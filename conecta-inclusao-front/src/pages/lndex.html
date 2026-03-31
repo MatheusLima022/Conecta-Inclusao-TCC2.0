@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BioPortal | Acesso Inteligente à Saúde</title>
+    <link rel="stylesheet" href="../assets/css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+
+    <div class="bio-portal-container">
+        <div class="background-pattern"></div> <div class="card bio-card left-card" id="card-medico">
+            <div class="content">
+                <i class="fas fa-user-md icon-large"></i>
+                <h2>Área do Profissional</h2>
+                <p>Acesse sistemas de diagnóstico, histórico de prontuários e gerencie sua agenda cirúrgica e de consultas.</p>
+                <button class="btn btn-left" onclick="navTo('medico')">Entrar como Médico</button>
+            </div>
+        </div>
+
+        <div class="center-divider">
+            <span class="portal-logo">BioPortal</span>
+        </div>
+
+        <div class="card bio-card right-card" id="card-paciente">
+            <div class="content">
+                <i class="fas fa-user-injured icon-large"></i>
+                <h2>Espaço do Paciente</h2>
+                <p>Consulte resultados de exames, acompanhe seu plano de tratamento e agende teleconsultas de forma intuitiva.</p>
+                <button class="btn btn-right" onclick="navTo('paciente')">Acessar Meu Perfil</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/js/script.js"></script>
+</body>
+</html>

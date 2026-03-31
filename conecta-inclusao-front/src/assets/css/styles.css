@@ -1,0 +1,214 @@
+:root {
+    --primary-blue: #0A72E4; /* Azul vibrante e médico */
+    --secondary-grey: #2c3e50; /* Cinza grafite, profundo */
+    --light-grey: #ecf0f1; /* Fundo suave */
+    --text-color: #34495e; /* Texto principal */
+    --white: #ffffff;
+    --border-radius-large: 15px;
+    --transition-speed: 0.4s ease-out;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--light-grey);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden; /* Para o efeito de fundo */
+    color: var(--text-color);
+}
+
+.bio-portal-container {
+    display: flex;
+    width: 90%;
+    max-width: 1200px;
+    background: var(--white);
+    border-radius: var(--border-radius-large);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    position: relative;
+    min-height: 600px;
+    overflow: hidden;
+}
+
+/* Padrão de fundo biométrico/tecnológico */
+.background-pattern {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23e3e3e3" fill-opacity="0.2"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0 20v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zm0 20v-4H4v4H0v2h4v4h2v-4h4v-2H6zM36 4v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zM6 4v-4H4v4H0v2h4v4h2v-4h4v-2H6z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');
+    opacity: 0.3;
+    z-index: 0;
+    pointer-events: none;
+}
+
+
+.bio-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 3rem;
+    position: relative;
+    z-index: 1;
+    transition: all var(--transition-speed);
+}
+
+.bio-card:hover {
+    transform: translateY(-5px); /* Efeito sutil de flutuação */
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+}
+
+.left-card {
+    background-color: var(--white);
+    border-right: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.right-card {
+    background-color: var(--white);
+    border-left: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.content {
+    text-align: center;
+    max-width: 400px;
+}
+
+.icon-large {
+    font-size: 4.5rem; /* Ícones maiores */
+    color: var(--primary-blue);
+    margin-bottom: 25px;
+    transition: transform 0.3s ease;
+}
+
+.bio-card:hover .icon-large {
+    transform: scale(1.1); /* Animação no ícone */
+}
+
+h2 {
+    font-size: 2.5rem;
+    font-weight: 800; /* Mais peso para os títulos */
+    margin-bottom: 15px;
+    color: var(--secondary-grey);
+}
+
+p {
+    font-size: 1.1rem;
+    line-height: 1.7;
+    margin-bottom: 40px;
+    color: var(--text-color);
+    font-weight: 300;
+}
+
+/* Botões */
+.btn {
+    padding: 16px 35px;
+    border: none;
+    border-radius: 8px; /* Botões mais arredondados */
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.btn-left {
+    background-color: var(--primary-blue);
+    color: var(--white);
+}
+
+.btn-left:hover {
+    background-color: #0867cf;
+    transform: translateY(-2px);
+}
+
+.btn-right {
+    background-color: var(--secondary-grey);
+    color: var(--white);
+}
+
+.btn-right:hover {
+    background-color: #1a2732;
+    transform: translateY(-2px);
+}
+
+/* Divisor Central e Logo */
+.center-divider {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 2px; /* Linha divisória */
+    background: linear-gradient(to bottom, transparent, var(--primary-blue), transparent);
+    transform: translateX(-50%);
+    z-index: 2;
+    pointer-events: none; /* Não interfere com cliques */
+}
+
+.portal-logo {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--primary-blue);
+    color: var(--white);
+    padding: 15px 25px;
+    border-radius: var(--border-radius-large);
+    font-weight: 800;
+    font-size: 1.4rem;
+    letter-spacing: 1px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+    z-index: 3;
+    pointer-events: none; /* Não interfere com cliques */
+}
+
+
+/* Responsividade */
+@media (max-width: 992px) {
+    .bio-portal-container {
+        flex-direction: column;
+        width: 95%;
+        height: auto;
+        min-height: auto;
+    }
+
+    .bio-card {
+        padding: 2.5rem 1.5rem;
+        border: none;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05); /* Separador em mobile */
+    }
+
+    .left-card, .right-card {
+        border-left: none;
+        border-right: none;
+    }
+
+    .center-divider {
+        display: none; /* Esconde a linha central em mobile */
+    }
+
+    .portal-logo {
+        position: relative; /* Ajusta a posição em mobile */
+        top: auto;
+        left: auto;
+        transform: none;
+        margin-bottom: 30px; /* Espaço abaixo do logo */
+        margin-top: 30px;
+    }
+}
+
+@media (max-width: 576px) {
+    h2 { font-size: 2rem; }
+    p { font-size: 1rem; }
+    .btn { font-size: 1rem; padding: 14px 25px; }
+    .icon-large { font-size: 3.5rem; }
+}
