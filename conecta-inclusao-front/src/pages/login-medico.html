@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Área do Profissional</title>
+    <link rel="stylesheet" href="../assets/css/login-medico.css">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <div class="doctor-icon">
+                <i class="ph ph-stethoscope"></i>
+            </div>
+            <h1>Área do Profissional</h1>
+            <p>Acesse sistemas de diagnóstico, histórico de prontuários e gerencie sua agenda.</p>
+        </div>
+
+        <form id="loginForm">
+            <div class="input-group">
+                <label for="crm">CRM / Registro</label>
+                <input type="text" id="crm" placeholder="000000-UF" required>
+            </div>
+
+            <div class="input-group">
+                <label for="password">Senha</label>
+                <input type="password" id="password" placeholder="••••••••" required>
+            </div>
+
+            <button type="submit" class="btn-login">Entrar como Médico</button>
+            
+            <div class="login-footer">
+                <a href="#">Esqueceu sua senha?</a>
+                <a href="#">Suporte técnico</a>
+            </div>
+        </form>
+    </div>
+
+    <script src="../assets/js/login-medico.js"></script>
+</body>
+</html>
