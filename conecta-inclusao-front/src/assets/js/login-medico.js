@@ -20,3 +20,7 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
         }, 1500);
     }
 });
+
+document.getElementById('buttonEnter').addEventListener('click', () => {
+    window.location.href = "../pages/dashboard-medico.html";
+});

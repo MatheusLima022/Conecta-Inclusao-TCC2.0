@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Paciente - Portal Saúde</title>
+    <link rel="stylesheet" href="../assets/css/paciente.css">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <div class="patient-icon">
+                <i class="ph ph-user-circle"></i>
+            </div>
+            <h1>Área do Paciente</h1>
+            <p>Acesse seus exames e histórico médico com segurança.</p>
+        </div>
+
+        <form id="loginFormPaciente">
+            <div class="input-group">
+                <label for="cpf">CPF</label>
+                <input type="text" id="cpf" placeholder="000.000.000-00" maxlength="14" required>
+            </div>
+
+            <div class="input-group">
+                <div class="label-row">
+                    <label for="password">Senha</label>
+                    
+                </div>
+                <input type="password" id="password" placeholder="Sua senha" required>
+            </div>
+
+            <button type="submit" class="btn-login">Acessar meus dados</button>
+            <a href="#" class="forgot-password" onclick="handleResetPassword()">Esqueceu a senha?</a>
+            
+            <div class="login-footer">
+                
+                    
+            </div>
+             <span>Não tem conta? 
+            <a href="#">Cadastre-se aqui</a></span>
+        </form>
+    </div>
+
+    <script src="../assets/js/script-paciente.js"></script>
+</body>
+</html>

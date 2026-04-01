@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Médico - Portal Saúde</title>
+    <link rel="stylesheet" href="../assets/css/dashboard-medico.css">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="logo-section">
+                <i class="ph ph-stethoscope"></i>
+                <span>MedSystem</span>
+            </div>
+            <nav>
+                <a href="#" class="active"><i class="ph ph-house"></i> Início</a>
+                <a href="#"><i class="ph ph-calendar-blank"></i> Agenda</a>
+                <a href="#"><i class="ph ph-users"></i> Pacientes</a>
+                <a href="#"><i class="ph ph-clipboard-text"></i> Prontuários</a>
+                <a href="#"><i class="ph ph-chart-line"></i> Relatórios</a>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="#"><i class="ph ph-gear"></i> Configurações</a>
+                <a href="login.html" class="logout"><i class="ph ph-sign-out"></i> Sair</a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="search-bar">
+                    <i class="ph ph-magnifying-glass"></i>
+                    <input type="text" placeholder="Buscar paciente ou prontuário...">
+                </div>
+                <div class="user-profile">
+                    <div class="user-info">
+                        <strong>Dr. Ricardo Silva</strong>
+                        <span>CRM 123456-SP</span>
+                    </div>
+                    <img src="https://ui-avatars.com/api/?name=Ricardo+Silva&background=0073e6&color=fff" alt="Avatar">
+                </div>
+            </header>
+
+            <section class="welcome-section">
+                <h2>Bom dia, Dr. Ricardo</h2>
+                <p>Você tem 8 consultas agendadas para hoje.</p>
+            </section>
+
+            <div class="stats-grid">
+                <div class="card">
+                    <i class="ph ph-users-three blue"></i>
+                    <div>
+                        <h3>42</h3>
+                        <p>Total Pacientes</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <i class="ph ph-calendar-check green"></i>
+                    <div>
+                        <h3>08</h3>
+                        <p>Consultas Hoje</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <i class="ph ph-clock orange"></i>
+                    <div>
+                        <h3>03</h3>
+                        <p>Aguardando</p>
+                    </div>
+                </div>
+            </div>
+
+            <section class="appointments-section">
+                <div class="section-header">
+                    <h3>Próximos Atendimentos</h3>
+                    <button class="btn-primary">Ver Agenda Completa</button>
+                </div>
+                <table class="appointments-table">
+                    <thead>
+                        <tr>
+                            <th>Paciente</th>
+                            <th>Horário</th>
+                            <th>Tipo</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="patient-td"><strong>Ana Maria Oliveira</strong></td>
+                            <td>09:00</td>
+                            <td>Retorno</td>
+                            <td><span class="status confirm">Confirmado</span></td>
+                            <td><button class="btn-action">Atender</button></td>
+                        </tr>
+                        <tr>
+                            <td class="patient-td"><strong>Carlos Eduardo Souza</strong></td>
+                            <td>09:45</td>
+                            <td>Primeira Consulta</td>
+                            <td><span class="status waiting">Aguardando</span></td>
+                            <td><button class="btn-action">Atender</button></td>
+                        </tr>
+                        <tr>
+                            <td class="patient-td"><strong>Juliana Mendes</strong></td>
+                            <td>10:30</td>
+                            <td>Exame</td>
+                            <td><span class="status pending">Pendente</span></td>
+                            <td><button class="btn-action">Atender</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+        </main>
+    </div>
+    <script src="../assets/js/dashboard-medico.js"></script>
+</body>
+</html>
