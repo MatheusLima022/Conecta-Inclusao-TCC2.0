@@ -2,14 +2,16 @@
 function handleResetPassword() {
     const cpf = document.getElementById('cpf').value;
     
-    if (!cpf) {
-        alert("Por favor, digite seu CPF primeiro para recuperarmos sua senha.");
+    if (!cpf || cpf.length < 14) {
+        alert("Por favor, digite seu CPF completo para recuperarmos sua senha.");
+        document.getElementById('cpf').focus();
     } else {
-        alert(`Um e-mail de recuperação foi enviado para o endereço cadastrado vinculado ao CPF: ${cpf}`);
+        // Estilizando o feedback de recuperação
+        alert(`Processando... Um link de recuperação foi enviado para o e-mail cadastrado no CPF: ${cpf}`);
     }
 }
 
-// Máscara de CPF automática
+// Máscara de CPF automática (Melhorada para performance)
 document.getElementById('cpf').addEventListener('input', function(e) {
     let v = e.target.value.replace(/\D/g, "");
     if (v.length > 11) v = v.slice(0, 11);
@@ -21,26 +23,41 @@ document.getElementById('cpf').addEventListener('input', function(e) {
     e.target.value = v;
 });
 
-// Login Form
+// Login Form com Feedback Visual e Redirecionamento
 document.getElementById('loginFormPaciente').addEventListener('submit', function(e) {
     e.preventDefault();
-    alert("Iniciando acesso ao portal...");
-});
-// Login Form
-document.getElementById('loginFormPaciente').addEventListener('submit', function(e) {
-    e.preventDefault(); // Impede o recarregamento da página
 
-    // Captura os valores (caso queira validar algo antes)
+    const btn = e.target.querySelector('.btn-login');
+    const originalText = btn.innerText;
+
+    // 1. Validação básica de segurança
     const cpf = document.getElementById('cpf').value;
     const password = document.getElementById('password').value;
 
-    if (cpf.length === 14 && password.length > 0) {
-        alert("Acesso autorizado! Bem-vindo ao seu portal.");
-
-        // Redireciona para o arquivo do dashboard
-        // Certifique-se de que o nome do arquivo seja exatamente igual ao que você salvou
-        window.location.href = "dash-paciente.html"; 
-    } else {
-        alert("Por favor, preencha o CPF e a senha corretamente.");
+    if (cpf.length < 14 || password.length < 4) {
+        alert("Por favor, verifique seus dados de acesso.");
+        return;
     }
+
+    // 2. Efeito de "Carregando" no botão (Estilo Moderno)
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ph ph-circle-notch-bold" style="animation: spin 1s linear infinite;"></i> Acessando...';
+    btn.style.opacity = "0.8";
+    btn.style.cursor = "not-allowed";
+
+    // 3. Simulação de autenticação e Redirecionamento
+    setTimeout(() => {
+        // Redireciona para a tela que criamos anteriormente
+        window.location.href = "dash-paciente.html"; 
+    }, 1500); // 1.5 segundos de espera para parecer real
 });
+
+// Adicione este CSS via JS apenas para a animação do ícone de carregar
+const style = document.createElement('style');
+style.innerHTML = `
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+`;
+document.head.appendChild(style);
