@@ -1,0 +1,83 @@
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+body { background-color: #f8fafc; color: #1e293b; }
+
+.top-nav {
+    background: #fff;
+    padding: 15px 5%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.logo { display: flex; align-items: center; gap: 10px; color: #0073e6; font-weight: bold; font-size: 20px; }
+.user-area { display: flex; align-items: center; gap: 12px; }
+.user-area img { width: 35px; border-radius: 50%; }
+
+.content { padding: 40px 5%; max-width: 1200px; margin: 0 auto; }
+
+.hero-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40px;
+}
+
+.btn-new-appointment {
+    background: #0073e6;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: 0.3s;
+}
+
+.btn-new-appointment:hover { background: #005bb5; }
+
+.cards-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.appointment-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    border-left: 5px solid #0073e6;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+}
+
+.card-header { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 13px; }
+.specialty { font-weight: bold; color: #0073e6; text-transform: uppercase; }
+.date-tag { color: #64748b; }
+
+.doc-info { margin-bottom: 20px; }
+.doc-info strong { display: block; font-size: 16px; }
+.doc-info span { font-size: 14px; color: #64748b; }
+
+.btn-cancel {
+    width: 100%;
+    background: #fff;
+    border: 1px solid #cbd5e1;
+    color: #64748b;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-cancel:hover { background: #fee2e2; color: #ef4444; border-color: #ef4444; }
+
+/* Modal */
+.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
+.modal-content { background: white; padding: 30px; border-radius: 12px; width: 400px; }
+.modal-content label { display: block; margin: 15px 0 5px; font-size: 14px; font-weight: 600; }
+.modal-content select, .modal-content input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; }
+.modal-footer { margin-top: 25px; display: flex; gap: 10px; justify-content: flex-end; }

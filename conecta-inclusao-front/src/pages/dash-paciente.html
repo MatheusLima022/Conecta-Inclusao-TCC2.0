@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minha Saúde - Portal do Paciente</title>
+    <link rel="stylesheet" href="../assets/css/dash-paciente.css">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+<body>
+    <div class="dash-container">
+        <header class="top-nav">
+            <div class="logo">
+                <i class="ph ph-heart-beat"></i>
+                <span>Portal Saúde</span>
+            </div>
+            <div class="user-area">
+                <span>Olá, <strong>Marcos Oliveira</strong></span>
+                <img src="https://ui-avatars.com/api/?name=Marcos+Oliveira&background=0073e6&color=fff" alt="Avatar">
+            </div>
+        </header>
+
+        <main class="content">
+            <section class="hero-section">
+                <div>
+                    <h2>Seu Painel de Saúde</h2>
+                    <p>Gerencie suas consultas e exames de forma simples.</p>
+                </div>
+                <button class="btn-new-appointment" onclick="openModal()">
+                    <i class="ph ph-plus"></i> Agendar Nova Consulta
+                </button>
+            </section>
+
+            <section class="appointments-grid">
+                <h3>Meus Próximos Agendamentos</h3>
+                <div id="appointmentsList" class="cards-container">
+                    <div class="appointment-card" data-date="2026-04-20">
+                        <div class="card-header">
+                            <span class="specialty">Cardiologia</span>
+                            <span class="date-tag">20/04/2026 - 14:30</span>
+                        </div>
+                        <div class="doc-info">
+                            <strong>Dr. Ricardo Silva</strong>
+                            <span>Hospital Central - Bloco A</span>
+                        </div>
+                        <button class="btn-cancel" onclick="cancelAppointment(this)">Desmarcar</button>
+                    </div>
+
+                    <div class="appointment-card" data-date="2026-04-05">
+                        <div class="card-header">
+                            <span class="specialty">Clínico Geral</span>
+                            <span class="date-tag">05/04/2026 - 09:00</span>
+                        </div>
+                        <div class="doc-info">
+                            <strong>Dra. Juliana Mendes</strong>
+                            <span>Unidade Botafogo</span>
+                        </div>
+                        <button class="btn-cancel" onclick="cancelAppointment(this)">Desmarcar</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <div id="appointmentModal" class="modal">
+            <div class="modal-content">
+                <h3>Novo Agendamento</h3>
+                <form id="formNewAppointment">
+                    <label>Especialidade</label>
+                    <select required>
+                        <option value="">Selecione...</option>
+                        <option>Clínico Geral</option>
+                        <option>Cardiologia</option>
+                        <option>Dermatologia</option>
+                    </select>
+                    
+                    <label>Data da Consulta</label>
+                    <input type="date" id="newDate" required>
+                    
+                    <div class="modal-footer">
+                        <button type="button" onclick="closeModal()" class="btn-secondary">Cancelar</button>
+                        <button type="submit" class="btn-primary">Confirmar Agendamento</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script src="../assets/js/dash-paciente.js"></script>
+</body>
+</html>
