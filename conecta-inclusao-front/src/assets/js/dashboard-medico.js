@@ -20,14 +20,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const actionButtons = document.querySelectorAll('.btn-action');
 
     actionButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', async function() {
             const row = this.closest('tr');
             const patientName = row.querySelector('.patient-td strong').innerText;
             const statusSpan = row.querySelector('.status');
 
             // Simula o início do atendimento
             if (this.innerText === 'Atender') {
-                const confirmar = confirm(`Deseja iniciar o atendimento de ${patientName}?`);
+                const confirmar = await showPopup(`Deseja iniciar o atendimento de ${patientName}?`, 'confirm');
                 
                 if (confirmar) {
                     this.innerText = 'Finalizar';
@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } else {
                 // Simula a finalização
-                alert(`Atendimento de ${patientName} finalizado com sucesso!`);
+                await showPopup(`Atendimento de ${patientName} finalizado com sucesso!`);
                 row.style.opacity = '0.5';
                 this.disabled = true;
                 this.innerText = 'Concluído';

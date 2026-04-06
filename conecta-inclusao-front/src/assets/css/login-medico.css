@@ -106,3 +106,76 @@ p {
 .login-footer a:hover {
     text-decoration: underline;
 }
+
+.back-button {
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.back-button a {
+    color: #0073e6;
+    text-decoration: none;
+    font-size: 16px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.back-button a:hover {
+    text-decoration: underline;
+}
+
+.back-button i {
+    margin-right: 5px;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .login-container {
+        padding: 20px;
+        max-width: 90%;
+        margin: 20px;
+    }
+
+    .doctor-icon {
+        font-size: 40px;
+    }
+
+    h1 {
+        font-size: 24px;
+    }
+
+    p {
+        font-size: 13px;
+        margin-bottom: 20px;
+    }
+
+    .input-group input {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+
+    .btn-login {
+        padding: 12px;
+        font-size: 15px;
+    }
+
+    .login-footer {
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .login-container {
+        padding: 15px;
+    }
+
+    h1 {
+        font-size: 20px;
+    }
+
+    .doctor-icon {
+        font-size: 35px;
+    }
+}

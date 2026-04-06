@@ -3,26 +3,27 @@ function openModal() { document.getElementById('appointmentModal').style.display
 function closeModal() { document.getElementById('appointmentModal').style.display = 'none'; }
 
 // Lógica de Sair
-function handleLogout() {
-    if (confirm("Deseja realmente sair?")) {
+async function handleLogout() {
+    const result = await showPopup("Deseja realmente sair?", 'confirm');
+    if (result) {
         window.location.href = "login-paciente.html";
     }
 }
 
 // Filtro de Busca
-function filterResults() {
+async function filterResults() {
     const spec = document.getElementById('searchSpecialty').value;
     const btn = document.querySelector('.btn-search-filter');
     
     btn.innerText = "Buscando...";
-    setTimeout(() => {
-        alert(`Filtro aplicado para: ${spec || 'Todas as áreas'}.`);
+    setTimeout(async () => {
+        await showPopup(`Filtro aplicado para: ${spec || 'Todas as áreas'}.`);
         btn.innerHTML = '<i class="ph ph-magnifying-glass"></i> Filtrar';
     }, 800);
 }
 
 // Lógica de Cancelamento (Regra de 2 semanas / 14 dias)
-function cancelAppointment(button) {
+async function cancelAppointment(button) {
     const card = button.closest('.appointment-card');
     const dateStr = card.getAttribute('data-date'); 
     
@@ -34,21 +35,22 @@ function cancelAppointment(button) {
     const diffInDays = Math.ceil(diffInTime / (1000 * 3600 * 24));
 
     if (diffInDays < 14) {
-        alert("Atenção: Por políticas de segurança, cancelamentos devem ser feitos com no mínimo 2 semanas de antecedência.");
+        await showPopup("Atenção: Por políticas de segurança, cancelamentos devem ser feitos com no mínimo 2 semanas de antecedência.");
     } else {
-        if (confirm("Tem certeza que deseja desmarcar esta consulta?")) {
+        const result = await showPopup("Tem certeza que deseja desmarcar esta consulta?", 'confirm');
+        if (result) {
             card.remove();
-            alert("Consulta removida com sucesso.");
+            await showPopup("Consulta removida com sucesso.");
         }
     }
 }
 
 // Criar Agendamento (Simulado)
-document.getElementById('formNewAppointment').addEventListener('submit', function(e) {
+document.getElementById('formNewAppointment').addEventListener('submit', async function(e) {
     e.preventDefault();
     const date = document.getElementById('modalDate').value;
     const spec = document.getElementById('modalSpec').value;
 
-    alert(`Sucesso! Consulta de ${spec} agendada para ${date}.`);
+    await showPopup(`Sucesso! Consulta de ${spec} agendada para ${date}.`);
     closeModal();
 });

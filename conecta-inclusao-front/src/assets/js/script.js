@@ -1,6 +1,19 @@
 // Função de Navegação com delay para animação de saída suave
 function navTo(tipo) {
-    const targetUrl = tipo === 'medico' ? 'login-medico.html' : 'login-paciente.html';
+    let targetUrl;
+    switch(tipo) {
+        case 'medico':
+            targetUrl = 'login-medico.html';
+            break;
+        case 'empresa':
+            targetUrl = 'login-empresa.html'; // Placeholder, página a ser criada
+            break;
+        case 'paciente':
+            targetUrl = 'login-paciente.html';
+            break;
+        default:
+            targetUrl = 'lndex.html';
+    }
     
     // Animação de fade-out do contêiner principal
     const container = document.querySelector('.bio-portal-container');

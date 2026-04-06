@@ -15,8 +15,8 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
         btn.disabled = true;
 
         setTimeout(() => {
-            alert("Acesso autorizado! Redirecionando para o painel...");
-            // window.location.href = "dashboard.html"; 
+            showPopup("Acesso autorizado! Redirecionando para o painel...");
+            window.location.href = "../pages/dashboard-medico.html";
         }, 1500);
     }
 });

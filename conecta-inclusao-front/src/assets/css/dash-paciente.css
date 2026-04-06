@@ -73,3 +73,71 @@ body { background-color: #f1f5f9; color: #334155; }
 .btn-primary { background: #0073e6; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; }
 
 @media (max-width: 900px) { .search-container-grid { grid-template-columns: 1fr; } }
+
+/* Responsividade adicional */
+@media (max-width: 768px) {
+    .top-nav {
+        padding: 10px 3%;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .logo {
+        font-size: 18px;
+    }
+
+    .content {
+        padding: 20px 3%;
+    }
+
+    .search-provider-section {
+        padding: 15px;
+    }
+
+    .hero-section {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .cards-container {
+        grid-template-columns: 1fr;
+    }
+
+    .modal-content {
+        width: 90%;
+        padding: 20px;
+    }
+
+    .modal-footer {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .btn-secondary, .btn-primary {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .top-nav {
+        padding: 10px 2%;
+    }
+
+    .content {
+        padding: 15px 2%;
+    }
+
+    .search-provider-section {
+        padding: 10px;
+    }
+
+    .appointment-card {
+        padding: 15px;
+    }
+
+    .modal-content {
+        width: 95%;
+        padding: 15px;
+    }
+}

@@ -73,6 +73,12 @@ body {
     border-right: 1px solid rgba(0, 0, 0, 0.05);
 }
 
+.middle-card {
+    background-color: var(--white);
+    border-left: 1px solid rgba(0, 0, 0, 0.05);
+    border-right: 1px solid rgba(0, 0, 0, 0.05);
+}
+
 .right-card {
     background-color: var(--white);
     border-left: 1px solid rgba(0, 0, 0, 0.05);
@@ -131,8 +137,18 @@ p {
     transform: translateY(-2px);
 }
 
-.btn-right {
+.btn-middle {
     background-color: var(--secondary-grey);
+    color: var(--white);
+}
+
+.btn-middle:hover {
+    background-color: #1a2732;
+    transform: translateY(-2px);
+}
+
+.btn-right {
+    background-color: var(--primary-blue);
     color: var(--white);
 }
 
@@ -142,18 +158,6 @@ p {
 }
 
 /* Divisor Central e Logo */
-.center-divider {
-    position: absolute;
-    left: 50%;
-    top: 0;
-    bottom: 0;
-    width: 2px; /* Linha divisória */
-    background: linear-gradient(to bottom, transparent, var(--primary-blue), transparent);
-    transform: translateX(-50%);
-    z-index: 2;
-    pointer-events: none; /* Não interfere com cliques */
-}
-
 .portal-logo {
     position: absolute;
     top: 50%;
@@ -174,6 +178,10 @@ p {
 
 /* Responsividade */
 @media (max-width: 992px) {
+    body {
+        overflow-y: scroll;
+    }
+    
     .bio-portal-container {
         flex-direction: column;
         width: 95%;
@@ -187,7 +195,7 @@ p {
         border-bottom: 1px solid rgba(0, 0, 0, 0.05); /* Separador em mobile */
     }
 
-    .left-card, .right-card {
+    .left-card, .middle-card, .right-card {
         border-left: none;
         border-right: none;
     }
@@ -207,8 +215,50 @@ p {
 }
 
 @media (max-width: 576px) {
+    body {
+        overflow-y: scroll;
+    }
+    
     h2 { font-size: 2rem; }
     p { font-size: 1rem; }
     .btn { font-size: 1rem; padding: 14px 25px; }
     .icon-large { font-size: 3.5rem; }
+}
+
+@media (max-width: 768px) {
+    body {
+        overflow-y: scroll;
+    }
+    
+    .bio-portal-container {
+        width: 95%;
+    }
+
+    .bio-card {
+        padding: 2rem 1rem;
+    }
+
+    h2 {
+        font-size: 2.2rem;
+    }
+
+    p {
+        font-size: 1rem;
+        margin-bottom: 30px;
+    }
+
+    .btn {
+        padding: 14px 30px;
+        font-size: 1rem;
+    }
+
+    .icon-large {
+        font-size: 4rem;
+        margin-bottom: 20px;
+    }
+
+    .portal-logo {
+        padding: 12px 20px;
+        font-size: 1.2rem;
+    }
 }

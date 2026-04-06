@@ -3,11 +3,11 @@ function handleResetPassword() {
     const cpf = document.getElementById('cpf').value;
     
     if (!cpf || cpf.length < 14) {
-        alert("Por favor, digite seu CPF completo para recuperarmos sua senha.");
+        showPopup("Por favor, digite seu CPF completo para recuperarmos sua senha.");
         document.getElementById('cpf').focus();
     } else {
         // Estilizando o feedback de recuperação
-        alert(`Processando... Um link de recuperação foi enviado para o e-mail cadastrado no CPF: ${cpf}`);
+        showPopup(`Processando... Um link de recuperação foi enviado para o e-mail cadastrado no CPF: ${cpf}`);
     }
 }
 
@@ -35,7 +35,7 @@ document.getElementById('loginFormPaciente').addEventListener('submit', function
     const password = document.getElementById('password').value;
 
     if (cpf.length < 14 || password.length < 4) {
-        alert("Por favor, verifique seus dados de acesso.");
+        showPopup("Por favor, verifique seus dados de acesso.");
         return;
     }
 
