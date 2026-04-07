@@ -106,6 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Store in sessionStorage
             sessionStorage.setItem('professionalName', professional.name);
             sessionStorage.setItem('professionalRegistry', formatRegistry(professional.registry));
+            sessionStorage.setItem('professionalUnit', professional.unit || 'Unidade não definida');
 
             setTimeout(() => {
                 showPopup("Acesso autorizado! Redirecionando para o painel...");

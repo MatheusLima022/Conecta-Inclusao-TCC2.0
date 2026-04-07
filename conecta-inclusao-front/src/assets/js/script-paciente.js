@@ -88,8 +88,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const cpf = document.getElementById('cpf').value;
             const password = document.getElementById('password').value;
 
-            if (cpf.length < 14 || password.length < 4) {
-                showPopup("Por favor, verifique seus dados de acesso.");
+            if (!validarCPF(cpf) || password.length < 4) {
+                showPopup("Por favor, verifique seus dados de acesso. CPF inválido.");
                 return;
             }
 

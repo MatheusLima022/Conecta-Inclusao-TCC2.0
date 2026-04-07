@@ -1,14 +1,17 @@
 function loadProfessionalInfo() {
     const name = sessionStorage.getItem('professionalName') || 'Dr. Nome';
     const registry = sessionStorage.getItem('professionalRegistry') || 'Registro';
+    const unit = sessionStorage.getItem('professionalUnit') || 'Unidade não definida';
 
     const nameEl = document.getElementById('professionalName');
     const registryEl = document.getElementById('professionalRegistry');
+    const unitEl = document.getElementById('professionalUnit');
     const welcomeEl = document.getElementById('welcomeMessage');
     const avatarEl = document.getElementById('professionalAvatar');
 
     if (nameEl) nameEl.innerText = name;
     if (registryEl) registryEl.innerText = registry;
+    if (unitEl) unitEl.innerText = unit;
     if (welcomeEl) welcomeEl.innerText = `Bom dia, ${name.split(' ')[0]}`;
     if (avatarEl) avatarEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0073e6&color=fff`;
 }

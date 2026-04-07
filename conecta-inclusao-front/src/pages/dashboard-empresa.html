@@ -167,6 +167,15 @@
                             <input type="tel" id="proPhone" placeholder="(00) 00000-0000" required>
                         </div>
                         <div class="input-group">
+                            <label for="proUnit">Unidade</label>
+                            <input list="unitOptions" id="proUnit" placeholder="Ex: Unidade A" required>
+                            <datalist id="unitOptions">
+                                <option value="Unidade A"></option>
+                                <option value="Unidade B"></option>
+                                <option value="Unidade C"></option>
+                            </datalist>
+                        </div>
+                        <div class="input-group">
                             <label for="proArea">Área de Atuação</label>
                             <input type="text" id="proArea" placeholder="Ex: Saúde Ocupacional" required>
                         </div>
@@ -204,6 +213,13 @@
                         <p>Veja o quadro completo de funcionários e suas situações atuais.</p>
                     </div>
                 </div>
+                <div class="team-filter-bar">
+                    <label for="unitFilterSelect">Filtrar por unidade:</label>
+                    <select id="unitFilterSelect">
+                        <option value="Todas">Todas</option>
+                    </select>
+                    <button class="btn-secondary" id="btnApplyUnitFilter">Filtrar</button>
+                </div>
                 <div class="status-grid">
                     <div class="status-box">
                         <h3>Ativos</h3>
@@ -226,6 +242,7 @@
                             <th>Registro</th>
                             <th>Status</th>
                             <th>Unidade</th>
+                            <th>Ações</th>
                         </tr>
                     </thead>
                     <tbody id="teamFullTableBody">

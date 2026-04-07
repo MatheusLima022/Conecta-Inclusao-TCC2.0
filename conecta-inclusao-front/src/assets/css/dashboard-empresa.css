@@ -22,6 +22,9 @@ body {
     display: flex;
     flex-direction: column;
     padding: 30px 22px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
 }
 
 .logo-section {
@@ -275,6 +278,76 @@ body {
     padding: 16px 14px;
     border-bottom: 1px solid #e2e8f0;
 }
+
+.team-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+}
+
+.team-filter-bar label {
+    color: #475569;
+    font-weight: 600;
+}
+
+.team-filter-bar select {
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    padding: 12px 14px;
+    background: #ffffff;
+    color: #1f2937;
+    font-size: 14px;
+    min-width: 220px;
+}
+
+.table-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.table-btn,
+.btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.table-btn:hover,
+.btn-secondary:hover {
+    transform: translateY(-1px);
+}
+
+.table-btn.edit-btn {
+    background: #0f4dbf;
+    color: white;
+}
+
+.table-btn.inactive-btn {
+    background: #ef4444;
+    color: white;
+}
+
+.btn-secondary {
+    background: #f8f9ff;
+    color: #0f4dbf;
+    border: 1px solid #dbe7f0;
+}
+
+.btn-secondary:hover {
+    background: #eef4ff;
+}
+
 
 .team-table th,
 .team-full-table th {
