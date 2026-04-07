@@ -22,8 +22,8 @@
 
         <form id="loginForm">
             <div class="input-group">
-                <label for="crm">CRM / Registro</label>
-                <input type="text" id="crm" placeholder="000000-UF" required>
+                <label for="crm">Registro</label>
+                <input type="text" id="crm" placeholder="CRM, COREN, CREFITO" required>
             </div>
 
             <div class="input-group">
@@ -33,7 +33,7 @@
 
             <button id="buttonEnter" type="submit" class="btn-login">Entrar como Médico</button>
             <br><br>
-            <a href="#">Esqueceu sua senha?</a>
+            <a href="#" class="forgot-password" onclick="openForgotPasswordModal(event)">Esqueceu sua senha?</a>
             
             <div class="login-footer">
             
@@ -41,6 +41,24 @@
             </div>
          
         </form>
+    </div>
+
+    <!-- Modal Esqueceu a Senha -->
+    <div id="forgotPasswordModal" class="forgot-modal-overlay" style="display: none;">
+        <div class="forgot-modal-content">
+            <div class="forgot-modal-header">
+                <h2>Recuperar Senha</h2>
+                <button type="button" class="forgot-modal-close" onclick="closeForgotPasswordModal()">&times;</button>
+            </div>
+            <div class="forgot-modal-body">
+                <p class="forgot-modal-description">Digite seu CRM/Registro para receber um link de recuperação de senha no seu e-mail cadastrado.</p>
+                <input type="text" id="forgotEmail" placeholder="000000-UF" class="forgot-input">
+                <button type="button" class="forgot-btn" onclick="sendResetEmail('crm')">Enviar Link de Recuperação</button>
+            </div>
+            <div class="forgot-modal-footer">
+                <button type="button" class="forgot-cancel-btn" onclick="closeForgotPasswordModal()">Cancelar</button>
+            </div>
+        </div>
     </div>
 
     <script src="../assets/js/utils.js"></script>

@@ -1,5 +1,20 @@
+function loadProfessionalInfo() {
+    const name = sessionStorage.getItem('professionalName') || 'Dr. Nome';
+    const registry = sessionStorage.getItem('professionalRegistry') || 'Registro';
+
+    const nameEl = document.getElementById('professionalName');
+    const registryEl = document.getElementById('professionalRegistry');
+    const welcomeEl = document.getElementById('welcomeMessage');
+    const avatarEl = document.getElementById('professionalAvatar');
+
+    if (nameEl) nameEl.innerText = name;
+    if (registryEl) registryEl.innerText = registry;
+    if (welcomeEl) welcomeEl.innerText = `Bom dia, ${name.split(' ')[0]}`;
+    if (avatarEl) avatarEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0073e6&color=fff`;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Lógica de Busca de Pacientes
+    loadProfessionalInfo();
     const searchInput = document.querySelector('.search-bar input');
     const tableRows = document.querySelectorAll('.appointments-table tbody tr');
 

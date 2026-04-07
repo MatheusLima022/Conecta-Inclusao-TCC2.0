@@ -15,7 +15,7 @@ function showPopup(message, type = 'info') {
         modal.style.display = 'flex';
         modal.style.justifyContent = 'center';
         modal.style.alignItems = 'center';
-        modal.style.zIndex = '1000';
+        modal.style.zIndex = '3000';
 
         const content = document.createElement('div');
         content.className = 'popup-content';
