@@ -10,6 +10,9 @@
 <body>
     <div class="login-container">
         <div class="login-header">
+            <div class="back-button">
+                <a href="lndex.html"><i class="ph ph-arrow-left"></i> Voltar</a>
+            </div>
             <div class="doctor-icon">
                 <i class="ph ph-stethoscope"></i>
             </div>
@@ -19,8 +22,8 @@
 
         <form id="loginForm">
             <div class="input-group">
-                <label for="crm">CRM / Registro</label>
-                <input type="text" id="crm" placeholder="000000-UF" required>
+                <label for="crm">Registro</label>
+                <input type="text" id="crm" placeholder="CRM, COREN, CREFITO" required>
             </div>
 
             <div class="input-group">
@@ -29,8 +32,8 @@
             </div>
 
             <button id="buttonEnter" type="submit" class="btn-login">Entrar como Médico</button>
-            
-            <a href="#">Esqueceu sua senha?</a>
+            <br><br>
+            <a href="#" class="forgot-password" onclick="openForgotPasswordModal(event)">Esqueceu sua senha?</a>
             
             <div class="login-footer">
             
@@ -40,6 +43,25 @@
         </form>
     </div>
 
+    <!-- Modal Esqueceu a Senha -->
+    <div id="forgotPasswordModal" class="forgot-modal-overlay" style="display: none;">
+        <div class="forgot-modal-content">
+            <div class="forgot-modal-header">
+                <h2>Recuperar Senha</h2>
+                <button type="button" class="forgot-modal-close" onclick="closeForgotPasswordModal()">&times;</button>
+            </div>
+            <div class="forgot-modal-body">
+                <p class="forgot-modal-description">Digite seu CRM/Registro para receber um link de recuperação de senha no seu e-mail cadastrado.</p>
+                <input type="text" id="forgotEmail" placeholder="000000-UF" class="forgot-input">
+                <button type="button" class="forgot-btn" onclick="sendResetEmail('crm')">Enviar Link de Recuperação</button>
+            </div>
+            <div class="forgot-modal-footer">
+                <button type="button" class="forgot-cancel-btn" onclick="closeForgotPasswordModal()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/js/utils.js"></script>
     <script src="../assets/js/login-medico.js"></script>
 </body>
 </html>

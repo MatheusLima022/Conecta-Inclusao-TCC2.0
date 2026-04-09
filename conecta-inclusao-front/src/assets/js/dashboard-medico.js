@@ -1,5 +1,23 @@
+function loadProfessionalInfo() {
+    const name = sessionStorage.getItem('professionalName') || 'Dr. Nome';
+    const registry = sessionStorage.getItem('professionalRegistry') || 'Registro';
+    const unit = sessionStorage.getItem('professionalUnit') || 'Unidade não definida';
+
+    const nameEl = document.getElementById('professionalName');
+    const registryEl = document.getElementById('professionalRegistry');
+    const unitEl = document.getElementById('professionalUnit');
+    const welcomeEl = document.getElementById('welcomeMessage');
+    const avatarEl = document.getElementById('professionalAvatar');
+
+    if (nameEl) nameEl.innerText = name;
+    if (registryEl) registryEl.innerText = registry;
+    if (unitEl) unitEl.innerText = unit;
+    if (welcomeEl) welcomeEl.innerText = `Bom dia, ${name.split(' ')[0]}`;
+    if (avatarEl) avatarEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0073e6&color=fff`;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Lógica de Busca de Pacientes
+    loadProfessionalInfo();
     const searchInput = document.querySelector('.search-bar input');
     const tableRows = document.querySelectorAll('.appointments-table tbody tr');
 
@@ -20,14 +38,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const actionButtons = document.querySelectorAll('.btn-action');
 
     actionButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', async function() {
             const row = this.closest('tr');
             const patientName = row.querySelector('.patient-td strong').innerText;
             const statusSpan = row.querySelector('.status');
 
             // Simula o início do atendimento
             if (this.innerText === 'Atender') {
-                const confirmar = confirm(`Deseja iniciar o atendimento de ${patientName}?`);
+                const confirmar = await showPopup(`Deseja iniciar o atendimento de ${patientName}?`, 'confirm');
                 
                 if (confirmar) {
                     this.innerText = 'Finalizar';
@@ -40,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } else {
                 // Simula a finalização
-                alert(`Atendimento de ${patientName} finalizado com sucesso!`);
+                await showPopup(`Atendimento de ${patientName} finalizado com sucesso!`);
                 row.style.opacity = '0.5';
                 this.disabled = true;
                 this.innerText = 'Concluído';

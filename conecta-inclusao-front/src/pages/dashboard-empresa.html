@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Empresa - Portal Saúde</title>
+    <link rel="stylesheet" href="../assets/css/dashboard-empresa.css">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="logo-section">
+                <i class="ph ph-building"></i>
+                <span id="companySidebarName">CorpHealth</span>
+            </div>
+            <nav>
+                <button class="nav-link active" data-tab="overview"><i class="ph ph-house"></i> Visão Geral</button>
+                <button class="nav-link" data-tab="register"><i class="ph ph-user-square"></i> Cadastrar Profissionais</button>
+                <button class="nav-link" data-tab="team"><i class="ph ph-users"></i> Equipe</button>
+                <button class="nav-link" data-tab="reports"><i class="ph ph-chart-line"></i> Relatórios</button>
+                <button class="nav-link" data-tab="settings"><i class="ph ph-gear"></i> Configurações</button>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="login-empresa.html"><i class="ph ph-sign-out"></i> Sair</a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="top-bar-left"></div>
+                <div class="user-profile">
+                    <div class="user-info">
+                        <strong id="companyHeaderName">Empresa Conecta Inclusão</strong>
+                        <span id="companyHeaderCnpj">CNPJ 12.345.678/0001-90</span>
+                    </div>
+                    <img id="companyAvatar" src="https://ui-avatars.com/api/?name=Conecta+Inclus%C3%A3o&background=0073e6&color=fff" alt="Avatar">
+                </div>
+            </header>
+
+            <section class="tab-content active" id="overview">
+                <div class="overview-header">
+                    <h1>Dashboard Corporativo</h1>
+                    <p>Visão completa dos profissionais e operações de saúde da empresa.</p>
+                </div>
+                <div class="overview-grid">
+                    <div class="status-card active-card">
+                        <div>
+                            <span>Funcionários Ativos</span>
+                            <h2 id="activeCount">28</h2>
+                        </div>
+                        <i class="ph ph-check-circle"></i>
+                    </div>
+                    <div class="status-card working-card">
+                        <div>
+                            <span>Atualmente Trabalhando</span>
+                            <h2 id="workingCount">20</h2>
+                        </div>
+                        <i class="ph ph-briefcase"></i>
+                    </div>
+                    <div class="status-card break-card">
+                        <div>
+                            <span>Férias / Folga</span>
+                            <h2 id="breakCount">8</h2>
+                        </div>
+                        <i class="ph ph-beach-chair"></i>
+                    </div>
+                </div>
+
+                <article class="summary-card">
+                    <div class="section-header">
+                        <div>
+                            <h2>Resumo Rápido</h2>
+                            <p>Monitoramento em tempo real dos times de saúde.</p>
+                        </div>
+                        <button class="btn-primary" id="btnAddProfessional">Novo Profissional</button>
+                    </div>
+                    <div class="summary-body">
+                        <div class="summary-item">
+                            <span>Atendimentos previstos</span>
+                            <strong>46</strong>
+                        </div>
+                        <div class="summary-item">
+                            <span>Solicitações pendentes</span>
+                            <strong>5</strong>
+                        </div>
+                        <div class="summary-item">
+                            <span>Documentos a validar</span>
+                            <strong>12</strong>
+                        </div>
+                    </div>
+                </article>
+
+                <section class="team-overview">
+                    <div class="section-header">
+                        <h2>Equipe em Destaque</h2>
+                        <span>Últimos 30 dias</span>
+                    </div>
+                    <table class="team-table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Especialidade</th>
+                                <th>Status</th>
+                                <th>Local</th>
+                            </tr>
+                        </thead>
+                        <tbody id="teamTableBody">
+                            <tr>
+                                <td>Dr. Eduardo Ramos</td>
+                                <td>Médico do Trabalho</td>
+                                <td><span class="status-dot active">Ativo</span></td>
+                                <td>Unidade A</td>
+                            </tr>
+                            <tr>
+                                <td>Enf. Ana Paula</td>
+                                <td>Enfermagem</td>
+                                <td><span class="status-dot working">Trabalhando</span></td>
+                                <td>Unidade B</td>
+                            </tr>
+                            <tr>
+                                <td>Fisioterapeuta Luiz</td>
+                                <td>Fisioterapia</td>
+                                <td><span class="status-dot break">Férias</span></td>
+                                <td>Unidade C</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+            </section>
+
+            <section class="tab-content" id="register">
+                <div class="section-header">
+                    <div>
+                        <h2>Cadastrar Profissional</h2>
+                        <p>Preencha os dados para incluir um novo profissional de saúde no sistema.</p>
+                    </div>
+                </div>
+                <form id="professionalForm" class="professional-form">
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label for="proName">Nome Completo</label>
+                            <input type="text" id="proName" placeholder="Nome completo" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="proRole">Função</label>
+                            <input type="text" id="proRole" placeholder="Ex: Médico, Enfermeiro, Fisioterapeuta" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="proRegistry">Registro Profissional</label>
+                            <input type="text" id="proRegistry" placeholder="CRM, COREN, CREFITO" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="proSpecialty">Especialidade</label>
+                            <input type="text" id="proSpecialty" placeholder="Ex: Medicina do Trabalho" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="proEmail">E-mail</label>
+                            <input type="email" id="proEmail" placeholder="nome@empresa.com.br" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="proPassword">Senha de Acesso</label>
+                            <input type="password" id="proPassword" placeholder="Senha para login do profissional" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="proPhone">Telefone</label>
+                            <input type="tel" id="proPhone" placeholder="(00) 00000-0000" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="proUnit">Unidade</label>
+                            <input list="unitOptions" id="proUnit" placeholder="Ex: Unidade A" required>
+                            <datalist id="unitOptions">
+                                <option value="Unidade A"></option>
+                                <option value="Unidade B"></option>
+                                <option value="Unidade C"></option>
+                            </datalist>
+                        </div>
+                        <div class="input-group">
+                            <label for="proArea">Área de Atuação</label>
+                            <input type="text" id="proArea" placeholder="Ex: Saúde Ocupacional" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="proShift">Tipo de Vínculo</label>
+                            <select id="proShift" required>
+                                <option value="">Selecione</option>
+                                <option value="CLT">CLT</option>
+                                <option value="PJ">PJ</option>
+                                <option value="Terceirizado">Terceirizado</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label for="proStartDate">Data de Início</label>
+                            <input type="date" id="proStartDate" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="proLoad">Carga Horária</label>
+                            <input type="text" id="proLoad" placeholder="Ex: 40h semanais" required>
+                        </div>
+                        <div class="input-group full-width">
+                            <label for="proNotes">Observações</label>
+                            <textarea id="proNotes" placeholder="Observações adicionais" rows="4"></textarea>
+                        </div>
+                    </div>
+                    <br>
+                    <button type="submit" class="btn-primary">Cadastrar Profissional</button>
+                </form>
+            </section>
+
+            <section class="tab-content" id="team">
+                <div class="section-header">
+                    <div>
+                        <h2>Equipe</h2>
+                        <p>Veja o quadro completo de funcionários e suas situações atuais.</p>
+                    </div>
+                </div>
+                <div class="team-filter-bar">
+                    <label for="unitFilterSelect">Filtrar por unidade:</label>
+                    <select id="unitFilterSelect">
+                        <option value="Todas">Todas</option>
+                    </select>
+                    <button class="btn-secondary" id="btnApplyUnitFilter">Filtrar</button>
+                </div>
+                <div class="status-grid">
+                    <div class="status-box">
+                        <h3>Ativos</h3>
+                        <p id="cardActiveCount">28</p>
+                    </div>
+                    <div class="status-box">
+                        <h3>Trabalhando</h3>
+                        <p id="cardWorkingCount">20</p>
+                    </div>
+                    <div class="status-box">
+                        <h3>Férias / Folga</h3>
+                        <p id="cardBreakCount">8</p>
+                    </div>
+                </div>
+                <table class="team-full-table">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Função</th>
+                            <th>Registro</th>
+                            <th>Status</th>
+                            <th>Unidade</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="teamFullTableBody">
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="tab-content" id="reports">
+                <div class="section-header">
+                    <div>
+                        <h2>Relatórios</h2>
+                        <p>Relatórios rápidos para acompanhar desempenho e compliance.</p>
+                    </div>
+                </div>
+                <div class="reports-grid">
+                    <div class="report-card">
+                        <h3>Profissionais ativos</h3>
+                        <p>Resumo por unidade, especialidade e vínculo.</p>
+                    </div>
+                    <div class="report-card">
+                        <h3>Solicitações em aberto</h3>
+                        <p>Acompanhamento de exames e validações.</p>
+                    </div>
+                    <div class="report-card">
+                        <h3>Compliance</h3>
+                        <p>Documentação e certificações pendentes.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="tab-content" id="settings">
+                <div class="section-header">
+                    <div>
+                        <h2>Configurações</h2>
+                        <p>Personalize as regras do dashboard e preferências da empresa.</p>
+                    </div>
+                </div>
+                <div class="settings-card">
+                    <h3>Preferências de notificação</h3>
+                    <p>Receber alertas sobre validade de registro e férias dos profissionais.</p>
+                </div>
+                <div class="settings-card">
+                    <h3>Gestão de acessos</h3>
+                    <p>Controle quais profissionais podem acessar o portal e alterar agendamentos.</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="../assets/js/utils.js"></script>
+    <script src="../assets/js/dashboard-empresa.js"></script>
+</body>
+</html>

@@ -11,7 +11,17 @@
 <body>
 
     <div class="bio-portal-container">
-        <div class="background-pattern"></div> <div class="card bio-card left-card" id="card-medico">
+        <div class="background-pattern"></div> 
+        <div class="card bio-card left-card" id="card-empresa">
+            <div class="content">
+                <i class="fas fa-building icon-large"></i>
+                <h2>Portal Empresarial</h2>
+                <p>Gerencie convênios, relatórios corporativos e soluções para saúde ocupacional da sua empresa.</p>
+                <button class="btn btn-middle" onclick="navTo('empresa')">Entrar como Empresa</button>
+            </div>
+        </div>
+
+        <div class="card bio-card middle-card" id="card-medico">
             <div class="content">
                 <i class="fas fa-user-md icon-large"></i>
                 <h2>Área do Profissional</h2>
@@ -19,7 +29,6 @@
                 <button class="btn btn-left" onclick="navTo('medico')">Entrar como Médico</button>
             </div>
         </div>
-
 
         <div class="card bio-card right-card" id="card-paciente">
             <div class="content">
@@ -31,6 +40,8 @@
         </div>
     </div>
 
+
+        
     <script src="../assets/js/script.js"></script>
 </body>
 </html>

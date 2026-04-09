@@ -193,3 +193,124 @@ body {
     background: #0073e6;
     color: white;
 }
+
+/* Responsividade */
+@media (max-width: 1024px) {
+    .sidebar {
+        width: 220px;
+        padding: 20px 15px;
+    }
+
+    .main-content {
+        padding: 20px;
+    }
+
+    .search-bar {
+        width: 300px;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-container {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        padding: 15px;
+        border-right: none;
+        border-bottom: 1px solid #e2e8f0;
+        flex-direction: row;
+        justify-content: space-between;
+    }
+
+    .sidebar nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .sidebar nav a {
+        padding: 8px 12px;
+        margin-bottom: 0;
+    }
+
+    .logo-section {
+        margin-bottom: 0;
+    }
+
+    .sidebar-footer {
+        border-top: none;
+        padding-top: 0;
+    }
+
+    .main-content {
+        padding: 15px;
+    }
+
+    .top-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .search-bar {
+        width: 100%;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .appointments-table {
+        font-size: 14px;
+    }
+
+    .appointments-table th, .appointments-table td {
+        padding: 8px 6px;
+    }
+
+    .btn-action {
+        padding: 4px 10px;
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .sidebar {
+        padding: 10px;
+    }
+
+    .main-content {
+        padding: 10px;
+    }
+
+    .card {
+        padding: 15px;
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
+    }
+
+    .appointments-section {
+        padding: 15px;
+    }
+
+    .appointments-table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    .user-profile {
+        gap: 10px;
+    }
+
+    .user-info span {
+        font-size: 11px;
+    }
+}

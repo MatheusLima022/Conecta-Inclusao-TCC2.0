@@ -6,7 +6,7 @@
 }
 
 body {
-    background-color: #f8f9fa;
+    background-color: #f0f4f8; /* Fundo levemente mais azulado/claro */
     height: 100vh;
     display: flex;
     justify-content: center;
@@ -16,57 +16,59 @@ body {
 .login-container {
     background-color: #ffffff;
     padding: 40px;
-    border-radius: 12px;
+    border-radius: 16px; /* Bordas um pouco mais arredondadas para o paciente */
     box-shadow: 0 15px 35px rgba(0, 115, 230, 0.1);
     width: 100%;
-    max-width: 450px;
+    max-width: 420px;
     text-align: center;
 }
 
-.doctor-icon {
-    font-size: 60px;
+.patient-icon {
+    font-size: 64px;
     color: #0073e6;
-    margin-bottom: 20px;
-}
-
-h1 {
-    color: #2c3e50;
-    font-size: 28px;
     margin-bottom: 15px;
 }
 
+h1 {
+    color: #1a202c;
+    font-size: 26px;
+    margin-bottom: 12px;
+}
+
 p {
-    color: #64748b;
+    color: #4a5568;
     font-size: 14px;
-    line-height: 1.6;
+    line-height: 1.5;
     margin-bottom: 30px;
+    padding: 0 10px;
 }
 
 .input-group {
     text-align: left;
-    margin-bottom: 20px;
+    margin-bottom: 18px;
 }
 
 .input-group label {
     display: block;
     font-size: 13px;
     font-weight: 600;
-    color: #475569;
-    margin-bottom: 8px;
+    color: #4a5568;
+    margin-bottom: 6px;
 }
 
 .input-group input {
     width: 100%;
-    padding: 12px 15px;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
+    padding: 14px;
+    border: 2px solid #edf2f7;
+    border-radius: 10px;
     font-size: 15px;
-    transition: border-color 0.3s;
+    transition: all 0.3s ease;
 }
 
 .input-group input:focus {
     outline: none;
     border-color: #0073e6;
+    background-color: #f8fbff;
 }
 
 .btn-login {
@@ -74,21 +76,18 @@ p {
     background-color: #0073e6;
     color: white;
     border: none;
-    padding: 14px;
-    border-radius: 8px;
+    padding: 16px;
+    border-radius: 10px;
     font-size: 16px;
-    font-weight: bold;
+    font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.3s, transform 0.1s;
+    transition: all 0.3s ease;
     margin-top: 10px;
 }
 
 .btn-login:hover {
     background-color: #005bb5;
-}
-
-.btn-login:active {
-    transform: scale(0.98);
+    box-shadow: 0 5px 15px rgba(0, 91, 181, 0.3);
 }
 
 .login-footer {
@@ -100,6 +99,7 @@ p {
 .login-footer a {
     font-size: 13px;
     color: #0073e6;
+    font-weight: 500;
     text-decoration: none;
 }
 
@@ -136,8 +136,8 @@ p {
         margin: 20px;
     }
 
-    .doctor-icon {
-        font-size: 40px;
+    .patient-icon {
+        font-size: 45px;
     }
 
     h1 {
@@ -150,12 +150,12 @@ p {
     }
 
     .input-group input {
-        padding: 10px 12px;
+        padding: 12px;
         font-size: 14px;
     }
 
     .btn-login {
-        padding: 12px;
+        padding: 14px;
         font-size: 15px;
     }
 
@@ -175,8 +175,8 @@ p {
         font-size: 20px;
     }
 
-    .doctor-icon {
-        font-size: 35px;
+    .patient-icon {
+        font-size: 40px;
     }
 }
 
@@ -220,7 +220,7 @@ p {
 
 .forgot-modal-content {
     background-color: white;
-    border-radius: 12px;
+    border-radius: 16px;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
     width: 100%;
     max-width: 400px;
@@ -278,16 +278,16 @@ p {
 
 .forgot-modal-description {
     font-size: 14px;
-    color: #475569;
+    color: #4a5568;
     margin-bottom: 25px;
     line-height: 1.6;
 }
 
 .forgot-input {
     width: 100%;
-    padding: 12px 15px;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
+    padding: 14px;
+    border: 2px solid #edf2f7;
+    border-radius: 10px;
     font-size: 15px;
     margin-bottom: 20px;
     transition: all 0.3s ease;
@@ -297,7 +297,7 @@ p {
 .forgot-input:focus {
     outline: none;
     border-color: #0073e6;
-    background-color: #f0f9ff;
+    background-color: #f8fbff;
     box-shadow: 0 0 0 3px rgba(0, 115, 230, 0.1);
 }
 
@@ -306,8 +306,8 @@ p {
     background: linear-gradient(135deg, #0073e6 0%, #005bb5 100%);
     color: white;
     border: none;
-    padding: 12px;
-    border-radius: 8px;
+    padding: 14px;
+    border-radius: 10px;
     font-size: 15px;
     font-weight: 600;
     cursor: pointer;
@@ -325,16 +325,16 @@ p {
 
 .forgot-modal-footer {
     padding: 20px 30px;
-    background-color: #f0f9ff;
-    border-top: 1px solid #e0e7ff;
+    background-color: #f8fbff;
+    border-top: 1px solid #edf2f7;
     text-align: right;
 }
 
 .forgot-cancel-btn {
     background-color: #e2e8f0;
-    color: #475569;
+    color: #4a5568;
     border: none;
-    padding: 10px 20px;
+    padding: 12px 24px;
     border-radius: 8px;
     font-size: 14px;
     font-weight: 600;
@@ -344,7 +344,7 @@ p {
 
 .forgot-cancel-btn:hover {
     background-color: #cbd5e1;
-    color: #334155;
+    color: #2d3748;
 }
 
 /* Responsividade Modal */
