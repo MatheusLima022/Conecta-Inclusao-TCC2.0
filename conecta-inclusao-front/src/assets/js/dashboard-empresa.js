@@ -250,6 +250,14 @@ function handleProfessionalRegistration(event) {
     });
 }
 
+// Lógica de Sair
+async function handleLogout() {
+    const result = await showPopup("Deseja realmente sair?", 'confirm');
+    if (result) {
+        window.location.href = "login-empresa.html";
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     loadCompanyInfo();
     populateUnitOptions();

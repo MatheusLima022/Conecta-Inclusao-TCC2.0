@@ -19,6 +19,7 @@ standardHeaders: true,
 // Desabilita headers antigos/legados do express-rate-limit 
 legacyHeaders: false 
 }); 
+
 // Define uma rota POST /login que recebe o middleware rate limiter como proteção 
 // A função é assíncrona (async) para permitir operações que esperam por promessas 
 router.post("/login", loginLimiter, async (req, res, next) => { 

@@ -8,15 +8,16 @@ import cors from "cors";
 import rateLimit from "express-rate-limit"; 
 // Importa as rotas de autenticação definidas no arquivo auth.routes.js 
 import authRoutes from "./routes/auth.routes.js"; 
-// Cria e exporta a aplicação Express 
 // Exporta como named export para ser usada em outros arquivos (como server.js) 
 export const app = express(); 
+
 // ============================================ 
 // MIDDLEWARES DE SEGURANÇA 
 // ============================================ 
 // Aplicar Helmet para adicionar headers de segurança HTTP padrão 
 // Protege contra ataques comuns como XSS, Clickjacking, etc 
 app.use(helmet()); 
+
 // ============================================ 
 // MIDDLEWARES DE PARSING DE DADOS 
 // ============================================ 
