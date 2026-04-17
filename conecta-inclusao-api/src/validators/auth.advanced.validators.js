@@ -1,0 +1,179 @@
+// Validadores avançados de autenticação com Zod
+import { z } from "zod";
+
+// Schema para login universal (aceita CRM, CNPJ, CPF ou Email)
+export const universalLoginSchema = z.object({
+  identifier: z
+    .string()
+    .trim()
+    .min(3, "Identificador muito curto")
+    .max(100, "Identificador muito longo")
+    .refine(
+      (value) => {
+        // Aceita: CPF (11 dígitos), CNPJ (14 dígitos), CRM (4-7 caracteres), Email
+        const cpf = /^\d{3}\.\d{3}\.\d{3}-\d{2}$|^\d{11}$/;
+        const cnpj = /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$|^\d{14}$/;
+        const crm = /^[A-Z0-9]{4,7}$/i;
+        const email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        
+        return cpf.test(value) || cnpj.test(value) || crm.test(value) || email.test(value);
+      },
+      "Formato inválido. Use CPF, CNPJ, CRM ou Email."
+    ),
+  password: z
+    .string()
+    .min(6, "Senha deve ter no mínimo 6 caracteres")
+    .max(100, "Senha muito longa")
+});
+
+// Schema para registro de paciente (CPF)
+export const registerPatientSchema = z.object({
+  cpf: z
+    .string()
+    .trim()
+    .refine(
+      (value) => /^\d{3}\.\d{3}\.\d{3}-\d{2}$|^\d{11}$/.test(value),
+      "CPF inválido"
+    ),
+  password: z
+    .string()
+    .min(6, "Senha deve ter no mínimo 6 caracteres")
+    .max(100),
+  name: z
+    .string()
+    .trim()
+    .min(3, "Nome muito curto")
+    .max(100),
+  email: z
+    .string()
+    .email("Email inválido")
+    .optional(),
+  nomeResponsavel: z
+    .string()
+    .trim()
+    .max(100)
+    .optional(),
+  tipoDeficiencia: z
+    .string()
+    .trim()
+    .max(100)
+    .optional(),
+  dataNascimento: z
+    .string()
+    .refine(
+      (date) => !isNaN(Date.parse(date)),
+      "Data inválida"
+    )
+    .optional()
+});
+
+// Schema para registro de médico (CRM)
+export const registerDoctorSchema = z.object({
+  crm: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .refine(
+      (value) => /^[A-Z0-9]{4,7}$/.test(value),
+      "CRM inválido"
+    ),
+  password: z
+    .string()
+    .min(6, "Senha deve ter no mínimo 6 caracteres")
+    .max(100),
+  name: z
+    .string()
+    .trim()
+    .min(3)
+    .max(100),
+  email: z
+    .string()
+    .email("Email inválido")
+    .optional(),
+  especialidade: z
+    .string()
+    .trim()
+    .max(100)
+    .optional(),
+  bio: z
+    .string()
+    .trim()
+    .max(500)
+    .optional(),
+  clinicaId: z
+    .number()
+    .int()
+    .positive()
+    .optional()
+});
+
+// Schema para registro de clínica (CNPJ)
+export const registerClinicSchema = z.object({
+  cnpj: z
+    .string()
+    .trim()
+    .refine(
+      (value) => /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$|^\d{14}$/.test(value),
+      "CNPJ inválido"
+    ),
+  password: z
+    .string()
+    .min(6, "Senha deve ter no mínimo 6 caracteres")
+    .max(100),
+  name: z
+    .string()
+    .trim()
+    .min(3)
+    .max(100),
+  razaoSocial: z
+    .string()
+    .trim()
+    .max(150),
+  email: z
+    .string()
+    .email("Email inválido")
+    .optional(),
+  endereco: z
+    .string()
+    .trim()
+    .max(255)
+    .optional(),
+  cidade: z
+    .string()
+    .trim()
+    .max(100)
+    .optional(),
+  estado: z
+    .string()
+    .trim()
+    .length(2)
+    .optional(),
+  cep: z
+    .string()
+    .trim()
+    .max(10)
+    .optional(),
+  telefone: z
+    .string()
+    .trim()
+    .max(20)
+    .optional(),
+  responsavel: z
+    .string()
+    .trim()
+    .max(100)
+    .optional()
+});
+
+// Schema original de login (para compatibilidade)
+export const loginSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .email(),
+  password: z
+    .string()
+    .min(6)
+    .max(100)
+});
