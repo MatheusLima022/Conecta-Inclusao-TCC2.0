@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minha Saúde - Portal do Paciente</title>
+    <link rel="stylesheet" href="../assets/css/dash-paciente.css">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+<body>
+    <div class="dash-container">
+        <header class="top-nav">
+            <div class="logo">
+                <i class="ph ph-heart-beat"></i>
+                <span>Portal Saúde</span>
+            </div>
+            <div class="user-area">
+                <div class="user-info">
+                    <span>Olá, <strong>Marcos Oliveira</strong></span>
+                </div>
+                <img src="https://ui-avatars.com/api/?name=Marcos+Oliveira&background=0073e6&color=fff" alt="Avatar">
+                <button class="btn-logout" onclick="handleLogout()">
+                    <i class="ph ph-sign-out"></i> Sair
+                </button>
+            </div>
+        </header>
+
+        <main class="content">
+            <section class="search-provider-section">
+                <h3>Encontre Atendimento</h3>
+                <div class="search-container-grid">
+                    <div class="search-item">
+                        <label><i class="ph ph-stethoscope"></i> Especialidade</label>
+                        <select id="searchSpecialty">
+                            <option value="">Todas as áreas</option>
+                            <option>Cardiologia</option>
+                            <option>Pediatria</option>
+                            <option>Ortopedia</option>
+                            <option>Clínico Geral</option>
+                        </select>
+                    </div>
+
+                    <div class="search-item">
+                        <label><i class="ph ph-hospital"></i> Hospital / Unidade</label>
+                        <select id="searchHospital">
+                            <option value="">Todos os hospitais</option>
+                            <option>Hospital Central</option>
+                            <option>Unidade Botafogo</option>
+                            <option>Clínica Santa Maria</option>
+                        </select>
+                    </div>
+
+                    <div class="search-item">
+                        <label><i class="ph ph-cardholder"></i> Plano de Saúde</label>
+                        <select id="searchPlan">
+                            <option value="">Todos os planos / Particular</option>
+                            <option>Unimed</option>
+                            <option>Amil</option>
+                            <option>Bradesco Saúde</option>
+                            <option>SulAmérica</option>
+                        </select>
+                    </div>
+                    
+                    <button class="btn-search-filter" onclick="filterResults()">
+                        <i class="ph ph-magnifying-glass"></i> Filtrar
+                    </button>
+                </div>
+            </section>
+
+            <section class="hero-section">
+                <div>
+                    <h2>Seus Agendamentos</h2>
+                    <p>Gerencie suas consultas marcadas abaixo.</p>
+                </div>
+                <button class="btn-new-appointment" onclick="openModal()">
+                    <i class="ph ph-plus"></i> Novo Agendamento
+                </button>
+            </section>
+
+            <div id="appointmentsList" class="cards-container">
+                <div class="appointment-card" data-date="2026-05-20">
+                    <div class="card-header">
+                        <span class="specialty">Cardiologia</span>
+                        <span class="date-tag">20/05/2026</span>
+                    </div>
+                    <div class="doc-info">
+                        <strong>Dr. Ricardo Silva</strong>
+                        <span>Hospital Central</span>
+                    </div>
+                    <button class="btn-cancel" onclick="cancelAppointment(this)">Desmarcar</button>
+                </div>
+
+                <div class="appointment-card" data-date="2026-04-05">
+                    <div class="card-header">
+                        <span class="specialty">Clínico Geral</span>
+                        <span class="date-tag">05/04/2026</span>
+                    </div>
+                    <div class="doc-info">
+                        <strong>Dra. Juliana Mendes</strong>
+                        <span>Unidade Botafogo</span>
+                    </div>
+                    <button class="btn-cancel" onclick="cancelAppointment(this)">Desmarcar</button>
+                </div>
+            </div>
+        </main>
+
+        <div id="appointmentModal" class="modal">
+            <div class="modal-content">
+                <h3>Novo Agendamento</h3>
+                <form id="formNewAppointment">
+                    <label>Especialidade</label>
+                    <select required id="modalSpec">
+                        <option value="">Selecione...</option>
+                        <option>Cardiologia</option>
+                        <option>Pediatria</option>
+                    </select>
+                    <label>Data</label>
+                    <input type="date" id="modalDate" required>
+                    <div class="modal-footer">
+                        <button type="button" onclick="closeModal()" class="btn-secondary">Voltar</button>
+                        <button type="submit" class="btn-primary">Agendar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script src="../assets/js/utils.js"></script>
+    <script src="../assets/js/dash-paciente.js"></script>
+</body>
+</html>

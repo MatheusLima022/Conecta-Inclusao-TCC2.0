@@ -70,8 +70,7 @@ WHERE email = ? LIMIT 1`,
     // Passa o email como parâmetro seguro (evita SQL Injection) 
     [email]
   );
-  // Define uma mensagem neutra de erro para não revelar se o email existe no 
-  banco
+  // Define uma mensagem neutra de erro para não revelar se o email existe no banco
   // Isso é importante para segurança (não informar se um email está cadastrado) 
   const invalidMsg = "Credenciais inválidas.";
   // Verifica se nenhum usuário foi encontrado com esse email 

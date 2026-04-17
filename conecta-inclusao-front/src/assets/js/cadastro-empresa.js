@@ -1,0 +1,181 @@
+function applyMask(input, maskFn) {
+    input.addEventListener('input', function(event) {
+        event.target.value = maskFn(event.target.value);
+    });
+}
+
+function cnpjMask(value) {
+    let v = value.replace(/\D/g, '');
+    if (v.length > 14) v = v.slice(0, 14);
+    v = v.replace(/(\d{2})(\d)/, '$1.$2');
+    v = v.replace(/(\d{3})(\d)/, '$1.$2');
+    v = v.replace(/(\d{3})(\d)/, '$1/$2');
+    v = v.replace(/(\d{4})(\d{1,2})$/, '$1-$2');
+    return v;
+}
+
+function cepMask(value) {
+    let v = value.replace(/\D/g, '');
+    if (v.length > 8) v = v.slice(0, 8);
+    v = v.replace(/(\d{5})(\d)/, '$1-$2');
+    return v;
+}
+
+function phoneMask(value) {
+    let v = value.replace(/\D/g, '');
+    if (v.length > 11) v = v.slice(0, 11);
+    v = v.replace(/(\d{2})(\d)/, '($1) $2');
+    v = v.replace(/(\d{5})(\d)/, '$1-$2');
+    return v;
+}
+
+function validateCompanyForm() {
+    const companyName = document.getElementById('companyName').value.trim();
+    const companyLegalName = document.getElementById('companyLegalName').value.trim();
+    const cnpj = document.getElementById('cnpj').value.trim();
+    const email = document.getElementById('companyEmail').value.trim();
+    const phone = document.getElementById('companyPhone').value.trim();
+    const contact = document.getElementById('companyContact').value.trim();
+    const role = document.getElementById('contactRole').value.trim();
+    const branch = document.getElementById('companyBranch').value.trim();
+    const address = document.getElementById('address').value.trim();
+    const city = document.getElementById('city').value.trim();
+    const state = document.getElementById('state').value.trim();
+    const zip = document.getElementById('zip').value.trim();
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+
+    if (!companyName || !companyLegalName || !cnpj || !email || !phone || !contact || !role || !branch || !address || !city || !state || !zip || !password || !confirmPassword) {
+        showPopup('Preencha todos os campos obrigatórios antes de continuar.');
+        return false;
+    }
+
+    if (cnpj.length < 18) {
+        showPopup('Insira um CNPJ válido.');
+        return false;
+    }
+
+    if (zip.length < 9) {
+        showPopup('Insira um CEP válido.');
+        return false;
+    }
+
+    if (state.length !== 2) {
+        showPopup('Informe o estado em formato UF.');
+        return false;
+    }
+
+    if (password.length < 6) {
+        showPopup('A senha deve ter no mínimo 6 caracteres.');
+        return false;
+    }
+
+    if (password !== confirmPassword) {
+        showPopup('As senhas não coincidem.');
+        return false;
+    }
+
+    return true;
+}
+
+function handleCompanyRegistration(event) {
+    event.preventDefault();
+    const submitButton = document.querySelector('.btn-register');
+
+    const companyName = document.getElementById('companyName').value.trim();
+    const companyLegalName = document.getElementById('companyLegalName').value.trim();
+    const cnpj = document.getElementById('cnpj').value.trim();
+    const email = document.getElementById('companyEmail').value.trim();
+    const phone = document.getElementById('companyPhone').value.trim();
+    const contact = document.getElementById('companyContact').value.trim();
+    const role = document.getElementById('contactRole').value.trim();
+    const branch = document.getElementById('companyBranch').value.trim();
+    const address = document.getElementById('address').value.trim();
+    const city = document.getElementById('city').value.trim();
+    const state = document.getElementById('state').value.trim();
+    const zip = document.getElementById('zip').value.trim();
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+
+    if (!companyName || !companyLegalName || !cnpj || !email || !phone || !contact || !role || !branch || !address || !city || !state || !zip || !password || !confirmPassword) {
+        showPopup('Preencha todos os campos obrigatórios antes de continuar.');
+        return;
+    }
+
+    if (cnpj.length < 18) {
+        showPopup('Insira um CNPJ válido.');
+        return;
+    }
+
+    if (zip.length < 9) {
+        showPopup('Insira um CEP válido.');
+        return;
+    }
+
+    if (state.length !== 2) {
+        showPopup('Informe o estado em formato UF.');
+        return;
+    }
+
+    if (password.length < 6) {
+        showPopup('A senha deve ter no mínimo 6 caracteres.');
+        return;
+    }
+
+    if (password !== confirmPassword) {
+        showPopup('As senhas não coincidem.');
+        return;
+    }
+
+    showPopup('Deseja confirmar o cadastro da empresa para validação?', 'confirm').then(confirmed => {
+        if (!confirmed) return;
+
+        const cnpjDigits = cnpj.replace(/\D/g, '');
+        const companyData = {
+            fantasyName: companyName,
+            legalName: companyLegalName,
+            email: email,
+            phone: phone,
+            contact: contact,
+            role: role,
+            branch: branch,
+            address: address,
+            city: city,
+            state: state,
+            zip: zip
+        };
+        localStorage.setItem(`empresa_${cnpjDigits}`, JSON.stringify(companyData));
+
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<i class="ph ph-circle-notch-bold" style="animation: spin 1s linear infinite;"></i> Cadastrando...';
+
+        setTimeout(() => {
+            showPopup('Cadastro enviado com sucesso! Agora você pode aguardar a validação e acessar pelo login da empresa.');
+            submitButton.disabled = false;
+            submitButton.innerText = 'Criar Conta';
+            document.getElementById('registerCompanyForm').reset();
+            window.location.href = 'login-empresa.html';
+        }, 1500);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const cnpjInput = document.getElementById('cnpj');
+    const zipInput = document.getElementById('zip');
+    const phoneInput = document.getElementById('companyPhone');
+    const form = document.getElementById('registerCompanyForm');
+
+    if (cnpjInput) applyMask(cnpjInput, cnpjMask);
+    if (zipInput) applyMask(zipInput, cepMask);
+    if (phoneInput) applyMask(phoneInput, phoneMask);
+    if (form) form.addEventListener('submit', handleCompanyRegistration);
+
+    const style = document.createElement('style');
+    style.innerHTML = `
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    `;
+    document.head.appendChild(style);
+});

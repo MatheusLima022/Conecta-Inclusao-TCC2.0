@@ -12,7 +12,7 @@
         <aside class="sidebar">
             <div class="logo-section">
                 <i class="ph ph-stethoscope"></i>
-                <span>MedSystem</span>
+                <span>Conecta Inclusão</span>
             </div>
             <nav>
                 <a href="#" class="active"><i class="ph ph-house"></i> Início</a>
@@ -20,9 +20,9 @@
                 <a href="#"><i class="ph ph-users"></i> Pacientes</a>
                 <a href="#"><i class="ph ph-clipboard-text"></i> Prontuários</a>
                 <a href="#"><i class="ph ph-chart-line"></i> Relatórios</a>
+                <a href="#"><i class="ph ph-gear"></i> Configurações</a>
             </nav>
             <div class="sidebar-footer">
-                <a href="#"><i class="ph ph-gear"></i> Configurações</a>
                 <a href="lndex.html" class="logout"><i class="ph ph-sign-out"></i> Sair</a>
             </div>
         </aside>
@@ -35,15 +35,16 @@
                 </div>
                 <div class="user-profile">
                     <div class="user-info">
-                        <strong>Dr. Ricardo Silva</strong>
-                        <span>CRM 123456-SP</span>
+                        <strong id="professionalName">Dr. Nome</strong>
+                        <span id="professionalRegistry">Registro</span>
+                        <span id="professionalUnit">Unidade</span>
                     </div>
-                    <img src="https://ui-avatars.com/api/?name=Ricardo+Silva&background=0073e6&color=fff" alt="Avatar">
+                    <img id="professionalAvatar" src="https://ui-avatars.com/api/?name=Nome&background=0073e6&color=fff" alt="Avatar">
                 </div>
             </header>
 
             <section class="welcome-section">
-                <h2>Bom dia, Dr. Ricardo</h2>
+                <h2 id="welcomeMessage">Bom dia, Dr. Nome</h2>
                 <p>Você tem 8 consultas agendadas para hoje.</p>
             </section>
 
@@ -113,6 +114,7 @@
             </section>
         </main>
     </div>
+    <script src="../assets/js/utils.js"></script>
     <script src="../assets/js/dashboard-medico.js"></script>
 </body>
 </html>

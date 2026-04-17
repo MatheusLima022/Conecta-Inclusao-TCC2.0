@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Empresa - Portal Saúde</title>
+    <link rel="stylesheet" href="../assets/css/cadastro-empresa.css">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+<body>
+    <div class="register-container">
+        <div class="register-card">
+            <div class="register-header">
+                <div class="back-button">
+                    <a href="login-empresa.html"><i class="ph ph-arrow-left"></i> Voltar</a>
+                </div>
+                <div class="company-icon">
+                    <i class="ph ph-building"></i>
+                </div>
+                <h1>Cadastro da Empresa</h1>
+                <p>Crie seu acesso corporativo para gerir saúde ocupacional e convênios médicos.</p>
+            </div>
+
+            <form id="registerCompanyForm">
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label for="companyName">Nome da Empresa</label>
+                        <input type="text" id="companyName" placeholder="Nome fantasia" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="companyLegalName">Razão Social</label>
+                        <input type="text" id="companyLegalName" placeholder="Razão social" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="cnpj">CNPJ</label>
+                        <input type="text" id="cnpj" placeholder="00.000.000/0000-00" maxlength="18" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="companyEmail">E-mail Corporativo</label>
+                        <input type="email" id="companyEmail" placeholder="contato@empresa.com.br" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="companyPhone">Telefone</label>
+                        <input type="tel" id="companyPhone" placeholder="(00) 00000-0000" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="companyContact">Responsável</label>
+                        <input type="text" id="companyContact" placeholder="Nome do responsável" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="contactRole">Cargo do Responsável</label>
+                        <input type="text" id="contactRole" placeholder="Ex: RH, Gestor de Saúde" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="companyBranch">Ramo de Atuação</label>
+                        <input type="text" id="companyBranch" placeholder="Ex: Indústria, Serviços, Comércio" required>
+                    </div>
+                    <div class="input-group full-width">
+                        <label for="address">Endereço</label>
+                        <input type="text" id="address" placeholder="Rua, número, complemento" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="city">Cidade</label>
+                        <input type="text" id="city" placeholder="Cidade" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="state">Estado</label>
+                        <input type="text" id="state" placeholder="UF" maxlength="2" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="zip">CEP</label>
+                        <input type="text" id="zip" placeholder="00000-000" maxlength="9" required>
+                    </div>
+                    <div class="input-group full-width">
+                        <label for="password">Senha</label>
+                        <input type="password" id="password" placeholder="Senha segura" required>
+                    </div>
+                    <div class="input-group full-width">
+                        <label for="confirmPassword">Confirmar Senha</label>
+                        <input type="password" id="confirmPassword" placeholder="Confirme sua senha" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-register">Criar Conta</button>
+                <p class="register-note">Após o cadastro, o acesso será validado pela equipe administrativa e você poderá usar o portal empresarial.</p>
+            </form>
+        </div>
+    </div>
+
+    <script src="../assets/js/utils.js"></script>
+    <script src="../assets/js/cadastro-empresa.js"></script>
+</body>
+</html>

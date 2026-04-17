@@ -1,0 +1,143 @@
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+body { background-color: #f1f5f9; color: #334155; }
+
+/* Header e Logout */
+.top-nav {
+    background: white;
+    padding: 15px 5%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.logo { display: flex; align-items: center; gap: 8px; color: #0073e6; font-weight: bold; font-size: 22px; }
+.user-area { display: flex; align-items: center; gap: 12px; }
+.user-area img { width: 40px; height: 40px; border-radius: 50%; }
+.btn-logout {
+    background: #fff1f2;
+    border: 1px solid #fecaca;
+    color: #e11d48;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: 0.3s;
+}
+.btn-logout:hover { background: #e11d48; color: white; }
+
+/* Filtros */
+.content { padding: 30px 5%; max-width: 1200px; margin: 0 auto; }
+.search-provider-section {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+}
+.search-container-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr) auto;
+    gap: 15px;
+    align-items: flex-end;
+}
+.search-item { display: flex; flex-direction: column; gap: 5px; }
+.search-item label { font-size: 13px; font-weight: 600; color: #64748b; }
+.search-item select { padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; }
+.btn-search-filter {
+    background: #0073e6;
+    color: white;
+    border: none;
+    padding: 11px 25px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+/* Cards */
+.hero-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.btn-new-appointment { background: #0073e6; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+.cards-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+.appointment-card { background: white; padding: 20px; border-radius: 12px; border-top: 4px solid #0073e6; }
+.card-header { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; }
+.specialty { font-weight: bold; color: #0073e6; }
+.btn-cancel { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; background: white; transition: 0.3s; }
+.btn-cancel:hover { background: #fee2e2; border-color: #ef4444; color: #ef4444; }
+
+/* Modal */
+.modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 100; }
+.modal-content { background: white; padding: 30px; border-radius: 12px; width: 400px; }
+.modal-footer { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+.btn-secondary { background: #f1f5f9; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; }
+.btn-primary { background: #0073e6; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; }
+
+@media (max-width: 900px) { .search-container-grid { grid-template-columns: 1fr; } }
+
+/* Responsividade adicional */
+@media (max-width: 768px) {
+    .top-nav {
+        padding: 10px 3%;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .logo {
+        font-size: 18px;
+    }
+
+    .content {
+        padding: 20px 3%;
+    }
+
+    .search-provider-section {
+        padding: 15px;
+    }
+
+    .hero-section {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .cards-container {
+        grid-template-columns: 1fr;
+    }
+
+    .modal-content {
+        width: 90%;
+        padding: 20px;
+    }
+
+    .modal-footer {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .btn-secondary, .btn-primary {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .top-nav {
+        padding: 10px 2%;
+    }
+
+    .content {
+        padding: 15px 2%;
+    }
+
+    .search-provider-section {
+        padding: 10px;
+    }
+
+    .appointment-card {
+        padding: 15px;
+    }
+
+    .modal-content {
+        width: 95%;
+        padding: 15px;
+    }
+}

@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Paciente - Portal Saúde</title>
-    <link rel="stylesheet" href="../assets/css/login-paciente.css">
+    <title>Login Empresa - Portal Saúde</title>
+    <link rel="stylesheet" href="../assets/css/login-empresa.css">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
 <body>
@@ -13,34 +13,33 @@
             <div class="back-button">
                 <a href="lndex.html"><i class="ph ph-arrow-left"></i> Voltar</a>
             </div>
-            <div class="patient-icon">
-                <i class="ph ph-user-circle"></i>
+            <div class="company-icon">
+                <i class="ph ph-building"></i>
             </div>
-            <h1>Área do Paciente</h1>
-            <p>Acesse seus exames e histórico médico com segurança.</p>
+            <h1>Área da Empresa</h1>
+            <p>Gerencie seus funcionários e acompanhe os históricos de saúde ocupacional.</p>
         </div>
 
-        <form id="loginFormPaciente">
+        <form id="loginFormEmpresa">
             <div class="input-group">
-                <label for="cpf">CPF</label>
-                <input type="text" id="cpf" placeholder="000.000.000-00" maxlength="14" required>
+                <label for="cnpj">CNPJ</label>
+                <input type="text" id="cnpj" placeholder="00.000.000/0000-00" maxlength="18" required>
             </div>
 
             <div class="input-group">
-                <div class="label-row">
-                    <label for="password">Senha</label>
-                    
-                </div>
+                <label for="password">Senha</label>
                 <input type="password" id="password" placeholder="Sua senha" required>
             </div>
 
-            <button type="submit" class="btn-login">Acessar meus dados</button>
+            <button type="submit" class="btn-login">Acessar como Empresa</button>
             <br><br>
             <a href="#" class="forgot-password" onclick="openForgotPasswordModal(event)">Esqueceu a senha?</a>
             
             <div class="login-footer">
                 
             </div>
+            <span>Não tem conta? 
+            <a href="cadastro-empresa.html">Cadastre sua empresa</a></span>
         </form>
     </div>
 
@@ -52,9 +51,9 @@
                 <button type="button" class="forgot-modal-close" onclick="closeForgotPasswordModal()">&times;</button>
             </div>
             <div class="forgot-modal-body">
-                <p class="forgot-modal-description">Digite seu CPF para receber um link de recuperação de senha no seu e-mail cadastrado.</p>
-                <input type="text" id="forgotEmail" placeholder="000.000.000-00" class="forgot-input" maxlength="14">
-                <button type="button" class="forgot-btn" onclick="sendResetEmail('cpf')">Enviar Link de Recuperação</button>
+                <p class="forgot-modal-description">Digite seu CNPJ para receber um link de recuperação de senha no seu e-mail cadastrado.</p>
+                <input type="text" id="forgotEmail" placeholder="00.000.000/0000-00" class="forgot-input" maxlength="18">
+                <button type="button" class="forgot-btn" onclick="sendResetEmail('cnpj')">Enviar Link de Recuperação</button>
             </div>
             <div class="forgot-modal-footer">
                 <button type="button" class="forgot-cancel-btn" onclick="closeForgotPasswordModal()">Cancelar</button>
@@ -63,6 +62,6 @@
     </div>
 
     <script src="../assets/js/utils.js"></script>
-    <script src="../assets/js/script-paciente.js"></script>
+    <script src="../assets/js/login-empresa.js"></script>
 </body>
 </html>
