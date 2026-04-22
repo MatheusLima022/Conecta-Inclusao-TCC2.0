@@ -15,21 +15,7 @@ CREATE TABLE users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 3. Tabela de Médicos (Detalhes profissionais)
-CREATE TABLE medicos (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    usuario_id INT NOT NULL,
-    crm VARCHAR(20) UNIQUE NOT NULL,
-    email VARCHAR(100),
-    especialidade VARCHAR(100),
-    clinica_id INT,
-    bio TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (usuario_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (clinica_id) REFERENCES clinicas(id) ON DELETE SET NULL
-);
-
--- 4. Tabela de Pacientes (Informações do responsável e PCD)
+-- 3. Tabela de Pacientes (Informações do responsável e PCD)
 CREATE TABLE pacientes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     usuario_id INT NOT NULL,
@@ -42,7 +28,7 @@ CREATE TABLE pacientes (
     FOREIGN KEY (usuario_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- 5. Tabela de Clínicas/Empresas (Detalhes das empresas)
+-- 4. Tabela de Clínicas/Empresas (Detalhes das empresas)
 CREATE TABLE clinicas (
     id INT AUTO_INCREMENT PRIMARY KEY,
     usuario_id INT NOT NULL,
@@ -57,6 +43,21 @@ CREATE TABLE clinicas (
     responsavel VARCHAR(100),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (usuario_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 5. Tabela de Médicos (Detalhes profissionais)
+CREATE TABLE medicos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT NOT NULL,
+    crm VARCHAR(20) UNIQUE NOT NULL,
+    email VARCHAR(100),
+    especialidade VARCHAR(100),
+    unidade VARCHAR(20) NOT NULL,
+    clinica_id INT,
+    bio TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (clinica_id) REFERENCES clinicas(id) ON DELETE SET NULL
 );
 
 -- 6. Tabela de Agendamentos (Consultas)

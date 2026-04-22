@@ -133,7 +133,7 @@
                 <div class="section-header">
                     <div>
                         <h2>Cadastrar Médico</h2>
-                        <p>Adicione um novo médico à sua clínica</p>
+                        <p>Adicione um novo médico à sua clínica. A senha temporária será gerada automaticamente.</p>
                     </div>
                 </div>
                 <form id="registerDoctorForm" class="professional-form">
@@ -167,17 +167,26 @@
                             <label for="docEmail">E-mail</label>
                             <input type="email" id="docEmail" placeholder="medico@example.com">
                         </div>
-                        <div class="input-group full-width">
-                            <label for="docBio">Biografia / Qualificações</label>
-                            <textarea id="docBio" placeholder="Descreva suas qualificações e experiência..." style="min-height: 100px;"></textarea>
+                        <div class="input-group">
+                            <label for="docUnit">Unidade <span style="color: #e74c3c;">*</span></label>
+                            <select id="docUnit" required>
+                                <option value="">Selecione uma unidade...</option>
+                                <option value="Unidade A">Unidade A</option>
+                                <option value="Unidade B">Unidade B</option>
+                                <option value="Unidade C">Unidade C</option>
+                            </select>
                         </div>
                         <div class="input-group">
-                            <label for="docPassword">Senha Temporária <span style="color: #e74c3c;">*</span></label>
+                            <label for="docPassword">Senha <span style="color: #e74c3c;">*</span></label>
                             <input type="password" id="docPassword" placeholder="Mínimo 6 caracteres" required>
                         </div>
                         <div class="input-group">
                             <label for="docConfirmPassword">Confirmar Senha <span style="color: #e74c3c;">*</span></label>
                             <input type="password" id="docConfirmPassword" placeholder="Repita a senha" required>
+                        </div>
+                        <div class="input-group full-width">
+                            <label for="docBio">Biografia / Qualificações</label>
+                            <textarea id="docBio" placeholder="Descreva suas qualificações e experiência..." style="min-height: 100px;"></textarea>
                         </div>
                     </div>
                     <div style="margin-top: 2rem; display: flex; gap: 1rem;">
@@ -275,5 +284,6 @@
 
     <script src="../assets/js/utils.js"></script>
     <script src="../assets/js/dashboard-empresa.js"></script>
+    <script src="../assets/js/register-doctor-dashboard.js"></script>
 </body>
 </html>

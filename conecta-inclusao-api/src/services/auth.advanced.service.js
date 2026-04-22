@@ -10,6 +10,46 @@ function nowPlusMinutes(min) {
   return new Date(Date.now() + min * 60 * 1000);
 }
 
+// Middleware de autenticação JWT
+export function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+  if (!token) {
+    return res.status(401).json({ message: 'Token de acesso não fornecido.' });
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(403).json({ message: 'Token inválido ou expirado.' });
+    }
+    
+    req.user = decoded; // { sub: userId, profile: 'clinica', iat, exp }
+    next();
+  });
+}
+
+// Busca detalhes da clínica do usuário autenticado
+export async function getClinicDetails(userId) {
+  try {
+    const [rows] = await pool.execute(
+      `SELECT c.id as clinicaId, c.cnpj, c.razao_social, c.endereco, c.cidade, c.estado, c.cep, c.telefone, c.responsavel
+       FROM clinicas c
+       WHERE c.usuario_id = ? LIMIT 1`,
+      [userId]
+    );
+    
+    if (rows.length === 0) {
+      return { ok: false, statusCode: 404, message: "Clínica não encontrada." };
+    }
+    
+    return { ok: true, data: rows[0] };
+  } catch (err) {
+    console.error("Erro em getClinicDetails:", err);
+    return { ok: false, statusCode: 500, message: "Erro interno do servidor." };
+  }
+}
+
 // Detecta o tipo de identificador baseado no padrão
 function detectIdentifierType(identifier) {
   const trimmed = identifier.trim();
@@ -42,7 +82,7 @@ async function loginWithCRM(crm, password) {
   try {
     const [rows] = await pool.execute(
       `SELECT u.id, u.name, u.email, u.password_hash, u.profile, u.status, 
-              u.failed_attempts, u.locked_until, m.crm
+              u.failed_attempts, u.locked_until, m.crm, m.unidade, m.especialidade
        FROM users u
        INNER JOIN medicos m ON u.id = m.usuario_id
        WHERE m.crm = ? AND u.profile = 'medico' LIMIT 1`,
@@ -191,7 +231,9 @@ async function validateUserPassword(user, password, expectedProfile = null) {
         id: user.id, 
         name: user.name, 
         email: user.email, 
-        profile: user.profile 
+        profile: user.profile,
+        unit: user.unidade || null,
+        specialty: user.especialidade || null
       }
     }
   };
@@ -279,9 +321,9 @@ export async function registerUser({ identifier, password, name, profile, userDa
         );
       } else if (profile === 'medico') {
         await connection.execute(
-          `INSERT INTO medicos (usuario_id, crm, email, especialidade, clinica_id, bio)
-           VALUES (?, ?, ?, ?, ?, ?)`,
-          [userId, identifierInfo.value, userData?.email || null, userData?.especialidade || null, userData?.clinicaId || null, userData?.bio || null]
+          `INSERT INTO medicos (usuario_id, crm, email, especialidade, clinica_id, bio, unidade)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [userId, identifierInfo.value, userData?.email || null, userData?.especialidade || null, userData?.clinicaId || null, userData?.bio || null, userData?.unidade || null]
         );
       } else if (profile === 'clinica') {
         // Salva todos os dados da clínica
@@ -330,10 +372,10 @@ export async function registerUser({ identifier, password, name, profile, userDa
 }
 
 // Função para registrar profissional (médico) quando a clínica o cadastra
-export async function registerProfessional({ crm, name, especialidade, clinicaId, bio = null }) {
+export async function registerProfessional({ crm, name, especialidade, clinicaId, bio = null, unidade, password, email = null }) {
   try {
     // Validações básicas
-    if (!crm || !name || !clinicaId) {
+    if (!crm || !name || !clinicaId || !unidade || !password) {
       return { ok: false, statusCode: 400, message: "Todos os campos obrigatórios não foram preenchidos." };
     }
 
@@ -348,25 +390,32 @@ export async function registerProfessional({ crm, name, especialidade, clinicaId
     try {
       await connection.beginTransaction();
 
-      // Gera uma senha padrão (a clínica deve obrigar alteração no primeiro login)
+      if (!["Unidade A", "Unidade B", "Unidade C"].includes(unidade)) {
+        return { ok: false, statusCode: 400, message: "Unidade inválida." };
+      }
+
+      if (password.trim().length < 6) {
+        return { ok: false, statusCode: 400, message: "Senha deve ter no mínimo 6 caracteres." };
+      }
+
       const SALT_ROUNDS = 10;
-      const defaultPassword = `${crm}@${new Date().getFullYear()}`;
+      const defaultPassword = password.trim();
       const password_hash = await bcrypt.hash(defaultPassword, SALT_ROUNDS);
 
       // Cria usuário com perfil de médico
       const [userResult] = await connection.execute(
         `INSERT INTO users (name, email, password_hash, profile, status)
          VALUES (?, ?, ?, 'medico', 'ACTIVE')`,
-        [name, `${crmInfo.value}@conecta.local`, password_hash]
+        [name, email || `${crmInfo.value}@conecta.local`, password_hash]
       );
 
       const userId = userResult.insertId;
 
       // Registra o médico vinculado à clínica
       await connection.execute(
-        `INSERT INTO medicos (usuario_id, clinica_id, crm, especialidade, bio)
-         VALUES (?, ?, ?, ?, ?)`,
-        [userId, clinicaId, crmInfo.value, especialidade || null, bio || null]
+        `INSERT INTO medicos (usuario_id, clinica_id, crm, especialidade, bio, unidade, email)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [userId, clinicaId, crmInfo.value, especialidade || null, bio || null, unidade, email]
       );
 
       await connection.commit();
@@ -378,8 +427,9 @@ export async function registerProfessional({ crm, name, especialidade, clinicaId
         data: {
           userId,
           crm: crmInfo.value,
-          defaultPassword, // Retornar para que a clínica possa informar ao profissional
-          name
+          defaultPassword,
+          name,
+          unidade
         }
       };
     } catch (err) {

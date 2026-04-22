@@ -18,7 +18,8 @@ function sendResetEmail(type) {
         return;
     }
 
-    const btn = event.target;
+    const btn = document.querySelector('#forgotPasswordModal .forgot-btn');
+    if (!btn) return;
     btn.disabled = true;
     btn.innerHTML = '<i class="ph ph-circle-notch-bold" style="animation: spin 1s linear infinite;"></i> Enviando...';
 
