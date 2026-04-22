@@ -1,91 +1,135 @@
-// Importa o módulo API (compatível com navegadores modernos)
-let api;
-
-// Carrega a API dinamicamente
-async function loadAPI() {
-    if (!api) {
-        api = await import('./api.js');
-    }
-    return api;
-}
-
-// Máscara de CRM automática
-function applyCRMMask(value) {
+function crmMask(value) {
     let v = value.toUpperCase().replace(/[^A-Z0-9]/g, '');
     if (v.length > 7) v = v.slice(0, 7);
     return v;
 }
 
-async function handleDoctorRegistration(event) {
-    event.preventDefault();
-    const submitButton = document.querySelector('.btn-login');
+function applyMask(input, maskFn) {
+    input.addEventListener('input', function(event) {
+        event.target.value = maskFn(event.target.value);
+    });
+}
 
-    const name = document.getElementById('name').value.trim();
+function validateDoctorForm() {
     const crm = document.getElementById('crm').value.trim();
+    const name = document.getElementById('name').value.trim();
     const especialidade = document.getElementById('especialidade').value.trim();
-    const bio = document.getElementById('bio').value.trim();
+    const clinicaId = document.getElementById('clinicaId').value.trim();
     const password = document.getElementById('password').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
 
-    // Validações
-    if (!name || !crm || !password || !confirmPassword) {
+    if (!crm || !name || !especialidade || !clinicaId || !password || !confirmPassword) {
         showPopup('Preencha todos os campos obrigatórios.');
-        return;
+        return false;
     }
 
-    if (crm.length < 4) {
-        showPopup('CRM inválido. Deve ter no mínimo 4 caracteres.');
-        return;
+    if (crm.length < 4 || crm.length > 7) {
+        showPopup('CRM deve ter entre 4 e 7 caracteres.');
+        return false;
     }
 
     if (password.length < 6) {
         showPopup('A senha deve ter no mínimo 6 caracteres.');
-        return;
+        return false;
     }
 
     if (password !== confirmPassword) {
         showPopup('As senhas não coincidem.');
+        return false;
+    }
+
+    return true;
+}
+
+async function registerDoctorAPI(data) {
+    try {
+        const response = await fetch('http://localhost:3000/auth/register/doctor', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        return { ok: response.ok, data: result };
+    } catch (error) {
+        console.error('Erro na requisição:', error);
+        return { ok: false, data: { message: 'Erro de conexão com o servidor' } };
+    }
+}
+
+function handleDoctorRegistration(event) {
+    event.preventDefault();
+    const submitButton = document.querySelector('.btn-submit');
+
+    if (!validateDoctorForm()) {
         return;
     }
 
-    showPopup('Deseja confirmar o cadastro?', 'confirm').then(async confirmed => {
+    const crm = document.getElementById('crm').value.trim();
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const especialidade = document.getElementById('especialidade').value.trim();
+    const bio = document.getElementById('bio').value.trim();
+    const clinicaId = parseInt(document.getElementById('clinicaId').value);
+    const password = document.getElementById('password').value;
+
+    showPopup('Deseja confirmar o cadastro deste médico?', 'confirm').then(async (confirmed) => {
         if (!confirmed) return;
 
         submitButton.disabled = true;
         submitButton.innerHTML = '<i class="ph ph-circle-notch-bold" style="animation: spin 1s linear infinite;"></i> Cadastrando...';
 
-        try {
-            const apiModule = await loadAPI();
-            
-            const result = await apiModule.registerDoctor(
-                crm.toUpperCase(),
-                password,
-                name,
-                especialidade,
-                null // clinicaId - opcional
-            );
+        const registrationData = {
+            crm: crm,
+            password: password,
+            name: name,
+            email: email || null,
+            especialidade: especialidade,
+            bio: bio || null,
+            clinicaId: clinicaId
+        };
 
-            if (!result.ok) {
-                showPopup(`Erro: ${result.error}`);
-                submitButton.disabled = false;
-                submitButton.innerText = 'Criar Conta';
-                return;
-            }
+        const result = await registerDoctorAPI(registrationData);
 
-            showPopup('Cadastro realizado com sucesso! Redirecionando para login...');
-            submitButton.disabled = false;
-            submitButton.innerText = 'Criar Conta';
+        if (result.ok) {
+            showPopup('Médico cadastrado com sucesso!');
             document.getElementById('registerDoctorForm').reset();
             
+            // Armazenar CRM em localStorage para pré-preenchimento no login
+            localStorage.setItem('lastCRM', crm);
+            localStorage.setItem('lastRegisteredCRM', crm);
+            
             setTimeout(() => {
-                window.location.href = 'login-medico.html';
-            }, 2000);
-        } catch (error) {
-            console.error('Erro ao registrar médico:', error);
-            showPopup(`Erro: ${error.message}`);
-            submitButton.disabled = false;
-            submitButton.innerText = 'Criar Conta';
+                window.history.back();
+            }, 1500);
+        } else {
+            showPopup(result.data.message || 'Erro ao cadastrar. Tente novamente.');
         }
+
+        submitButton.disabled = false;
+        submitButton.innerText = 'Cadastrar Médico';
+    });
+}
+
+async function loadClinics() {
+    // Esta função buscaria as clínicas do backend
+    // Por enquanto, será uma lista estática/mock
+    // No futuro, implementar: GET /auth/clinicas (com autenticação)
+    const clinicaSelect = document.getElementById('clinicaId');
+    
+    // Mock de dados - substitua por chamada real quando endpoint disponível
+    const clinicas = [
+        { id: 1, name: 'Clínica Saúde Total' },
+        { id: 2, name: 'Centro Médico Inclusivo' },
+        { id: 3, name: 'Clínica de Reabilitação São Paulo' }
+    ];
+
+    clinicas.forEach(clinica => {
+        const option = document.createElement('option');
+        option.value = clinica.id;
+        option.textContent = clinica.name;
+        clinicaSelect.appendChild(option);
     });
 }
 
@@ -93,17 +137,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const crmInput = document.getElementById('crm');
     const form = document.getElementById('registerDoctorForm');
 
-    if (crmInput) {
-        crmInput.addEventListener('input', function(e) {
-            e.target.value = applyCRMMask(e.target.value);
-        });
-    }
+    if (crmInput) applyMask(crmInput, crmMask);
+    if (form) form.addEventListener('submit', handleDoctorRegistration);
 
-    if (form) {
-        form.addEventListener('submit', handleDoctorRegistration);
-    }
+    loadClinics();
 
-    // Animação de carregamento
     const style = document.createElement('style');
     style.innerHTML = `
         @keyframes spin {

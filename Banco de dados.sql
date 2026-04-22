@@ -15,43 +15,46 @@ CREATE TABLE users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 3. Tabela de Clínicas/Empresas (Dados da empresa)
-CREATE TABLE clinicas (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    usuario_id INT NOT NULL,
-    cnpj VARCHAR(20) UNIQUE NOT NULL,
-    razao_social VARCHAR(150) NOT NULL,
-    endereco VARCHAR(255),
-    cidade VARCHAR(100),
-    estado VARCHAR(2),
-    cep VARCHAR(10),
-    telefone VARCHAR(20),
-    responsavel VARCHAR(100),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (usuario_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
--- 4. Tabela de Médicos (Detalhes profissionais)
+-- 3. Tabela de Médicos (Detalhes profissionais)
 CREATE TABLE medicos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     usuario_id INT NOT NULL,
-    clinica_id INT,
     crm VARCHAR(20) UNIQUE NOT NULL,
+    email VARCHAR(100),
     especialidade VARCHAR(100),
+    clinica_id INT,
     bio TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (usuario_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (clinica_id) REFERENCES clinicas(id) ON DELETE SET NULL
 );
 
--- 5. Tabela de Pacientes (Informações do responsável e PCD)
+-- 4. Tabela de Pacientes (Informações do responsável e PCD)
 CREATE TABLE pacientes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     usuario_id INT NOT NULL,
     cpf VARCHAR(14) UNIQUE NOT NULL,
+    email VARCHAR(100),
     nome_responsavel VARCHAR(100),
     tipo_deficiencia VARCHAR(100),
     data_nascimento DATE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 5. Tabela de Clínicas/Empresas (Detalhes das empresas)
+CREATE TABLE clinicas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT NOT NULL,
+    cnpj VARCHAR(18) UNIQUE NOT NULL,
+    email VARCHAR(100),
+    razao_social VARCHAR(100),
+    endereco VARCHAR(255),
+    cidade VARCHAR(100),
+    estado VARCHAR(2),
+    cep VARCHAR(10),
+    telefone VARCHAR(15),
+    responsavel VARCHAR(100),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (usuario_id) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -63,9 +66,7 @@ CREATE TABLE agendamentos (
     medico_id INT NOT NULL,
     data_hora DATETIME NOT NULL,
     status ENUM('pendente', 'confirmado', 'cancelado', 'realizado') DEFAULT 'pendente',
-    link_reuniao VARCHAR(255),
-    observacoes TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    link_reuniao VARCHAR(255), -- Para a consulta online
     FOREIGN KEY (paciente_id) REFERENCES pacientes(id) ON DELETE CASCADE,
     FOREIGN KEY (medico_id) REFERENCES medicos(id) ON DELETE CASCADE
 );

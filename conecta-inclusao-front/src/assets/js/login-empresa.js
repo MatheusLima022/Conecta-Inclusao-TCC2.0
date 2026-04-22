@@ -12,7 +12,7 @@ function closeForgotPasswordModal() {
 
 function sendResetEmail(type) {
     const email = document.getElementById('forgotEmail').value;
-    
+
     if (!email || (type === 'cnpj' && email.length < 18)) {
         showPopup("Por favor, digite um CNPJ válido.");
         return;
@@ -21,7 +21,7 @@ function sendResetEmail(type) {
     const btn = event.target;
     btn.disabled = true;
     btn.innerHTML = '<i class="ph ph-circle-notch-bold" style="animation: spin 1s linear infinite;"></i> Enviando...';
-    
+
     setTimeout(() => {
         showPopup(`Um link de recuperação foi enviado para o e-mail cadastrado no CNPJ: ${email}. Verifique sua caixa de entrada.`);
         closeForgotPasswordModal();
@@ -34,15 +34,6 @@ function formatCnpjDigits(value) {
     return value.replace(/\D/g, '').slice(0, 14);
 }
 
-// Importa o módulo API
-let api;
-async function loadAPI() {
-    if (!api) {
-        api = await import('./api.js');
-    }
-    return api;
-}
-
 function formatCnpjDisplay(value) {
     let v = value.replace(/\D/g, '');
     v = v.replace(/(\d{2})(\d)/, '$1.$2');
@@ -52,12 +43,21 @@ function formatCnpjDisplay(value) {
     return v;
 }
 
-async function fetchCnpjData(cnpjDigits) {
-    const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpjDigits}`);
-    if (!response.ok) {
-        throw new Error('Empresa não encontrada ou CNPJ inválido');
+async function loginEmpresaAPI(identifier, password) {
+    try {
+        const response = await fetch('http://localhost:3000/auth/login/universal', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ identifier, password })
+        });
+        const result = await response.json();
+        return { ok: response.ok, data: result };
+    } catch (error) {
+        console.error('Erro na requisição:', error);
+        return { ok: false, data: { message: 'Erro de conexão' } };
     }
-    return response.json();
 }
 
 function setLoginButtonLoading(button, loading) {
@@ -90,15 +90,23 @@ document.addEventListener('DOMContentLoaded', function() {
 document.addEventListener('DOMContentLoaded', function() {
     const cnpjInput = document.getElementById('cnpj');
     if (cnpjInput) {
+        // Pré-preencher CNPJ se vindo do cadastro
+        const lastCNPJ = localStorage.getItem('lastCNPJ');
+        if (lastCNPJ) {
+            cnpjInput.value = lastCNPJ;
+            localStorage.removeItem('lastCNPJ'); // Limpar após usar
+            localStorage.removeItem('lastRegisteredCNPJ');
+        }
+        
         cnpjInput.addEventListener('input', function(e) {
             let v = e.target.value.replace(/\D/g, "");
             if (v.length > 14) v = v.slice(0, 14);
-            
+
             v = v.replace(/(\d{2})(\d)/, "$1.$2");
             v = v.replace(/(\d{3})(\d)/, "$1.$2");
             v = v.replace(/(\d{3})(\d)/, "$1/$2");
             v = v.replace(/(\d{4})(\d{1,2})$/, "$1-$2");
-            
+
             e.target.value = v;
         });
     }
@@ -109,12 +117,12 @@ document.addEventListener('DOMContentLoaded', function() {
         forgotEmailInput.addEventListener('input', function(e) {
             let v = e.target.value.replace(/\D/g, "");
             if (v.length > 14) v = v.slice(0, 14);
-            
+
             v = v.replace(/(\d{2})(\d)/, "$1.$2");
             v = v.replace(/(\d{3})(\d)/, "$1.$2");
             v = v.replace(/(\d{3})(\d)/, "$1/$2");
             v = v.replace(/(\d{4})(\d{1,2})$/, "$1-$2");
-            
+
             e.target.value = v;
         });
     }
@@ -144,39 +152,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
             setLoginButtonLoading(btn, true);
 
-            try {
-                // Carrega o módulo API
-                const apiModule = await loadAPI();
-                
-                // Tenta fazer login com o CNPJ
-                const loginResult = await apiModule.loginUniversal(cnpjDigits, password);
-                
-                if (!loginResult.ok) {
-                    showPopup(loginResult.error || "Credenciais inválidas.");
-                    setLoginButtonLoading(btn, false);
-                    return;
-                }
+            const result = await loginEmpresaAPI(cnpjDigits, password);
 
-                // Busca dados adicionais da empresa via API Brasil (opcional)
-                const cnpjDataResult = await apiModule.fetchCnpjData(cnpjDigits);
-                
-                // Armazena dados da empresa em sessionStorage
-                const fantasyName = cnpjDataResult.ok ? cnpjDataResult.data.fantasia : 'Empresa';
-                const razaoSocial = cnpjDataResult.ok ? cnpjDataResult.data.nome : '';
-                
-                sessionStorage.setItem('empresaNomeFantasia', fantasyName);
+            if (result.ok) {
+                // Salvar token e dados do usuário
+                localStorage.setItem('token', result.data.token);
+                localStorage.setItem('user', JSON.stringify(result.data.user));
+
+                // Salvar dados da empresa na sessão
+                sessionStorage.setItem('empresaNomeFantasia', result.data.user.name);
                 sessionStorage.setItem('empresaCnpj', formatCnpjDisplay(cnpjDigits));
-                sessionStorage.setItem('empresaRazaoSocial', razaoSocial);
-                sessionStorage.setItem('userId', loginResult.user.id);
-                sessionStorage.setItem('userProfile', loginResult.user.profile);
-                
-                showPopup("Empresa validada com sucesso! Entrando...");
+                sessionStorage.setItem('empresaRazaoSocial', result.data.user.razaoSocial || '');
+
+                showPopup("Login realizado com sucesso! Entrando...");
                 setTimeout(() => {
                     window.location.href = "dashboard-empresa.html";
                 }, 800);
-            } catch (error) {
-                console.error('Erro no login:', error);
-                showPopup("Erro ao fazer login. Tente novamente.");
+            } else {
+                showPopup(result.data.message || "Credenciais inválidas. Verifique seus dados.");
                 setLoginButtonLoading(btn, false);
             }
         });

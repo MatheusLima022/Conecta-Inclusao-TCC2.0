@@ -12,7 +12,7 @@ function closeForgotPasswordModal() {
 
 function sendResetEmail(type) {
     const email = document.getElementById('forgotEmail').value;
-    
+
     if (!email || (type === 'cpf' && email.length < 14)) {
         showPopup("Por favor, digite um CPF válido.");
         return;
@@ -21,13 +21,30 @@ function sendResetEmail(type) {
     const btn = event.target;
     btn.disabled = true;
     btn.innerHTML = '<i class="ph ph-circle-notch-bold" style="animation: spin 1s linear infinite;"></i> Enviando...';
-    
+
     setTimeout(() => {
         showPopup(`Um link de recuperação foi enviado para o e-mail cadastrado no CPF: ${email}. Verifique sua caixa de entrada.`);
         closeForgotPasswordModal();
         btn.disabled = false;
         btn.innerHTML = 'Enviar Link de Recuperação';
     }, 1500);
+}
+
+async function loginPacienteAPI(identifier, password) {
+    try {
+        const response = await fetch('http://localhost:3000/auth/login/universal', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ identifier, password })
+        });
+        const result = await response.json();
+        return { ok: response.ok, data: result };
+    } catch (error) {
+        console.error('Erro na requisição:', error);
+        return { ok: false, data: { message: 'Erro de conexão' } };
+    }
 }
 
 // Fechar modal ao clicar fora dele
@@ -43,25 +60,25 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Máscara de CPF automática (Melhorada para performance)
-let api;
-async function loadAPI() {
-    if (!api) {
-        api = await import('./api.js');
-    }
-    return api;
-}
-
 document.addEventListener('DOMContentLoaded', function() {
     const cpfInput = document.getElementById('cpf');
     if (cpfInput) {
+        // Pré-preencher CPF se vindo do cadastro
+        const lastCPF = localStorage.getItem('lastCPF');
+        if (lastCPF) {
+            cpfInput.value = lastCPF;
+            localStorage.removeItem('lastCPF'); // Limpar após usar
+            localStorage.removeItem('lastRegisteredCPF');
+        }
+        
         cpfInput.addEventListener('input', function(e) {
             let v = e.target.value.replace(/\D/g, "");
             if (v.length > 11) v = v.slice(0, 11);
-            
+
             v = v.replace(/(\d{3})(\d)/, "$1.$2");
             v = v.replace(/(\d{3})(\d)/, "$1.$2");
             v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-            
+
             e.target.value = v;
         });
     }
@@ -72,11 +89,11 @@ document.addEventListener('DOMContentLoaded', function() {
         forgotEmailInput.addEventListener('input', function(e) {
             let v = e.target.value.replace(/\D/g, "");
             if (v.length > 11) v = v.slice(0, 11);
-            
+
             v = v.replace(/(\d{3})(\d)/, "$1.$2");
             v = v.replace(/(\d{3})(\d)/, "$1.$2");
             v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-            
+
             e.target.value = v;
         });
     }
@@ -107,52 +124,24 @@ document.addEventListener('DOMContentLoaded', function() {
             btn.style.opacity = "0.8";
             btn.style.cursor = "not-allowed";
 
-            try {
-                // Carrega o módulo API
-                const apiModule = await loadAPI();
-                
-                // Remove formatação do CPF
-                const cpfDigits = cpf.replace(/\D/g, '');
-                
-                // Tenta fazer login com o CPF
-                const loginResult = await apiModule.loginUniversal(cpfDigits, password);
-                
-                if (!loginResult.ok) {
-                    showPopup(loginResult.error || "CPF ou senha incorretos.");
-                    btn.disabled = false;
-                    btn.innerHTML = originalText;
-                    btn.style.opacity = "1";
-                    btn.style.cursor = "pointer";
-                    return;
-                }
+            const cpfDigits = cpf.replace(/\D/g, '');
+            const result = await loginPacienteAPI(cpfDigits, password);
 
-                // Verifica se é um perfil de paciente
-                if (loginResult.user.profile !== 'paciente') {
-                    showPopup("Você não tem permissão de paciente.");
-                    btn.disabled = false;
-                    btn.innerHTML = originalText;
-                    btn.style.opacity = "1";
-                    btn.style.cursor = "pointer";
-                    return;
-                }
+            if (result.ok) {
+                // Salvar token e dados
+                localStorage.setItem('token', result.data.token);
+                localStorage.setItem('user', JSON.stringify(result.data.user));
 
-                // Armazena dados do paciente em sessionStorage
-                sessionStorage.setItem('patientName', loginResult.user.name);
-                sessionStorage.setItem('patientCPF', cpf);
-                sessionStorage.setItem('userId', loginResult.user.id);
-                sessionStorage.setItem('userProfile', 'paciente');
-
-                showPopup("Acesso autorizado! Redirecionando para seu painel...");
+                // Redireciona para a tela
                 setTimeout(() => {
                     window.location.href = "dash-paciente.html";
-                }, 1500);
-            } catch (error) {
-                console.error('Erro no login:', error);
-                showPopup("Erro ao fazer login. Tente novamente.");
-                btn.disabled = false;
+                }, 800);
+            } else {
+                showPopup(result.data.message || "CPF ou senha incorretos.");
                 btn.innerHTML = originalText;
-                btn.style.opacity = "1";
-                btn.style.cursor = "pointer";
+                btn.disabled = false;
+                btn.style.opacity = "";
+                btn.style.cursor = "";
             }
         });
     }

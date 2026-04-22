@@ -1,126 +1,119 @@
-// Importa o módulo API (compatível com navegadores modernos)
-let api;
-
-// Carrega a API dinamicamente
-async function loadAPI() {
-    if (!api) {
-        api = await import('./api.js');
-    }
-    return api;
+function applyMask(input, maskFn) {
+    input.addEventListener('input', function(event) {
+        event.target.value = maskFn(event.target.value);
+    });
 }
 
-// Máscara de CPF automática
-function applyCPFMask(value) {
-    let v = value.replace(/\D/g, "");
+function cpfMask(value) {
+    let v = value.replace(/\D/g, '');
     if (v.length > 11) v = v.slice(0, 11);
-    v = v.replace(/(\d{3})(\d)/, "$1.$2");
-    v = v.replace(/(\d{3})(\d)/, "$1.$2");
-    v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+    v = v.replace(/(\d{3})(\d)/, '$1.$2');
+    v = v.replace(/(\d{3})(\d)/, '$1.$2');
+    v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
     return v;
 }
 
-// Validação de CPF
-function validarCPF(cpf) {
-    const digits = cpf.replace(/\D/g, '');
-    if (digits.length !== 11) return false;
-    if (/^(\d)\1{10}$/.test(digits)) return false;
-    
-    let sum = 0;
-    let remainder;
-    
-    for (let i = 1; i <= 9; i++) {
-        sum += parseInt(digits.substring(i - 1, i)) * (11 - i);
-    }
-    
-    remainder = (sum * 10) % 11;
-    if (remainder === 10 || remainder === 11) remainder = 0;
-    if (remainder !== parseInt(digits.substring(9, 10))) return false;
-    
-    sum = 0;
-    for (let i = 1; i <= 10; i++) {
-        sum += parseInt(digits.substring(i - 1, i)) * (12 - i);
-    }
-    
-    remainder = (sum * 10) % 11;
-    if (remainder === 10 || remainder === 11) remainder = 0;
-    if (remainder !== parseInt(digits.substring(10, 11))) return false;
-    
-    return true;
-}
-
-async function handlePatientRegistration(event) {
-    event.preventDefault();
-    const submitButton = document.querySelector('.btn-login');
-
-    const name = document.getElementById('name').value.trim();
+function validatePatientForm() {
     const cpf = document.getElementById('cpf').value.trim();
+    const name = document.getElementById('name').value.trim();
     const dataNascimento = document.getElementById('dataNascimento').value;
     const tipoDeficiencia = document.getElementById('tipoDeficiencia').value.trim();
     const nomeResponsavel = document.getElementById('nomeResponsavel').value.trim();
     const password = document.getElementById('password').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
 
-    // Validações
-    if (!name || !cpf || !password || !confirmPassword) {
+    if (!cpf || !name || !dataNascimento || !tipoDeficiencia || !nomeResponsavel || !password || !confirmPassword) {
         showPopup('Preencha todos os campos obrigatórios.');
-        return;
+        return false;
     }
 
-    if (!validarCPF(cpf)) {
-        showPopup('CPF inválido.');
-        return;
+    if (cpf.length < 14) {
+        showPopup('Insira um CPF válido.');
+        return false;
     }
 
     if (password.length < 6) {
         showPopup('A senha deve ter no mínimo 6 caracteres.');
-        return;
+        return false;
     }
 
     if (password !== confirmPassword) {
         showPopup('As senhas não coincidem.');
+        return false;
+    }
+
+    return true;
+}
+
+async function registerPatientAPI(data) {
+    try {
+        const response = await fetch('http://localhost:3000/auth/register/patient', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        return { ok: response.ok, data: result };
+    } catch (error) {
+        console.error('Erro na requisição:', error);
+        return { ok: false, data: { message: 'Erro de conexão com o servidor' } };
+    }
+}
+
+function handlePatientRegistration(event) {
+    event.preventDefault();
+    const submitButton = document.querySelector('.btn-submit');
+
+    if (!validatePatientForm()) {
         return;
     }
 
-    showPopup('Deseja confirmar o cadastro?', 'confirm').then(async confirmed => {
+    const cpf = document.getElementById('cpf').value.trim();
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const dataNascimento = document.getElementById('dataNascimento').value;
+    const tipoDeficiencia = document.getElementById('tipoDeficiencia').value.trim();
+    const nomeResponsavel = document.getElementById('nomeResponsavel').value.trim();
+    const password = document.getElementById('password').value;
+
+    showPopup('Deseja confirmar o cadastro?', 'confirm').then(async (confirmed) => {
         if (!confirmed) return;
 
         submitButton.disabled = true;
         submitButton.innerHTML = '<i class="ph ph-circle-notch-bold" style="animation: spin 1s linear infinite;"></i> Cadastrando...';
 
-        try {
-            const apiModule = await loadAPI();
-            
-            const cpfDigits = cpf.replace(/\D/g, '');
-            const result = await apiModule.registerPatient(
-                cpfDigits,
-                password,
-                name,
-                nomeResponsavel,
-                tipoDeficiencia,
-                dataNascimento
-            );
+        const cpfDigits = cpf.replace(/\D/g, '');
+        const registrationData = {
+            cpf: cpfDigits,
+            password: password,
+            name: name,
+            email: email || null,
+            nomeResponsavel: nomeResponsavel,
+            tipoDeficiencia: tipoDeficiencia,
+            dataNascimento: dataNascimento
+        };
 
-            if (!result.ok) {
-                showPopup(`Erro: ${result.error}`);
-                submitButton.disabled = false;
-                submitButton.innerText = 'Criar Conta';
-                return;
-            }
+        const result = await registerPatientAPI(registrationData);
 
-            showPopup('Cadastro realizado com sucesso! Redirecionando para login...');
-            submitButton.disabled = false;
-            submitButton.innerText = 'Criar Conta';
+        if (result.ok) {
+            showPopup('Cadastro realizado com sucesso! Você pode fazer login agora.');
             document.getElementById('registerPatientForm').reset();
             
+            // Pré-preencher CPF no login
+            localStorage.setItem('lastCPF', cpf);
+            localStorage.setItem('lastRegisteredCPF', cpfDigits);
+            
             setTimeout(() => {
-                window.location.href = 'login-paciente.html';
-            }, 2000);
-        } catch (error) {
-            console.error('Erro ao registrar paciente:', error);
-            showPopup(`Erro: ${error.message}`);
-            submitButton.disabled = false;
-            submitButton.innerText = 'Criar Conta';
+                window.location.href = 'lndex.html';
+            }, 1500);
+        } else {
+            showPopup(result.data.message || 'Erro ao cadastrar. Tente novamente.');
         }
+
+        submitButton.disabled = false;
+        submitButton.innerText = 'Criar Conta';
     });
 }
 
@@ -128,17 +121,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const cpfInput = document.getElementById('cpf');
     const form = document.getElementById('registerPatientForm');
 
-    if (cpfInput) {
-        cpfInput.addEventListener('input', function(e) {
-            e.target.value = applyCPFMask(e.target.value);
-        });
-    }
+    if (cpfInput) applyMask(cpfInput, cpfMask);
+    if (form) form.addEventListener('submit', handlePatientRegistration);
 
-    if (form) {
-        form.addEventListener('submit', handlePatientRegistration);
-    }
-
-    // Animação de carregamento
     const style = document.createElement('style');
     style.innerHTML = `
         @keyframes spin {
