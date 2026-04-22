@@ -13,12 +13,11 @@ function applyMask(input, maskFn) {
 function validateDoctorForm() {
     const crm = document.getElementById('crm').value.trim();
     const name = document.getElementById('name').value.trim();
-    const especialidade = document.getElementById('especialidade').value.trim();
-    const clinicaId = document.getElementById('clinicaId').value.trim();
+    const unidade = document.getElementById('unidade').value.trim();
     const password = document.getElementById('password').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
 
-    if (!crm || !name || !especialidade || !clinicaId || !password || !confirmPassword) {
+    if (!crm || !name || !unidade || !password || !confirmPassword) {
         showPopup('Preencha todos os campos obrigatórios.');
         return false;
     }
@@ -68,10 +67,9 @@ function handleDoctorRegistration(event) {
 
     const crm = document.getElementById('crm').value.trim();
     const name = document.getElementById('name').value.trim();
-    const email = document.getElementById('email').value.trim();
     const especialidade = document.getElementById('especialidade').value.trim();
+    const unidade = document.getElementById('unidade').value.trim();
     const bio = document.getElementById('bio').value.trim();
-    const clinicaId = parseInt(document.getElementById('clinicaId').value);
     const password = document.getElementById('password').value;
 
     showPopup('Deseja confirmar o cadastro deste médico?', 'confirm').then(async (confirmed) => {
@@ -84,10 +82,9 @@ function handleDoctorRegistration(event) {
             crm: crm,
             password: password,
             name: name,
-            email: email || null,
             especialidade: especialidade,
-            bio: bio || null,
-            clinicaId: clinicaId
+            unidade: unidade,
+            bio: bio || null
         };
 
         const result = await registerDoctorAPI(registrationData);
@@ -96,8 +93,25 @@ function handleDoctorRegistration(event) {
             showPopup('Médico cadastrado com sucesso!');
             document.getElementById('registerDoctorForm').reset();
             
-            // Armazenar CRM em localStorage para pré-preenchimento no login
+            // Armazenar dados em localStorage para pré-preenchimento no login
             localStorage.setItem('lastCRM', crm);
+            localStorage.setItem('lastUnidade', unidade);
+            localStorage.setItem('lastRegisteredCRM', crm);
+            
+            // Armazenar na sessionStorage para o dashboard
+            sessionStorage.setItem('professionalUnit', unidade);
+            
+            setTimeout(() => {
+                window.history.back();
+            }, 1500);
+        } else {
+            showPopup(result.data.message || 'Erro ao cadastrar. Tente novamente.');
+        }
+
+        submitButton.disabled = false;
+        submitButton.innerText = 'Cadastrar Médico';
+    });
+}
             localStorage.setItem('lastRegisteredCRM', crm);
             
             setTimeout(() => {

@@ -8,16 +8,66 @@ function loadProfessionalInfo() {
     const unitEl = document.getElementById('professionalUnit');
     const welcomeEl = document.getElementById('welcomeMessage');
     const avatarEl = document.getElementById('professionalAvatar');
+    const unitBadge = document.getElementById('unitBadge');
 
     if (nameEl) nameEl.innerText = name;
     if (registryEl) registryEl.innerText = registry;
     if (unitEl) unitEl.innerText = unit;
+    if (unitBadge) unitBadge.innerText = `Unidade ${unit}`;
     if (welcomeEl) welcomeEl.innerText = `Bom dia, ${name.split(' ')[0]}`;
     if (avatarEl) avatarEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0073e6&color=fff`;
 }
 
+// Dados simulados de equipes por unidade
+const equipePorUnidade = {
+    'A': [
+        { name: 'Dr. Ricardo Silva', crm: 'MED001', specialty: 'Cardiologia' },
+        { name: 'Dra. Ana Costa', crm: 'MED002', specialty: 'Pediatria' },
+        { name: 'Dr. Pedro Santos', crm: 'MED003', specialty: 'Ortopedia' }
+    ],
+    'B': [
+        { name: 'Dr. João Oliveira', crm: 'MED004', specialty: 'Neurologia' },
+        { name: 'Dra. Maria Gomes', crm: 'MED005', specialty: 'Psiquiatria' },
+        { name: 'Dr. Carlos Ferreira', crm: 'MED006', specialty: 'Dermatologia' }
+    ],
+    'C': [
+        { name: 'Dr. Luis Mendes', crm: 'MED007', specialty: 'Pneumologia' },
+        { name: 'Dra. Patricia Rocha', crm: 'MED008', specialty: 'Ginecologia' },
+        { name: 'Dr. Fernando Costa', crm: 'MED009', specialty: 'Gastroenterologia' }
+    ]
+};
+
+function loadTeam() {
+    const unit = sessionStorage.getItem('professionalUnit') || 'A';
+    const teamGrid = document.getElementById('teamGrid');
+    
+    if (!teamGrid) return;
+
+    const equipe = equipePorUnidade[unit] || [];
+
+    if (equipe.length === 0) {
+        teamGrid.innerHTML = `
+            <div class="empty-team-message">
+                <i class="ph ph-users-three"></i>
+                <p>Nenhum profissional cadastrado nesta unidade</p>
+            </div>
+        `;
+        return;
+    }
+
+    teamGrid.innerHTML = equipe.map(member => `
+        <div class="team-member-card">
+            <div class="team-member-avatar">${member.name.charAt(0)}</div>
+            <div class="team-member-name">${member.name}</div>
+            <div class="team-member-crm">CRM: ${member.crm}</div>
+            <div class="team-member-specialty">${member.specialty}</div>
+        </div>
+    `).join('');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     loadProfessionalInfo();
+    loadTeam();
     const searchInput = document.querySelector('.search-bar input');
     const tableRows = document.querySelectorAll('.appointments-table tbody tr');
 

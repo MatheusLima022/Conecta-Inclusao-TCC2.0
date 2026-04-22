@@ -69,6 +69,39 @@ p {
     border-color: #0073e6;
 }
 
+.input-group select {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 15px;
+    background-color: white;
+    color: #475569;
+    cursor: pointer;
+    transition: border-color 0.3s;
+}
+
+.input-group select:focus {
+    outline: none;
+    border-color: #0073e6;
+}
+
+.input-group textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 15px;
+    font-family: inherit;
+    transition: border-color 0.3s;
+    resize: vertical;
+}
+
+.input-group textarea:focus {
+    outline: none;
+    border-color: #0073e6;
+}
+
 .btn-login {
     width: 100%;
     background-color: #0073e6;
