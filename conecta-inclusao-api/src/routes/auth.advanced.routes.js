@@ -93,7 +93,13 @@ router.post("/register/patient", registerLimiter, async (req, res, next) => {
       identifier: parsed.data.cpf,
       password: parsed.data.password,
       name: parsed.data.name,
-      profile: 'paciente'
+      profile: 'paciente',
+      userData: {
+        email: parsed.data.email,
+        nomeResponsavel: parsed.data.nomeResponsavel,
+        tipoDeficiencia: parsed.data.tipoDeficiencia,
+        dataNascimento: parsed.data.dataNascimento
+      }
     });
     
     if (!result.ok) {
@@ -134,7 +140,13 @@ router.post("/register/doctor", registerLimiter, async (req, res, next) => {
       identifier: parsed.data.crm,
       password: parsed.data.password,
       name: parsed.data.name,
-      profile: 'medico'
+      profile: 'medico',
+      userData: {
+        email: parsed.data.email,
+        especialidade: parsed.data.especialidade,
+        bio: parsed.data.bio,
+        clinicaId: parsed.data.clinicaId
+      }
     });
     
     if (!result.ok) {
@@ -177,7 +189,8 @@ router.post("/register/clinic", registerLimiter, async (req, res, next) => {
       password: parsed.data.password,
       name: parsed.data.name,
       profile: 'clinica',
-      clinicaData: {
+      userData: {
+        email: parsed.data.email,
         razaoSocial: parsed.data.razaoSocial,
         endereco: parsed.data.endereco,
         cidade: parsed.data.cidade,

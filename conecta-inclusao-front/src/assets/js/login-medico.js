@@ -12,7 +12,7 @@ function closeForgotPasswordModal() {
 
 function sendResetEmail(type) {
     const email = document.getElementById('forgotEmail').value;
-    
+
     if (!email || email.length < 7) {
         showPopup("Por favor, digite um Registro válido.");
         return;
@@ -21,7 +21,7 @@ function sendResetEmail(type) {
     const btn = event.target;
     btn.disabled = true;
     btn.innerHTML = '<i class="ph ph-circle-notch-bold" style="animation: spin 1s linear infinite;"></i> Enviando...';
-    
+
     setTimeout(() => {
         showPopup(`Um link de recuperação foi enviado para o e-mail cadastrado no Registro: ${email}. Verifique sua caixa de entrada.`);
         closeForgotPasswordModal();
@@ -43,6 +43,23 @@ function formatRegistry(value) {
     return v;
 }
 
+async function loginMedicoAPI(identifier, password) {
+    try {
+        const response = await fetch('http://localhost:3000/auth/login/universal', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ identifier, password })
+        });
+        const result = await response.json();
+        return { ok: response.ok, data: result };
+    } catch (error) {
+        console.error('Erro na requisição:', error);
+        return { ok: false, data: { message: 'Erro de conexão' } };
+    }
+}
+
 // Fechar modal ao clicar fora dele
 document.addEventListener('DOMContentLoaded', function() {
     const modal = document.getElementById('forgotPasswordModal');
@@ -57,6 +74,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Máscara para o registro
     const registryInput = document.getElementById('crm');
     if (registryInput) {
+        // Pré-preencher CRM se vindo do cadastro
+        const lastCRM = localStorage.getItem('lastCRM');
+        if (lastCRM) {
+            registryInput.value = lastCRM;
+            localStorage.removeItem('lastCRM'); // Limpar após usar
+            localStorage.removeItem('lastRegisteredCRM');
+        }
+        
         registryInput.addEventListener('input', function(e) {
             e.target.value = formatRegistry(e.target.value);
         });
@@ -77,7 +102,7 @@ document.head.appendChild(style);
 document.addEventListener('DOMContentLoaded', function() {
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
-        loginForm.addEventListener('submit', function(event) {
+        loginForm.addEventListener('submit', async function(event) {
             event.preventDefault();
 
             const registry = document.getElementById('crm').value.trim();
@@ -89,13 +114,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const registryNormalized = registry.replace(/[\s-]/g, '').toUpperCase();
-            const professionals = JSON.parse(localStorage.getItem('profissionais') || '[]');
-            const professional = professionals.find(p => p.registry.replace(/[\s-]/g, '').toUpperCase() === registryNormalized && p.password === password);
-
-            if (!professional) {
-                showPopup('Registro ou senha incorretos.');
-                return;
-            }
 
             // Efeito visual no botão
             const btn = document.querySelector('.btn-login');
@@ -103,15 +121,28 @@ document.addEventListener('DOMContentLoaded', function() {
             btn.style.opacity = "0.7";
             btn.disabled = true;
 
-            // Store in sessionStorage
-            sessionStorage.setItem('professionalName', professional.name);
-            sessionStorage.setItem('professionalRegistry', formatRegistry(professional.registry));
-            sessionStorage.setItem('professionalUnit', professional.unit || 'Unidade não definida');
+            const result = await loginMedicoAPI(registryNormalized, password);
 
-            setTimeout(() => {
+            if (result.ok) {
+                // Salvar token e dados
+                localStorage.setItem('token', result.data.token);
+                localStorage.setItem('user', JSON.stringify(result.data.user));
+
+                // Store in sessionStorage
+                sessionStorage.setItem('professionalName', result.data.user.name);
+                sessionStorage.setItem('professionalRegistry', formatRegistry(registryNormalized));
+                sessionStorage.setItem('professionalUnit', result.data.user.unit || 'Unidade não definida');
+
                 showPopup("Acesso autorizado! Redirecionando para o painel...");
-                window.location.href = "dashboard-medico.html";
-            }, 1500);
+                setTimeout(() => {
+                    window.location.href = "dashboard-medico.html";
+                }, 800);
+            } else {
+                showPopup(result.data.message || "Registro ou senha incorretos.");
+                btn.innerHTML = 'Acessar como Médico';
+                btn.style.opacity = "";
+                btn.disabled = false;
+            }
         });
     }
 });

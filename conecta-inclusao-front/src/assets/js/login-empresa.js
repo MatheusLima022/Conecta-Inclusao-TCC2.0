@@ -12,7 +12,7 @@ function closeForgotPasswordModal() {
 
 function sendResetEmail(type) {
     const email = document.getElementById('forgotEmail').value;
-    
+
     if (!email || (type === 'cnpj' && email.length < 18)) {
         showPopup("Por favor, digite um CNPJ válido.");
         return;
@@ -21,7 +21,7 @@ function sendResetEmail(type) {
     const btn = event.target;
     btn.disabled = true;
     btn.innerHTML = '<i class="ph ph-circle-notch-bold" style="animation: spin 1s linear infinite;"></i> Enviando...';
-    
+
     setTimeout(() => {
         showPopup(`Um link de recuperação foi enviado para o e-mail cadastrado no CNPJ: ${email}. Verifique sua caixa de entrada.`);
         closeForgotPasswordModal();
@@ -43,12 +43,21 @@ function formatCnpjDisplay(value) {
     return v;
 }
 
-async function fetchCnpjData(cnpjDigits) {
-    const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpjDigits}`);
-    if (!response.ok) {
-        throw new Error('Empresa não encontrada ou CNPJ inválido');
+async function loginEmpresaAPI(identifier, password) {
+    try {
+        const response = await fetch('http://localhost:3000/auth/login/universal', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ identifier, password })
+        });
+        const result = await response.json();
+        return { ok: response.ok, data: result };
+    } catch (error) {
+        console.error('Erro na requisição:', error);
+        return { ok: false, data: { message: 'Erro de conexão' } };
     }
-    return response.json();
 }
 
 function setLoginButtonLoading(button, loading) {
@@ -81,15 +90,23 @@ document.addEventListener('DOMContentLoaded', function() {
 document.addEventListener('DOMContentLoaded', function() {
     const cnpjInput = document.getElementById('cnpj');
     if (cnpjInput) {
+        // Pré-preencher CNPJ se vindo do cadastro
+        const lastCNPJ = localStorage.getItem('lastCNPJ');
+        if (lastCNPJ) {
+            cnpjInput.value = lastCNPJ;
+            localStorage.removeItem('lastCNPJ'); // Limpar após usar
+            localStorage.removeItem('lastRegisteredCNPJ');
+        }
+        
         cnpjInput.addEventListener('input', function(e) {
             let v = e.target.value.replace(/\D/g, "");
             if (v.length > 14) v = v.slice(0, 14);
-            
+
             v = v.replace(/(\d{2})(\d)/, "$1.$2");
             v = v.replace(/(\d{3})(\d)/, "$1.$2");
             v = v.replace(/(\d{3})(\d)/, "$1/$2");
             v = v.replace(/(\d{4})(\d{1,2})$/, "$1-$2");
-            
+
             e.target.value = v;
         });
     }
@@ -100,12 +117,12 @@ document.addEventListener('DOMContentLoaded', function() {
         forgotEmailInput.addEventListener('input', function(e) {
             let v = e.target.value.replace(/\D/g, "");
             if (v.length > 14) v = v.slice(0, 14);
-            
+
             v = v.replace(/(\d{2})(\d)/, "$1.$2");
             v = v.replace(/(\d{3})(\d)/, "$1.$2");
             v = v.replace(/(\d{3})(\d)/, "$1/$2");
             v = v.replace(/(\d{4})(\d{1,2})$/, "$1-$2");
-            
+
             e.target.value = v;
         });
     }
@@ -135,34 +152,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
             setLoginButtonLoading(btn, true);
 
-            try {
-                const companyData = await fetchCnpjData(cnpjDigits);
-                const storedData = JSON.parse(localStorage.getItem(`empresa_${cnpjDigits}`) || '{}');
-                const fantasyName = storedData.fantasyName || companyData.fantasia || companyData.nome || 'Empresa';
-                const cnpjFormatted = formatCnpjDisplay(companyData.cnpj || cnpjDigits);
-                sessionStorage.setItem('empresaNomeFantasia', fantasyName);
-                sessionStorage.setItem('empresaCnpj', cnpjFormatted);
-                sessionStorage.setItem('empresaRazaoSocial', companyData.nome || storedData.legalName || '');
-                showPopup("Empresa validada com sucesso! Entrando...");
+            const result = await loginEmpresaAPI(cnpjDigits, password);
+
+            if (result.ok) {
+                // Salvar token e dados do usuário
+                localStorage.setItem('token', result.data.token);
+                localStorage.setItem('user', JSON.stringify(result.data.user));
+
+                // Salvar dados da empresa na sessão
+                sessionStorage.setItem('empresaNomeFantasia', result.data.user.name);
+                sessionStorage.setItem('empresaCnpj', formatCnpjDisplay(cnpjDigits));
+                sessionStorage.setItem('empresaRazaoSocial', result.data.user.razaoSocial || '');
+
+                showPopup("Login realizado com sucesso! Entrando...");
                 setTimeout(() => {
                     window.location.href = "dashboard-empresa.html";
                 }, 800);
-            } catch (error) {
-                const storedData = JSON.parse(localStorage.getItem(`empresa_${cnpjDigits}`) || '{}');
-                if (storedData.fantasyName) {
-                    const fantasyName = storedData.fantasyName;
-                    const cnpjFormatted = formatCnpjDisplay(cnpjDigits);
-                    sessionStorage.setItem('empresaNomeFantasia', fantasyName);
-                    sessionStorage.setItem('empresaCnpj', cnpjFormatted);
-                    sessionStorage.setItem('empresaRazaoSocial', storedData.legalName || '');
-                    showPopup("Empresa validada com sucesso! Entrando...");
-                    setTimeout(() => {
-                        window.location.href = "dashboard-empresa.html";
-                    }, 800);
-                } else {
-                    showPopup("Não foi possível verificar este CNPJ. Verifique os dados e tente novamente.");
-                    setLoginButtonLoading(btn, false);
-                }
+            } else {
+                showPopup(result.data.message || "Credenciais inválidas. Verifique seus dados.");
+                setLoginButtonLoading(btn, false);
             }
         });
     }

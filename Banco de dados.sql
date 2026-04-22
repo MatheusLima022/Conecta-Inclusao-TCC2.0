@@ -20,22 +20,46 @@ CREATE TABLE medicos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     usuario_id INT NOT NULL,
     crm VARCHAR(20) UNIQUE NOT NULL,
+    email VARCHAR(100),
     especialidade VARCHAR(100),
+    clinica_id INT,
     bio TEXT,
-    FOREIGN KEY (usuario_id) REFERENCES users(id) ON DELETE CASCADE
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (clinica_id) REFERENCES clinicas(id) ON DELETE SET NULL
 );
 
 -- 4. Tabela de Pacientes (Informações do responsável e PCD)
 CREATE TABLE pacientes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     usuario_id INT NOT NULL,
+    cpf VARCHAR(14) UNIQUE NOT NULL,
+    email VARCHAR(100),
     nome_responsavel VARCHAR(100),
     tipo_deficiencia VARCHAR(100),
     data_nascimento DATE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (usuario_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- 5. Tabela de Agendamentos (Consultas)
+-- 5. Tabela de Clínicas/Empresas (Detalhes das empresas)
+CREATE TABLE clinicas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT NOT NULL,
+    cnpj VARCHAR(18) UNIQUE NOT NULL,
+    email VARCHAR(100),
+    razao_social VARCHAR(100),
+    endereco VARCHAR(255),
+    cidade VARCHAR(100),
+    estado VARCHAR(2),
+    cep VARCHAR(10),
+    telefone VARCHAR(15),
+    responsavel VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 6. Tabela de Agendamentos (Consultas)
 CREATE TABLE agendamentos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     paciente_id INT NOT NULL,
@@ -47,7 +71,7 @@ CREATE TABLE agendamentos (
     FOREIGN KEY (medico_id) REFERENCES medicos(id) ON DELETE CASCADE
 );
 
--- 6. Tabela de Relatórios Médicos (Histórico e Registros)
+-- 7. Tabela de Relatórios Médicos (Histórico e Registros)
 CREATE TABLE relatorios (
     id INT AUTO_INCREMENT PRIMARY KEY,
     agendamento_id INT NOT NULL,
@@ -57,7 +81,7 @@ CREATE TABLE relatorios (
     FOREIGN KEY (agendamento_id) REFERENCES agendamentos(id) ON DELETE CASCADE
 );
 
--- 7. Tabela de Sessões (Para armazenar sessões de usuário no banco)
+-- 8. Tabela de Sessões (Para armazenar sessões de usuário no banco)
 CREATE TABLE sessions (
     session_id VARCHAR(255) PRIMARY KEY,
     user_id INT NOT NULL,

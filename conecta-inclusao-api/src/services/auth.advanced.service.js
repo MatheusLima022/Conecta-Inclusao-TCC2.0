@@ -50,7 +50,7 @@ async function loginWithCRM(crm, password) {
     );
     
     if (rows.length === 0) {
-      return { ok: false, statusCode: 401, message: "Credenciais inválidas." };
+      return { ok: false, statusCode: 401, message: "CRM ou senha inválidos. Verifique seus dados de acesso." };
     }
     
     return await validateUserPassword(rows[0], password, 'medico');
@@ -73,7 +73,7 @@ async function loginWithCNPJ(cnpj, password) {
     );
     
     if (rows.length === 0) {
-      return { ok: false, statusCode: 401, message: "Credenciais inválidas." };
+      return { ok: false, statusCode: 401, message: "CNPJ ou senha inválidos. Verifique seus dados de acesso." };
     }
     
     return await validateUserPassword(rows[0], password, 'clinica');
@@ -96,7 +96,7 @@ async function loginWithCPF(cpf, password) {
     );
     
     if (rows.length === 0) {
-      return { ok: false, statusCode: 401, message: "Credenciais inválidas." };
+      return { ok: false, statusCode: 401, message: "CPF ou senha inválidos. Verifique seus dados de acesso." };
     }
     
     return await validateUserPassword(rows[0], password, 'paciente');
@@ -225,7 +225,7 @@ export async function loginUniversal({ identifier, password }) {
 }
 
 // Função de registro (cadastro) de usuário com suporte a diferentes perfis
-export async function registerUser({ identifier, password, name, profile, clinicaData = null }) {
+export async function registerUser({ identifier, password, name, profile, userData = null }) {
   try {
     // Validações básicas
     if (!identifier || !password || !name || !profile) {
@@ -265,7 +265,7 @@ export async function registerUser({ identifier, password, name, profile, clinic
       const [userResult] = await connection.execute(
         `INSERT INTO users (name, email, password_hash, profile, status)
          VALUES (?, ?, ?, ?, 'ACTIVE')`,
-        [name, `${identifierInfo.value}@conecta.local`, password_hash, profile]
+        [name, userData?.email || `${identifierInfo.value}@conecta.local`, password_hash, profile]
       );
       
       const userId = userResult.insertId;
@@ -273,31 +273,32 @@ export async function registerUser({ identifier, password, name, profile, clinic
       // Cria registro específico do perfil
       if (profile === 'paciente') {
         await connection.execute(
-          `INSERT INTO pacientes (usuario_id, cpf)
-           VALUES (?, ?)`,
-          [userId, identifierInfo.value]
+          `INSERT INTO pacientes (usuario_id, cpf, email, nome_responsavel, tipo_deficiencia, data_nascimento)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [userId, identifierInfo.value, userData?.email || null, userData?.nomeResponsavel || null, userData?.tipoDeficiencia || null, userData?.dataNascimento || null]
         );
       } else if (profile === 'medico') {
         await connection.execute(
-          `INSERT INTO medicos (usuario_id, crm)
-           VALUES (?, ?)`,
-          [userId, identifierInfo.value]
+          `INSERT INTO medicos (usuario_id, crm, email, especialidade, clinica_id, bio)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [userId, identifierInfo.value, userData?.email || null, userData?.especialidade || null, userData?.clinicaId || null, userData?.bio || null]
         );
       } else if (profile === 'clinica') {
         // Salva todos os dados da clínica
         await connection.execute(
-          `INSERT INTO clinicas (usuario_id, cnpj, razao_social, endereco, cidade, estado, cep, telefone, responsavel)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO clinicas (usuario_id, cnpj, email, razao_social, endereco, cidade, estado, cep, telefone, responsavel)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             userId,
             identifierInfo.value,
-            clinicaData?.razaoSocial || name,
-            clinicaData?.endereco || '',
-            clinicaData?.cidade || '',
-            clinicaData?.estado || '',
-            clinicaData?.cep || '',
-            clinicaData?.telefone || '',
-            clinicaData?.responsavel || ''
+            userData?.email || null,
+            userData?.razaoSocial || name,
+            userData?.endereco || '',
+            userData?.cidade || '',
+            userData?.estado || '',
+            userData?.cep || '',
+            userData?.telefone || '',
+            userData?.responsavel || ''
           ]
         );
       }

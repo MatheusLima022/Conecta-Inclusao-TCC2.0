@@ -132,77 +132,58 @@
             <section class="tab-content" id="register">
                 <div class="section-header">
                     <div>
-                        <h2>Cadastrar Profissional</h2>
-                        <p>Preencha os dados para incluir um novo profissional de saúde no sistema.</p>
+                        <h2>Cadastrar Médico</h2>
+                        <p>Adicione um novo médico à sua clínica</p>
                     </div>
                 </div>
-                <form id="professionalForm" class="professional-form">
+                <form id="registerDoctorForm" class="professional-form">
                     <div class="form-grid">
                         <div class="input-group">
-                            <label for="proName">Nome Completo</label>
-                            <input type="text" id="proName" placeholder="Nome completo" required>
+                            <label for="docName">Nome Completo <span style="color: #e74c3c;">*</span></label>
+                            <input type="text" id="docName" placeholder="Dr. João Silva" required>
                         </div>
                         <div class="input-group">
-                            <label for="proRole">Função</label>
-                            <input type="text" id="proRole" placeholder="Ex: Médico, Enfermeiro, Fisioterapeuta" required>
+                            <label for="docCRM">CRM <span style="color: #e74c3c;">*</span></label>
+                            <input type="text" id="docCRM" placeholder="ABC1234" maxlength="7" required>
                         </div>
                         <div class="input-group">
-                            <label for="proRegistry">Registro Profissional</label>
-                            <input type="text" id="proRegistry" placeholder="CRM, COREN, CREFITO" required>
-                        </div>
-                        <div class="input-group">
-                            <label for="proSpecialty">Especialidade</label>
-                            <input type="text" id="proSpecialty" placeholder="Ex: Medicina do Trabalho" required>
-                        </div>
-                        <div class="input-group">
-                            <label for="proEmail">E-mail</label>
-                            <input type="email" id="proEmail" placeholder="nome@empresa.com.br" required>
-                        </div>
-                        <div class="input-group">
-                            <label for="proPassword">Senha de Acesso</label>
-                            <input type="password" id="proPassword" placeholder="Senha para login do profissional" required>
-                        </div>
-                        <div class="input-group">
-                            <label for="proPhone">Telefone</label>
-                            <input type="tel" id="proPhone" placeholder="(00) 00000-0000" required>
-                        </div>
-                        <div class="input-group">
-                            <label for="proUnit">Unidade</label>
-                            <input list="unitOptions" id="proUnit" placeholder="Ex: Unidade A" required>
-                            <datalist id="unitOptions">
-                                <option value="Unidade A"></option>
-                                <option value="Unidade B"></option>
-                                <option value="Unidade C"></option>
-                            </datalist>
-                        </div>
-                        <div class="input-group">
-                            <label for="proArea">Área de Atuação</label>
-                            <input type="text" id="proArea" placeholder="Ex: Saúde Ocupacional" required>
-                        </div>
-                        <div class="input-group">
-                            <label for="proShift">Tipo de Vínculo</label>
-                            <select id="proShift" required>
-                                <option value="">Selecione</option>
-                                <option value="CLT">CLT</option>
-                                <option value="PJ">PJ</option>
-                                <option value="Terceirizado">Terceirizado</option>
+                            <label for="docEspecialidade">Especialidade <span style="color: #e74c3c;">*</span></label>
+                            <select id="docEspecialidade" required>
+                                <option value="">Selecione uma especialidade...</option>
+                                <option value="Cardiologia">Cardiologia</option>
+                                <option value="Dermatologia">Dermatologia</option>
+                                <option value="Pediatria">Pediatria</option>
+                                <option value="Ortopedia">Ortopedia</option>
+                                <option value="Neurologia">Neurologia</option>
+                                <option value="Psicologia">Psicologia</option>
+                                <option value="Fonoaudiologia">Fonoaudiologia</option>
+                                <option value="Fisioterapia">Fisioterapia</option>
+                                <option value="Terapia Ocupacional">Terapia Ocupacional</option>
+                                <option value="Medicina Geral">Medicina Geral</option>
+                                <option value="Outra">Outra</option>
                             </select>
                         </div>
                         <div class="input-group">
-                            <label for="proStartDate">Data de Início</label>
-                            <input type="date" id="proStartDate" required>
-                        </div>
-                        <div class="input-group">
-                            <label for="proLoad">Carga Horária</label>
-                            <input type="text" id="proLoad" placeholder="Ex: 40h semanais" required>
+                            <label for="docEmail">E-mail</label>
+                            <input type="email" id="docEmail" placeholder="medico@example.com">
                         </div>
                         <div class="input-group full-width">
-                            <label for="proNotes">Observações</label>
-                            <textarea id="proNotes" placeholder="Observações adicionais" rows="4"></textarea>
+                            <label for="docBio">Biografia / Qualificações</label>
+                            <textarea id="docBio" placeholder="Descreva suas qualificações e experiência..." style="min-height: 100px;"></textarea>
+                        </div>
+                        <div class="input-group">
+                            <label for="docPassword">Senha Temporária <span style="color: #e74c3c;">*</span></label>
+                            <input type="password" id="docPassword" placeholder="Mínimo 6 caracteres" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="docConfirmPassword">Confirmar Senha <span style="color: #e74c3c;">*</span></label>
+                            <input type="password" id="docConfirmPassword" placeholder="Repita a senha" required>
                         </div>
                     </div>
-                    <br>
-                    <button type="submit" class="btn-primary">Cadastrar Profissional</button>
+                    <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+                        <button type="submit" class="btn-primary">Cadastrar Médico</button>
+                        <button type="reset" class="btn-secondary" style="background-color: #95a5a6; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer;">Limpar</button>
+                    </div>
                 </form>
             </section>
 
