@@ -1,15 +1,37 @@
-// Integração de cadastro de médico com autenticação
+async function getClinicDetails() {
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+        return { ok: false, message: 'Token nao encontrado' };
+    }
+
+    try {
+        const response = await fetch('http://localhost:3000/auth/clinic/details', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const result = await response.json();
+        return { ok: response.ok, data: result, status: response.status };
+    } catch (error) {
+        console.error('Erro na requisicao:', error);
+        return { ok: false, message: 'Erro de conexao com o servidor' };
+    }
+}
+
 async function registerDoctorFromDashboard(data) {
     const token = localStorage.getItem('token');
-    
+
     if (!token) {
-        showPopup('Você precisa estar autenticado para cadastrar um médico.');
+        showPopup('Voce precisa estar autenticado para cadastrar um medico.');
         window.location.href = 'login-empresa.html';
         return { ok: false };
     }
 
     try {
-        const response = await fetch('http://localhost:3000/auth/register/doctor', {
+        const response = await fetch('http://localhost:3000/auth/register/professional', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -21,8 +43,8 @@ async function registerDoctorFromDashboard(data) {
         const result = await response.json();
         return { ok: response.ok, data: result, status: response.status };
     } catch (error) {
-        console.error('Erro na requisição:', error);
-        return { ok: false, data: { message: 'Erro de conexão com o servidor' } };
+        console.error('Erro na requisicao:', error);
+        return { ok: false, data: { message: 'Erro de conexao com o servidor' } };
     }
 }
 
@@ -54,12 +76,12 @@ function showCredentialsModal(credentials) {
     content.innerHTML = `
         <div style="text-align: center; margin-bottom: 1.5rem;">
             <i class="ph ph-check-circle" style="font-size: 3rem; color: #27ae60;"></i>
-            <h2 style="color: #333; margin-top: 1rem;">Médico Cadastrado com Sucesso!</h2>
+            <h2 style="color: #333; margin-top: 1rem;">Medico Cadastrado com Sucesso!</h2>
         </div>
 
         <div style="background-color: #e8f4f8; border-left: 4px solid #3498db; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
             <p style="color: #2c3e50; margin: 0; font-size: 0.95rem;">
-                <strong>⚠️ Importante:</strong> Compartilhe as credenciais abaixo com o médico. Ele deverá alterar a senha no primeiro login.
+                <strong>Importante:</strong> Compartilhe as credenciais abaixo com o medico. Ele devera alterar a senha no primeiro login.
             </p>
         </div>
 
@@ -75,7 +97,7 @@ function showCredentialsModal(credentials) {
             </div>
 
             <div style="margin-bottom: 1.5rem;">
-                <label style="display: block; font-weight: 600; color: #333; margin-bottom: 0.5rem;">Senha Temporária:</label>
+                <label style="display: block; font-weight: 600; color: #333; margin-bottom: 0.5rem;">Senha Temporaria:</label>
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
                     <input type="text" value="${credentials.password}" readonly style="flex: 1; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-family: monospace; font-size: 1rem;">
                     <button onclick="copyToClipboard('${credentials.password}')" style="padding: 0.75rem 1rem; background-color: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer;">
@@ -85,15 +107,9 @@ function showCredentialsModal(credentials) {
             </div>
 
             <div>
-                <label style="display: block; font-weight: 600; color: #333; margin-bottom: 0.5rem;">Nome Médico:</label>
+                <label style="display: block; font-weight: 600; color: #333; margin-bottom: 0.5rem;">Nome Medico:</label>
                 <p style="margin: 0; padding: 0.75rem; background-color: white; border-radius: 6px; border: 1px solid #ddd;">${credentials.name}</p>
             </div>
-        </div>
-
-        <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
-            <p style="color: #856404; margin: 0; font-size: 0.9rem;">
-                <strong>Dica:</strong> Envie estas credenciais de forma segura ao médico via email ou mensagem criptografada.
-            </p>
         </div>
 
         <div style="display: flex; gap: 1rem;">
@@ -108,7 +124,7 @@ function showCredentialsModal(credentials) {
 
     modal.appendChild(content);
     document.body.appendChild(modal);
-    
+
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
             modal.remove();
@@ -118,7 +134,7 @@ function showCredentialsModal(credentials) {
 
 function copyToClipboard(text) {
     navigator.clipboard.writeText(text).then(() => {
-        showPopup('Copiado para a área de transferência!');
+        showPopup('Copiado para a area de transferencia!');
     }).catch(() => {
         alert('Erro ao copiar: ' + text);
     });
@@ -129,7 +145,7 @@ function printCredentials(crm, password, name) {
     printWindow.document.write(`
         <html>
             <head>
-                <title>Credenciais do Médico</title>
+                <title>Credenciais do Medico</title>
                 <style>
                     body { font-family: Arial, sans-serif; padding: 2rem; }
                     .header { text-align: center; margin-bottom: 2rem; }
@@ -142,14 +158,14 @@ function printCredentials(crm, password, name) {
             </head>
             <body>
                 <div class="header">
-                    <h1>Credenciais de Acesso - Conecta Inclusão</h1>
+                    <h1>Credenciais de Acesso - Conecta Inclusao</h1>
                 </div>
                 <div class="content">
                     <div class="warning">
-                        <strong>IMPORTANTE:</strong> Guarde estas credenciais com segurança. O médico deve alterar a senha no primeiro login.
+                        <strong>IMPORTANTE:</strong> Guarde estas credenciais com seguranca. O medico deve alterar a senha no primeiro login.
                     </div>
                     <div class="field">
-                        <label>Nome do Médico:</label>
+                        <label>Nome do Medico:</label>
                         <div class="value">${name}</div>
                     </div>
                     <div class="field">
@@ -157,11 +173,8 @@ function printCredentials(crm, password, name) {
                         <div class="value">${crm}</div>
                     </div>
                     <div class="field">
-                        <label>Senha Temporária:</label>
+                        <label>Senha Temporaria:</label>
                         <div class="value">${password}</div>
-                    </div>
-                    <div class="warning">
-                        <strong>URL de Acesso:</strong> Direcionar para a página de login de médicos
                     </div>
                 </div>
             </body>
@@ -175,6 +188,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('registerDoctorForm');
     if (!form) return;
 
+    getClinicDetails().then((result) => {
+        if (!result.ok || !result.data) return;
+
+        if (result.data.cnpj) {
+            sessionStorage.setItem('empresaCnpj', result.data.cnpj);
+        }
+        if (result.data.razao_social) {
+            sessionStorage.setItem('empresaRazaoSocial', result.data.razao_social);
+        }
+    }).catch((error) => {
+        console.error('Erro ao carregar dados da clinica:', error);
+    });
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -182,13 +208,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const name = document.getElementById('docName').value.trim();
         const especialidade = document.getElementById('docEspecialidade').value.trim();
         const email = document.getElementById('docEmail').value.trim();
-        const bio = document.getElementById('docBio').value.trim();
+        const unit = document.getElementById('docUnit').value;
         const password = document.getElementById('docPassword').value;
         const confirmPassword = document.getElementById('docConfirmPassword').value;
+        const bio = document.getElementById('docBio').value.trim();
 
-        // Validações
-        if (!crm || !name || !especialidade || !password || !confirmPassword) {
-            showPopup('Preencha todos os campos obrigatórios.');
+        if (!crm || !name || !especialidade || !unit || !password || !confirmPassword) {
+            showPopup('Preencha todos os campos obrigatorios.');
             return;
         }
 
@@ -198,28 +224,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (password.length < 6) {
-            showPopup('A senha deve ter no mínimo 6 caracteres.');
+            showPopup('A senha deve ter no minimo 6 caracteres.');
             return;
         }
 
         if (password !== confirmPassword) {
-            showPopup('As senhas não coincidem.');
+            showPopup('As senhas nao coincidem.');
             return;
         }
 
-        // Buscar clinicaId do usuário autenticado
         const userStr = localStorage.getItem('user');
         if (!userStr) {
-            showPopup('Você precisa estar autenticado.');
+            showPopup('Voce precisa estar autenticado.');
             window.location.href = 'login-empresa.html';
             return;
         }
-
-        const user = JSON.parse(userStr);
-        
-        // Por enquanto, usaremos um clinicaId mock (será implementado após obter ID do banco)
-        // TODO: Implementar endpoint para buscar clinicaId do usuário autenticado
-        const clinicaId = 1; // Mock - será dinâmico
 
         const submitBtn = form.querySelector('button[type="submit"]');
         const originalText = submitBtn.innerText;
@@ -227,30 +246,43 @@ document.addEventListener('DOMContentLoaded', () => {
         submitBtn.innerHTML = '<i class="ph ph-circle-notch-bold" style="animation: spin 1s linear infinite;"></i> Cadastrando...';
 
         const registrationData = {
-            crm: crm,
-            password: password,
-            name: name,
+            crm,
+            name,
+            especialidade,
+            unidade: unit,
+            password,
             email: email || null,
-            especialidade: especialidade,
-            bio: bio || null,
-            clinicaId: clinicaId
+            bio: bio || null
         };
 
         const result = await registerDoctorFromDashboard(registrationData);
 
-        if (result.ok) {
-            showPopup('Médico cadastrado com sucesso!');
-            
-            // Mostrar modal com credenciais
+        if (result.ok && result.data?.data) {
+            const credentials = result.data.data;
+
+            showPopup('Medico cadastrado com sucesso!');
+
+            if (window.companyDashboard?.addOrUpdateProfessional) {
+                window.companyDashboard.addOrUpdateProfessional({
+                    name,
+                    role: especialidade,
+                    registry: credentials.crm,
+                    status: 'Ativo',
+                    unit,
+                    email: email || '',
+                    bio: bio || ''
+                });
+            }
+
             showCredentialsModal({
-                identifier: crm,
-                password: password,
-                name: name
+                identifier: credentials.crm,
+                password: credentials.defaultPassword,
+                name: credentials.name
             });
 
             form.reset();
         } else {
-            const errorMsg = result.data?.message || 'Erro ao cadastrar médico.';
+            const errorMsg = result.data?.message || 'Erro ao cadastrar medico.';
             showPopup(errorMsg);
         }
 
@@ -258,7 +290,6 @@ document.addEventListener('DOMContentLoaded', () => {
         submitBtn.innerText = originalText;
     });
 
-    // Máscara para CRM
     const crmInput = document.getElementById('docCRM');
     if (crmInput) {
         crmInput.addEventListener('input', (e) => {
@@ -266,7 +297,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // CSS para animação de carregamento
     const style = document.createElement('style');
     style.innerHTML = `
         @keyframes spin {

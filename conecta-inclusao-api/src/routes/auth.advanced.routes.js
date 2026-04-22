@@ -1,21 +1,22 @@
-// Rotas avançadas de autenticação com suporte a CRM, CNPJ e CPF
+// Rotas avanÃ§adas de autenticaÃ§Ã£o com suporte a CRM, CNPJ e CPF
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
-import { 
+import {
   universalLoginSchema,
   registerPatientSchema,
   registerDoctorSchema,
   registerClinicSchema
 } from "../validators/auth.advanced.validators.js";
-import { 
+import {
   loginUniversal,
   registerUser,
-  registerProfessional
+  registerProfessional,
+  authenticateToken,
+  getClinicDetails
 } from "../services/auth.advanced.service.js";
 
 const router = Router();
 
-// Rate limiter para login
 const loginLimiter = rateLimit({
   windowMs: 60 * 1000,
   limit: 20,
@@ -23,72 +24,47 @@ const loginLimiter = rateLimit({
   legacyHeaders: false
 });
 
-// Rate limiter para registro
 const registerLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hora
-  limit: 5, // Máximo 5 registros por hora
+  windowMs: 60 * 60 * 1000,
+  limit: 5,
   standardHeaders: true,
   legacyHeaders: false
 });
 
-/**
- * POST /auth/login/universal
- * Realiza login com qualquer tipo de identificador (Email, CRM, CNPJ, CPF)
- * 
- * Body:
- * {
- *   "identifier": "123456789012" | "12.123.123/1234-12" | "ABC1234" | "user@example.com",
- *   "password": "senha123"
- * }
- */
 router.post("/login/universal", loginLimiter, async (req, res, next) => {
   try {
     const parsed = universalLoginSchema.safeParse(req.body);
-    
+
     if (!parsed.success) {
-      return res.status(400).json({ 
-        message: "Dados inválidos",
-        errors: parsed.error.errors 
+      return res.status(400).json({
+        message: "Dados invalidos",
+        errors: parsed.error.errors
       });
     }
-    
+
     const result = await loginUniversal(parsed.data);
-    
+
     if (!result.ok) {
       return res.status(result.statusCode).json({ message: result.message });
     }
-    
+
     return res.status(200).json(result.data);
   } catch (err) {
     next(err);
   }
 });
 
-/**
- * POST /auth/register/patient
- * Registra um novo paciente com CPF
- * 
- * Body:
- * {
- *   "cpf": "12345678901",
- *   "password": "senha123",
- *   "name": "João Silva",
- *   "nomeResponsavel": "Maria Silva",
- *   "tipoDeficiencia": "Mobilidade",
- *   "dataNascimento": "1990-01-15"
- * }
- */
 router.post("/register/patient", registerLimiter, async (req, res, next) => {
   try {
     const parsed = registerPatientSchema.safeParse(req.body);
-    
+
     if (!parsed.success) {
-      return res.status(400).json({ 
-        message: "Dados inválidos",
-        errors: parsed.error.errors 
+      return res.status(400).json({
+        message: "Dados invalidos",
+        errors: parsed.error.errors
       });
     }
-    
+
     const result = await registerUser({
       identifier: parsed.data.cpf,
       password: parsed.data.password,
@@ -101,41 +77,28 @@ router.post("/register/patient", registerLimiter, async (req, res, next) => {
         dataNascimento: parsed.data.dataNascimento
       }
     });
-    
+
     if (!result.ok) {
       return res.status(result.statusCode).json({ message: result.message });
     }
-    
+
     return res.status(201).json(result);
   } catch (err) {
     next(err);
   }
 });
 
-/**
- * POST /auth/register/doctor
- * Registra um novo médico com CRM
- * 
- * Body:
- * {
- *   "crm": "ABC1234",
- *   "password": "senha123",
- *   "name": "Dr. João",
- *   "especialidade": "Cardiologia",
- *   "clinicaId": 1
- * }
- */
 router.post("/register/doctor", registerLimiter, async (req, res, next) => {
   try {
     const parsed = registerDoctorSchema.safeParse(req.body);
-    
+
     if (!parsed.success) {
-      return res.status(400).json({ 
-        message: "Dados inválidos",
-        errors: parsed.error.errors 
+      return res.status(400).json({
+        message: "Dados invalidos",
+        errors: parsed.error.errors
       });
     }
-    
+
     const result = await registerUser({
       identifier: parsed.data.crm,
       password: parsed.data.password,
@@ -148,42 +111,28 @@ router.post("/register/doctor", registerLimiter, async (req, res, next) => {
         clinicaId: parsed.data.clinicaId
       }
     });
-    
+
     if (!result.ok) {
       return res.status(result.statusCode).json({ message: result.message });
     }
-    
+
     return res.status(201).json(result);
   } catch (err) {
     next(err);
   }
 });
 
-/**
- * POST /auth/register/clinic
- * Registra uma nova clínica/empresa com CNPJ
- * 
- * Body:
- * {
- *   "cnpj": "12345678000190",
- *   "password": "senha123",
- *   "name": "Clínica Saúde",
- *   "razaoSocial": "Clínica Saúde Ltda",
- *   "endereco": "Rua...",
- *   "telefone": "1133334444"
- * }
- */
 router.post("/register/clinic", registerLimiter, async (req, res, next) => {
   try {
     const parsed = registerClinicSchema.safeParse(req.body);
-    
+
     if (!parsed.success) {
-      return res.status(400).json({ 
-        message: "Dados inválidos",
-        errors: parsed.error.errors 
+      return res.status(400).json({
+        message: "Dados invalidos",
+        errors: parsed.error.errors
       });
     }
-    
+
     const result = await registerUser({
       identifier: parsed.data.cnpj,
       password: parsed.data.password,
@@ -200,55 +149,71 @@ router.post("/register/clinic", registerLimiter, async (req, res, next) => {
         responsavel: parsed.data.responsavel
       }
     });
-    
+
     if (!result.ok) {
       return res.status(result.statusCode).json({ message: result.message });
     }
-    
+
     return res.status(201).json(result);
   } catch (err) {
     next(err);
   }
 });
 
-/**
- * POST /auth/register/professional
- * Registra um novo profissional (médico) para uma clínica
- * Requer autenticação da clínica
- * 
- * Body:
- * {
- *   "crm": "ABC1234",
- *   "name": "Dr. João",
- *   "especialidade": "Cardiologia",
- *   "clinicaId": 1,
- *   "bio": "Especialista..."
- * }
- */
-router.post("/register/professional", registerLimiter, async (req, res, next) => {
+router.post("/register/professional", authenticateToken, registerLimiter, async (req, res, next) => {
   try {
-    const { crm, name, especialidade, clinicaId, bio } = req.body;
-    
-    if (!crm || !name || !clinicaId) {
-      return res.status(400).json({ 
-        message: "Dados inválidos",
-        errors: [{ message: "CRM, nome e clinicaId são obrigatórios" }]
+    if (req.user.profile !== 'clinica') {
+      return res.status(403).json({ message: 'Acesso negado. Apenas clinicas podem cadastrar profissionais.' });
+    }
+
+    const clinicResult = await getClinicDetails(req.user.sub);
+    if (!clinicResult.ok) {
+      return res.status(clinicResult.statusCode).json({ message: clinicResult.message });
+    }
+
+    const { crm, name, especialidade, bio, password, unidade, email } = req.body;
+
+    if (!crm || !name) {
+      return res.status(400).json({
+        message: "Dados invalidos",
+        errors: [{ message: "CRM e nome sao obrigatorios" }]
       });
     }
-    
+
     const result = await registerProfessional({
       crm,
       name,
       especialidade,
-      clinicaId,
-      bio
+      clinicaId: clinicResult.data.clinicaId,
+      bio,
+      password,
+      unidade,
+      email
     });
-    
+
     if (!result.ok) {
       return res.status(result.statusCode).json({ message: result.message });
     }
-    
+
     return res.status(201).json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/clinic/details", authenticateToken, async (req, res, next) => {
+  try {
+    if (req.user.profile !== 'clinica') {
+      return res.status(403).json({ message: 'Acesso negado. Apenas clÃ­nicas podem acessar este endpoint.' });
+    }
+
+    const result = await getClinicDetails(req.user.sub);
+
+    if (!result.ok) {
+      return res.status(result.statusCode).json({ message: result.message });
+    }
+
+    return res.status(200).json(result.data);
   } catch (err) {
     next(err);
   }

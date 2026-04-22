@@ -1,13 +1,32 @@
-const employeeData = [
-    { name: 'Julia Martins', role: 'Médica do Trabalho', registry: 'CRM 123456-SP', status: 'Ativo', unit: 'Unidade A' },
-    { name: 'Bruno Souza', role: 'Enfermeiro', registry: 'COREN 789101', status: 'Trabalhando', unit: 'Unidade B' },
-    { name: 'Paula Ferreira', role: 'Fisioterapeuta', registry: 'CREFITO 112233', status: 'Férias', unit: 'Unidade C' },
-    { name: 'Rafael Lima', role: 'Técnico de Enfermagem', registry: 'CRT 445566', status: 'Ativo', unit: 'Unidade A' },
-    { name: 'Marina Alves', role: 'Nutricionista', registry: 'CRN 778899', status: 'Trabalhando', unit: 'Unidade B' }
+const PROFESSIONALS_STORAGE_KEY = 'companyProfessionals';
+const seedProfessionals = [
+    { name: 'Julia Martins', role: 'Medica do Trabalho', registry: 'CRM 123456', status: 'Ativo', unit: 'Unidade A', email: 'julia@corphealth.local', bio: '' },
+    { name: 'Bruno Souza', role: 'Enfermeiro', registry: 'COREN 789101', status: 'Trabalhando', unit: 'Unidade B', email: 'bruno@corphealth.local', bio: '' },
+    { name: 'Paula Ferreira', role: 'Fisioterapeuta', registry: 'CREFITO 112233', status: 'Ferias', unit: 'Unidade C', email: 'paula@corphealth.local', bio: '' }
 ];
 
-let currentEditIndex = null;
 let activeUnitFilter = 'Todas';
+
+function loadStoredProfessionals() {
+    try {
+        const raw = localStorage.getItem(PROFESSIONALS_STORAGE_KEY);
+        if (!raw) {
+            return [...seedProfessionals];
+        }
+
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) && parsed.length > 0 ? parsed : [...seedProfessionals];
+    } catch (error) {
+        console.error('Erro ao carregar profissionais:', error);
+        return [...seedProfessionals];
+    }
+}
+
+let employeeData = loadStoredProfessionals();
+
+function saveProfessionals() {
+    localStorage.setItem(PROFESSIONALS_STORAGE_KEY, JSON.stringify(employeeData));
+}
 
 function renderTeamTable() {
     const body = document.getElementById('teamFullTableBody');
@@ -30,7 +49,6 @@ function renderTeamTable() {
             <td><span class="status-dot ${member.status === 'Ativo' ? 'active' : member.status === 'Trabalhando' ? 'working' : 'break'}">${member.status}</span></td>
             <td>${member.unit}</td>
             <td class="table-actions">
-                <button class="table-btn edit-btn" data-index="${index}"><i class="ph ph-pencil"></i> Editar</button>
                 <button class="table-btn inactive-btn" data-index="${index}"><i class="ph ph-user-minus"></i> ${member.status === 'Inativo' ? 'Ativar' : 'Inativar'}</button>
             </td>
         `;
@@ -47,6 +65,7 @@ function renderTeamTable() {
         `;
         overviewBody.appendChild(row);
     });
+
     attachTeamActionListeners();
 }
 
@@ -55,12 +74,19 @@ function updateCounters() {
     const workingCount = employeeData.filter(item => item.status === 'Trabalhando').length;
     const breakCount = employeeData.filter(item => item.status !== 'Ativo' && item.status !== 'Trabalhando').length;
 
-    document.getElementById('activeCount').innerText = activeCount;
-    document.getElementById('workingCount').innerText = workingCount;
-    document.getElementById('breakCount').innerText = breakCount;
-    document.getElementById('cardActiveCount').innerText = activeCount;
-    document.getElementById('cardWorkingCount').innerText = workingCount;
-    document.getElementById('cardBreakCount').innerText = breakCount;
+    const activeCountEl = document.getElementById('activeCount');
+    const workingCountEl = document.getElementById('workingCount');
+    const breakCountEl = document.getElementById('breakCount');
+    const cardActiveCountEl = document.getElementById('cardActiveCount');
+    const cardWorkingCountEl = document.getElementById('cardWorkingCount');
+    const cardBreakCountEl = document.getElementById('cardBreakCount');
+
+    if (activeCountEl) activeCountEl.innerText = activeCount;
+    if (workingCountEl) workingCountEl.innerText = workingCount;
+    if (breakCountEl) breakCountEl.innerText = breakCount;
+    if (cardActiveCountEl) cardActiveCountEl.innerText = activeCount;
+    if (cardWorkingCountEl) cardWorkingCountEl.innerText = workingCount;
+    if (cardBreakCountEl) cardBreakCountEl.innerText = breakCount;
 }
 
 function getUniqueUnits() {
@@ -70,54 +96,18 @@ function getUniqueUnits() {
 function populateUnitOptions() {
     const unitOptions = getUniqueUnits();
     const filterSelect = document.getElementById('unitFilterSelect');
-    const dataList = document.getElementById('unitOptions');
-
-    if (!filterSelect || !dataList) return;
+    if (!filterSelect) return;
 
     filterSelect.innerHTML = '<option value="Todas">Todas</option>' + unitOptions.map(unit => `<option value="${unit}">${unit}</option>`).join('');
-    dataList.innerHTML = unitOptions.map(unit => `<option value="${unit}"></option>`).join('');
 }
 
 function attachTeamActionListeners() {
-    const editButtons = document.querySelectorAll('.edit-btn');
     const inactiveButtons = document.querySelectorAll('.inactive-btn');
-
-    editButtons.forEach(button => button.addEventListener('click', () => {
-        const index = Number(button.dataset.index);
-        editProfessional(index);
-    }));
 
     inactiveButtons.forEach(button => button.addEventListener('click', () => {
         const index = Number(button.dataset.index);
         toggleProfessionalActiveState(index);
     }));
-}
-
-function editProfessional(index) {
-    const member = employeeData[index];
-    if (!member) return;
-
-    currentEditIndex = index;
-    switchTab('register');
-
-    document.getElementById('proName').value = member.name;
-    document.getElementById('proRole').value = member.role;
-    document.getElementById('proRegistry').value = member.registry;
-    document.getElementById('proSpecialty').value = member.specialty || '';
-    document.getElementById('proEmail').value = member.email || '';
-    document.getElementById('proPassword').value = member.password || '';
-    document.getElementById('proPhone').value = member.phone || '';
-    document.getElementById('proUnit').value = member.unit || '';
-    document.getElementById('proArea').value = member.area || '';
-    document.getElementById('proShift').value = member.shift || '';
-    document.getElementById('proStartDate').value = member.startDate || '';
-    document.getElementById('proLoad').value = member.load || '';
-    document.getElementById('proNotes').value = member.notes || '';
-
-    const formHeader = document.querySelector('#register .section-header h2');
-    if (formHeader) formHeader.innerText = 'Editar Profissional';
-    const submitBtn = document.querySelector('#professionalForm button[type="submit"]');
-    if (submitBtn) submitBtn.innerText = 'Salvar Alterações';
 }
 
 function toggleProfessionalActiveState(index) {
@@ -127,25 +117,19 @@ function toggleProfessionalActiveState(index) {
     const action = member.status === 'Inativo' ? 'ativar' : 'inativar';
     showPopup(`Deseja ${action} ${member.name}?`, 'confirm').then(confirmed => {
         if (!confirmed) return;
+
         member.status = member.status === 'Inativo' ? 'Ativo' : 'Inativo';
+        saveProfessionals();
         updateCounters();
         renderTeamTable();
         showPopup(`Profissional ${action}do com sucesso.`);
     });
 }
 
-function resetProfessionalForm() {
-    currentEditIndex = null;
-    document.getElementById('professionalForm').reset();
-    const formHeader = document.querySelector('#register .section-header h2');
-    if (formHeader) formHeader.innerText = 'Cadastrar Profissional';
-    const submitBtn = document.querySelector('#professionalForm button[type="submit"]');
-    if (submitBtn) submitBtn.innerText = 'Cadastrar Profissional';
-}
-
 function applyUnitFilter() {
     const filterSelect = document.getElementById('unitFilterSelect');
     if (!filterSelect) return;
+
     activeUnitFilter = filterSelect.value;
     renderTeamTable();
 }
@@ -174,89 +158,40 @@ function switchTab(tabKey) {
     buttons.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabKey));
 }
 
-function handleProfessionalRegistration(event) {
-    event.preventDefault();
+function addOrUpdateProfessional(member) {
+    const registry = member.registry?.trim();
+    if (!registry) return;
 
-    const data = {
-        name: document.getElementById('proName').value.trim(),
-        role: document.getElementById('proRole').value.trim(),
-        registry: document.getElementById('proRegistry').value.trim(),
-        specialty: document.getElementById('proSpecialty').value.trim(),
-        email: document.getElementById('proEmail').value.trim(),
-        password: document.getElementById('proPassword').value.trim(),
-        phone: document.getElementById('proPhone').value.trim(),
-        unit: document.getElementById('proUnit').value.trim(),
-        area: document.getElementById('proArea').value.trim(),
-        shift: document.getElementById('proShift').value,
-        startDate: document.getElementById('proStartDate').value,
-        load: document.getElementById('proLoad').value.trim(),
-        notes: document.getElementById('proNotes').value.trim()
-    };
-
-    if (!data.name || !data.role || !data.registry || !data.specialty || !data.email || !data.password || !data.phone || !data.area || !data.shift || !data.startDate || !data.load || !data.unit) {
-        showPopup('Por favor, preencha todos os campos obrigatórios antes de registrar o profissional.');
-        return;
+    const existingIndex = employeeData.findIndex(item => item.registry === registry);
+    if (existingIndex >= 0) {
+        employeeData[existingIndex] = { ...employeeData[existingIndex], ...member };
+    } else {
+        employeeData.push(member);
     }
 
-    showPopup(currentEditIndex === null ? 'Deseja confirmar o cadastro deste profissional?' : 'Deseja salvar as alterações deste profissional?', 'confirm').then(confirmed => {
-        if (!confirmed) return;
-
-        const professionals = JSON.parse(localStorage.getItem('profissionais') || '[]');
-        if (currentEditIndex === null) {
-            professionals.push(data);
-            employeeData.push({
-                name: data.name,
-                role: data.role,
-                registry: data.registry,
-                status: 'Ativo',
-                unit: data.unit,
-                specialty: data.specialty,
-                email: data.email,
-                password: data.password,
-                phone: data.phone,
-                area: data.area,
-                shift: data.shift,
-                startDate: data.startDate,
-                load: data.load,
-                notes: data.notes
-            });
-        } else {
-            professionals[currentEditIndex] = data;
-            employeeData[currentEditIndex] = {
-                name: data.name,
-                role: data.role,
-                registry: data.registry,
-                status: employeeData[currentEditIndex].status,
-                unit: data.unit,
-                specialty: data.specialty,
-                email: data.email,
-                password: data.password,
-                phone: data.phone,
-                area: data.area,
-                shift: data.shift,
-                startDate: data.startDate,
-                load: data.load,
-                notes: data.notes
-            };
-        }
-
-        localStorage.setItem('profissionais', JSON.stringify(professionals));
-        const wasEditing = currentEditIndex !== null;
-        populateUnitOptions();
-        renderTeamTable();
-        updateCounters();
-        resetProfessionalForm();
-        showPopup(wasEditing ? 'Alterações salvas!' : 'Profissional cadastrado com sucesso!');
-    });
+    saveProfessionals();
+    populateUnitOptions();
+    updateCounters();
+    renderTeamTable();
 }
 
-// Lógica de Sair
 async function handleLogout() {
-    const result = await showPopup("Deseja realmente sair?", 'confirm');
+    const result = await showPopup('Deseja realmente sair?', 'confirm');
     if (result) {
-        window.location.href = "login-empresa.html";
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        sessionStorage.removeItem('empresaNomeFantasia');
+        sessionStorage.removeItem('empresaCnpj');
+        sessionStorage.removeItem('empresaRazaoSocial');
+        window.location.href = 'login-empresa.html';
     }
 }
+
+window.companyDashboard = {
+    addOrUpdateProfessional
+};
+
+window.handleLogout = handleLogout;
 
 document.addEventListener('DOMContentLoaded', () => {
     loadCompanyInfo();
@@ -269,10 +204,13 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', () => switchTab(btn.dataset.tab));
     });
 
-    document.getElementById('btnAddProfessional').addEventListener('click', () => {
-        resetProfessionalForm();
-        switchTab('register');
-    });
-    document.getElementById('professionalForm').addEventListener('submit', handleProfessionalRegistration);
-    document.getElementById('btnApplyUnitFilter').addEventListener('click', applyUnitFilter);
+    const addButton = document.getElementById('btnAddProfessional');
+    if (addButton) {
+        addButton.addEventListener('click', () => switchTab('register'));
+    }
+
+    const filterButton = document.getElementById('btnApplyUnitFilter');
+    if (filterButton) {
+        filterButton.addEventListener('click', applyUnitFilter);
+    }
 });
