@@ -73,6 +73,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     navLinks.forEach(link => {
         link.addEventListener('click', function(e) {
+            // Se for o link de prontuários, redirecionar para autenticação
+            if (this.id === 'recordsNavLink') {
+                e.preventDefault();
+                window.location.href = 'auth-records-access.html';
+                return;
+            }
+            
             // Remove active de todos
             navLinks.forEach(l => l.classList.remove('active'));
             // Adiciona no clicado
@@ -80,6 +87,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 4. Notificação Simples ao Carregar
+    // 4. Card de Prontuários - Redirecionar para autenticação
+    const recordsCard = document.getElementById('recordsCard');
+    if (recordsCard) {
+        recordsCard.addEventListener('click', function() {
+            window.location.href = 'auth-records-access.html';
+        });
+    }
+
+    // 5. Notificação Simples ao Carregar
     console.log("Dashboard Médico carregado. Bem-vindo, Dr. Ricardo.");
 });

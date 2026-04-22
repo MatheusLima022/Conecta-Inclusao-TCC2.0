@@ -43,6 +43,14 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Máscara de CPF automática (Melhorada para performance)
+let api;
+async function loadAPI() {
+    if (!api) {
+        api = await import('./api.js');
+    }
+    return api;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const cpfInput = document.getElementById('cpf');
     if (cpfInput) {
@@ -78,7 +86,7 @@ document.addEventListener('DOMContentLoaded', function() {
 document.addEventListener('DOMContentLoaded', function() {
     const loginForm = document.getElementById('loginFormPaciente');
     if (loginForm) {
-        loginForm.addEventListener('submit', function(e) {
+        loginForm.addEventListener('submit', async function(e) {
             e.preventDefault();
 
             const btn = e.target.querySelector('.btn-login');
@@ -99,11 +107,53 @@ document.addEventListener('DOMContentLoaded', function() {
             btn.style.opacity = "0.8";
             btn.style.cursor = "not-allowed";
 
-            // 3. Simulação de autenticação e Redirecionamento
-            setTimeout(() => {
-                // Redireciona para a tela que criamos anteriormente
-                window.location.href = "dash-paciente.html"; 
-            }, 1500); // 1.5 segundos de espera para parecer real
+            try {
+                // Carrega o módulo API
+                const apiModule = await loadAPI();
+                
+                // Remove formatação do CPF
+                const cpfDigits = cpf.replace(/\D/g, '');
+                
+                // Tenta fazer login com o CPF
+                const loginResult = await apiModule.loginUniversal(cpfDigits, password);
+                
+                if (!loginResult.ok) {
+                    showPopup(loginResult.error || "CPF ou senha incorretos.");
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                    btn.style.opacity = "1";
+                    btn.style.cursor = "pointer";
+                    return;
+                }
+
+                // Verifica se é um perfil de paciente
+                if (loginResult.user.profile !== 'paciente') {
+                    showPopup("Você não tem permissão de paciente.");
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                    btn.style.opacity = "1";
+                    btn.style.cursor = "pointer";
+                    return;
+                }
+
+                // Armazena dados do paciente em sessionStorage
+                sessionStorage.setItem('patientName', loginResult.user.name);
+                sessionStorage.setItem('patientCPF', cpf);
+                sessionStorage.setItem('userId', loginResult.user.id);
+                sessionStorage.setItem('userProfile', 'paciente');
+
+                showPopup("Acesso autorizado! Redirecionando para seu painel...");
+                setTimeout(() => {
+                    window.location.href = "dash-paciente.html";
+                }, 1500);
+            } catch (error) {
+                console.error('Erro no login:', error);
+                showPopup("Erro ao fazer login. Tente novamente.");
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                btn.style.opacity = "1";
+                btn.style.cursor = "pointer";
+            }
         });
     }
 });

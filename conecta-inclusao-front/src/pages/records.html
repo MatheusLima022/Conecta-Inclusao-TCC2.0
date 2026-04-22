@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prontuários - Conecta Inclusão</title>
+    <link rel="stylesheet" href="../assets/css/records.css">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+<body>
+    <div class="records-container">
+        <aside class="sidebar">
+            <div class="logo-section">
+                <i class="ph ph-stethoscope"></i>
+                <span>Conecta Inclusão</span>
+            </div>
+            <nav>
+                <a href="dashboard-medico.html"><i class="ph ph-arrow-left"></i> Voltar ao Dashboard</a>
+                <a href="#" class="active"><i class="ph ph-file-text"></i> Prontuários</a>
+                <a href="#"><i class="ph ph-search"></i> Buscar Paciente</a>
+                <a href="#"><i class="ph ph-download"></i> Exportar</a>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="lndex.html" class="logout"><i class="ph ph-sign-out"></i> Sair</a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <h1><i class="ph ph-file-text"></i> Prontuários dos Pacientes</h1>
+                <div class="user-profile">
+                    <div class="user-info">
+                        <strong id="professionalName">Dr. Nome</strong>
+                        <span id="professionalRegistry">CRM</span>
+                    </div>
+                    <img id="professionalAvatar" src="https://ui-avatars.com/api/?name=Nome&background=0073e6&color=fff" alt="Avatar">
+                </div>
+            </header>
+
+            <div class="filters-section">
+                <input type="text" id="searchInput" placeholder="Buscar por nome do paciente ou CPF..." class="search-input">
+                <select id="filterStatus" class="filter-select">
+                    <option value="">Todos os Status</option>
+                    <option value="ativo">Ativo</option>
+                    <option value="pendente">Pendente</option>
+                    <option value="concluido">Concluído</option>
+                </select>
+            </div>
+
+            <section class="records-section">
+                <div class="section-header">
+                    <h2>Prontuários Registrados</h2>
+                    <button class="btn-new-record" id="newRecordBtn">
+                        <i class="ph ph-plus"></i> Novo Prontuário
+                    </button>
+                </div>
+
+                <div class="records-grid" id="recordsGrid">
+                    <!-- Records will be loaded here -->
+                    <div class="loading-state">
+                        <i class="ph ph-spinner"></i>
+                        <p>Carregando prontuários...</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal para novo prontuário -->
+    <div id="recordModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Novo Prontuário</h2>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+            <form id="recordForm" class="record-form">
+                <div class="form-group">
+                    <label for="patientCPF">CPF do Paciente</label>
+                    <input type="text" id="patientCPF" name="patientCPF" placeholder="000.000.000-00" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="patientName">Nome do Paciente</label>
+                    <input type="text" id="patientName" name="patientName" placeholder="Nome completo" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="diagnosis">Diagnóstico</label>
+                    <textarea id="diagnosis" name="diagnosis" placeholder="Digite o diagnóstico..." required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="treatment">Tratamento Indicado</label>
+                    <textarea id="treatment" name="treatment" placeholder="Descreva o tratamento..." required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="notes">Observações</label>
+                    <textarea id="notes" name="notes" placeholder="Notas adicionais..."></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel" id="cancelBtn">Cancelar</button>
+                    <button type="submit" class="btn-submit">Salvar Prontuário</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../assets/js/api.js"></script>
+    <script src="../assets/js/records.js"></script>
+</body>
+</html>

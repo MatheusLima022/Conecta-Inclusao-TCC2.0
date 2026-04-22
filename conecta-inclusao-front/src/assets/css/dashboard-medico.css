@@ -125,6 +125,7 @@ body {
 .blue { background: #e0f0ff; color: #0073e6; }
 .green { background: #dcfce7; color: #16a34a; }
 .orange { background: #fff7ed; color: #ea580c; }
+.purple { background: #ede9fe; color: #7c3aed; }
 
 /* Table */
 .appointments-section {
@@ -313,4 +314,22 @@ body {
     .user-info span {
         font-size: 11px;
     }
+}
+
+/* Card de Prontuários */
+.records-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.records-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px -2px rgba(124, 58, 237, 0.15);
+    border-color: #7c3aed;
+    background: linear-gradient(135deg, #ffffff 0%, #faf5ff 100%);
+}
+
+.records-card:active {
+    transform: translateY(-2px);
 }

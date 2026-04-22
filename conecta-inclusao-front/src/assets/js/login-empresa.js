@@ -34,6 +34,15 @@ function formatCnpjDigits(value) {
     return value.replace(/\D/g, '').slice(0, 14);
 }
 
+// Importa o módulo API
+let api;
+async function loadAPI() {
+    if (!api) {
+        api = await import('./api.js');
+    }
+    return api;
+}
+
 function formatCnpjDisplay(value) {
     let v = value.replace(/\D/g, '');
     v = v.replace(/(\d{2})(\d)/, '$1.$2');
@@ -136,33 +145,39 @@ document.addEventListener('DOMContentLoaded', function() {
             setLoginButtonLoading(btn, true);
 
             try {
-                const companyData = await fetchCnpjData(cnpjDigits);
-                const storedData = JSON.parse(localStorage.getItem(`empresa_${cnpjDigits}`) || '{}');
-                const fantasyName = storedData.fantasyName || companyData.fantasia || companyData.nome || 'Empresa';
-                const cnpjFormatted = formatCnpjDisplay(companyData.cnpj || cnpjDigits);
+                // Carrega o módulo API
+                const apiModule = await loadAPI();
+                
+                // Tenta fazer login com o CNPJ
+                const loginResult = await apiModule.loginUniversal(cnpjDigits, password);
+                
+                if (!loginResult.ok) {
+                    showPopup(loginResult.error || "Credenciais inválidas.");
+                    setLoginButtonLoading(btn, false);
+                    return;
+                }
+
+                // Busca dados adicionais da empresa via API Brasil (opcional)
+                const cnpjDataResult = await apiModule.fetchCnpjData(cnpjDigits);
+                
+                // Armazena dados da empresa em sessionStorage
+                const fantasyName = cnpjDataResult.ok ? cnpjDataResult.data.fantasia : 'Empresa';
+                const razaoSocial = cnpjDataResult.ok ? cnpjDataResult.data.nome : '';
+                
                 sessionStorage.setItem('empresaNomeFantasia', fantasyName);
-                sessionStorage.setItem('empresaCnpj', cnpjFormatted);
-                sessionStorage.setItem('empresaRazaoSocial', companyData.nome || storedData.legalName || '');
+                sessionStorage.setItem('empresaCnpj', formatCnpjDisplay(cnpjDigits));
+                sessionStorage.setItem('empresaRazaoSocial', razaoSocial);
+                sessionStorage.setItem('userId', loginResult.user.id);
+                sessionStorage.setItem('userProfile', loginResult.user.profile);
+                
                 showPopup("Empresa validada com sucesso! Entrando...");
                 setTimeout(() => {
                     window.location.href = "dashboard-empresa.html";
                 }, 800);
             } catch (error) {
-                const storedData = JSON.parse(localStorage.getItem(`empresa_${cnpjDigits}`) || '{}');
-                if (storedData.fantasyName) {
-                    const fantasyName = storedData.fantasyName;
-                    const cnpjFormatted = formatCnpjDisplay(cnpjDigits);
-                    sessionStorage.setItem('empresaNomeFantasia', fantasyName);
-                    sessionStorage.setItem('empresaCnpj', cnpjFormatted);
-                    sessionStorage.setItem('empresaRazaoSocial', storedData.legalName || '');
-                    showPopup("Empresa validada com sucesso! Entrando...");
-                    setTimeout(() => {
-                        window.location.href = "dashboard-empresa.html";
-                    }, 800);
-                } else {
-                    showPopup("Não foi possível verificar este CNPJ. Verifique os dados e tente novamente.");
-                    setLoginButtonLoading(btn, false);
-                }
+                console.error('Erro no login:', error);
+                showPopup("Erro ao fazer login. Tente novamente.");
+                setLoginButtonLoading(btn, false);
             }
         });
     }

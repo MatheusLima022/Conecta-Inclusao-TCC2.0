@@ -1,6 +1,9 @@
 // Rotas avançadas de autenticação com suporte a CRM, CNPJ e CPF
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import { pool } from "../db.js";
 import { 
   universalLoginSchema,
   registerPatientSchema,
@@ -238,6 +241,107 @@ router.post("/register/professional", registerLimiter, async (req, res, next) =>
     return res.status(201).json(result);
   } catch (err) {
     next(err);
+  }
+});
+
+/**
+ * POST /auth/records/authenticate
+ * Autentica um profissional para acesso aos prontuários
+ * Requer CNPJ da clínica, CRM do profissional e senha
+ * 
+ * Body:
+ * {
+ *   "cnpj": "12345678000190",
+ *   "crm": "ABC1234",
+ *   "password": "senha123"
+ * }
+ */
+router.post("/records/authenticate", loginLimiter, async (req, res, next) => {
+  try {
+    const { cnpj, crm, password } = req.body;
+    
+    if (!cnpj || !crm || !password) {
+      return res.status(400).json({ 
+        message: "CNPJ, CRM e senha são obrigatórios"
+      });
+    }
+
+    // Validar e normalizar CNPJ
+    const cleanCNPJ = cnpj.replace(/\D/g, '');
+    if (cleanCNPJ.length !== 14) {
+      return res.status(400).json({ 
+        message: "CNPJ inválido"
+      });
+    }
+
+    // Validar e normalizar CRM
+    const normalizedCRM = crm.trim().toUpperCase();
+    if (normalizedCRM.length < 4) {
+      return res.status(400).json({ 
+        message: "CRM inválido"
+      });
+    }
+
+    // Verificar se existe um usuário com esse CRM e senha
+    const [doctorRows] = await pool.execute(
+      `SELECT u.id, u.name, u.email, u.password_hash, u.profile, u.status, m.crm, c.cnpj
+       FROM users u
+       INNER JOIN medicos m ON u.id = m.usuario_id
+       INNER JOIN clinicas c ON m.clinica_id = c.id
+       WHERE m.crm = ? AND c.cnpj = ? AND u.profile = 'medico' LIMIT 1`,
+      [normalizedCRM, cleanCNPJ]
+    );
+
+    if (doctorRows.length === 0) {
+      return res.status(401).json({ 
+        message: "Credenciais inválidas. Verifique CNPJ, CRM e tente novamente."
+      });
+    }
+
+    const doctor = doctorRows[0];
+
+    // Verificar status do usuário
+    if (doctor.status !== 'ativo') {
+      return res.status(403).json({ 
+        message: "Sua conta está desativada. Entre em contato com o administrador."
+      });
+    }
+
+    // Validar senha
+    const passwordMatch = await bcrypt.compare(password, doctor.password_hash);
+    if (!passwordMatch) {
+      return res.status(401).json({ 
+        message: "Credenciais inválidas. Verifique CNPJ, CRM e tente novamente."
+      });
+    }
+
+    // Gerar token JWT para a sessão
+    const token = jwt.sign(
+      {
+        userId: doctor.id,
+        crm: doctor.crm,
+        cnpj: doctor.cnpj,
+        type: 'records_access'
+      },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '4h' }
+    );
+
+    return res.status(200).json({
+      message: "Autenticado com sucesso",
+      token: token,
+      user: {
+        name: doctor.name,
+        crm: doctor.crm,
+        profile: doctor.profile
+      }
+    });
+
+  } catch (error) {
+    console.error("Erro em /auth/records/authenticate:", error);
+    return res.status(500).json({ 
+      message: "Erro interno do servidor"
+    });
   }
 });
 

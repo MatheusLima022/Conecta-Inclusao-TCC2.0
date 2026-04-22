@@ -1,3 +1,14 @@
+// Importa o módulo API (compatível com navegadores modernos)
+let api;
+
+// Carrega a API dinamicamente
+async function loadAPI() {
+    if (!api) {
+        api = await import('./api.js');
+    }
+    return api;
+}
+
 function applyMask(input, maskFn) {
     input.addEventListener('input', function(event) {
         event.target.value = maskFn(event.target.value);
@@ -78,7 +89,7 @@ function validateCompanyForm() {
     return true;
 }
 
-function handleCompanyRegistration(event) {
+async function handleCompanyRegistration(event) {
     event.preventDefault();
     const submitButton = document.querySelector('.btn-register');
 
@@ -127,35 +138,67 @@ function handleCompanyRegistration(event) {
         return;
     }
 
-    showPopup('Deseja confirmar o cadastro da empresa para validação?', 'confirm').then(confirmed => {
+    showPopup('Deseja confirmar o cadastro da empresa para validação?', 'confirm').then(async confirmed => {
         if (!confirmed) return;
-
-        const cnpjDigits = cnpj.replace(/\D/g, '');
-        const companyData = {
-            fantasyName: companyName,
-            legalName: companyLegalName,
-            email: email,
-            phone: phone,
-            contact: contact,
-            role: role,
-            branch: branch,
-            address: address,
-            city: city,
-            state: state,
-            zip: zip
-        };
-        localStorage.setItem(`empresa_${cnpjDigits}`, JSON.stringify(companyData));
 
         submitButton.disabled = true;
         submitButton.innerHTML = '<i class="ph ph-circle-notch-bold" style="animation: spin 1s linear infinite;"></i> Cadastrando...';
 
-        setTimeout(() => {
-            showPopup('Cadastro enviado com sucesso! Agora você pode aguardar a validação e acessar pelo login da empresa.');
+        try {
+            // Carrega o módulo API
+            const apiModule = await loadAPI();
+            
+            const cnpjDigits = cnpj.replace(/\D/g, '');
+            const result = await apiModule.registerClinic(
+                cnpjDigits,
+                password,
+                companyName,
+                companyLegalName,
+                address,
+                city,
+                state,
+                zip.replace(/\D/g, ''),
+                phone,
+                contact
+            );
+
+            if (!result.ok) {
+                showPopup(`Erro ao registrar: ${result.error}`);
+                submitButton.disabled = false;
+                submitButton.innerText = 'Criar Conta';
+                return;
+            }
+
+            // Armazena no localStorage para compatibilidade
+            const companyData = {
+                fantasyName: companyName,
+                legalName: companyLegalName,
+                email: email,
+                phone: phone,
+                contact: contact,
+                role: role,
+                branch: branch,
+                address: address,
+                city: city,
+                state: state,
+                zip: zip
+            };
+            localStorage.setItem(`empresa_${cnpjDigits}`, JSON.stringify(companyData));
+
+            showPopup('Cadastro enviado com sucesso! Agora você pode acessar pelo login da empresa.');
             submitButton.disabled = false;
             submitButton.innerText = 'Criar Conta';
             document.getElementById('registerCompanyForm').reset();
-            window.location.href = 'login-empresa.html';
-        }, 1500);
+            
+            setTimeout(() => {
+                window.location.href = 'login-empresa.html';
+            }, 1500);
+        } catch (error) {
+            console.error('Erro ao registrar empresa:', error);
+            showPopup(`Erro: ${error.message}`);
+            submitButton.disabled = false;
+            submitButton.innerText = 'Criar Conta';
+        }
     });
 }
 

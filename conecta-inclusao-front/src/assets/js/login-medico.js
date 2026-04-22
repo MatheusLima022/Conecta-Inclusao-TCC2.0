@@ -43,6 +43,15 @@ function formatRegistry(value) {
     return v;
 }
 
+// Importa o módulo API
+let api;
+async function loadAPI() {
+    if (!api) {
+        api = await import('./api.js');
+    }
+    return api;
+}
+
 // Fechar modal ao clicar fora dele
 document.addEventListener('DOMContentLoaded', function() {
     const modal = document.getElementById('forgotPasswordModal');
@@ -77,7 +86,7 @@ document.head.appendChild(style);
 document.addEventListener('DOMContentLoaded', function() {
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
-        loginForm.addEventListener('submit', function(event) {
+        loginForm.addEventListener('submit', async function(event) {
             event.preventDefault();
 
             const registry = document.getElementById('crm').value.trim();
@@ -88,30 +97,52 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            const registryNormalized = registry.replace(/[\s-]/g, '').toUpperCase();
-            const professionals = JSON.parse(localStorage.getItem('profissionais') || '[]');
-            const professional = professionals.find(p => p.registry.replace(/[\s-]/g, '').toUpperCase() === registryNormalized && p.password === password);
-
-            if (!professional) {
-                showPopup('Registro ou senha incorretos.');
-                return;
-            }
-
-            // Efeito visual no botão
             const btn = document.querySelector('.btn-login');
             btn.innerHTML = '<i class="ph ph-circle-notch-bold" style="animation: spin 1s linear infinite;"></i> Autenticando...';
             btn.style.opacity = "0.7";
             btn.disabled = true;
 
-            // Store in sessionStorage
-            sessionStorage.setItem('professionalName', professional.name);
-            sessionStorage.setItem('professionalRegistry', formatRegistry(professional.registry));
-            sessionStorage.setItem('professionalUnit', professional.unit || 'Unidade não definida');
+            try {
+                // Carrega o módulo API
+                const apiModule = await loadAPI();
+                
+                // Tenta fazer login com o CRM
+                const loginResult = await apiModule.loginUniversal(registry, password);
+                
+                if (!loginResult.ok) {
+                    showPopup(loginResult.error || "CRM ou senha incorretos.");
+                    btn.innerHTML = 'Acessar como Médico';
+                    btn.style.opacity = "1";
+                    btn.disabled = false;
+                    return;
+                }
 
-            setTimeout(() => {
+                // Verifica se é um perfil de médico
+                if (loginResult.user.profile !== 'medico') {
+                    showPopup("Você não tem permissão de médico.");
+                    btn.innerHTML = 'Acessar como Médico';
+                    btn.style.opacity = "1";
+                    btn.disabled = false;
+                    return;
+                }
+
+                // Armazena dados do médico em sessionStorage
+                sessionStorage.setItem('professionalName', loginResult.user.name);
+                sessionStorage.setItem('professionalRegistry', formatRegistry(registry));
+                sessionStorage.setItem('userId', loginResult.user.id);
+                sessionStorage.setItem('userProfile', 'medico');
+
                 showPopup("Acesso autorizado! Redirecionando para o painel...");
-                window.location.href = "dashboard-medico.html";
-            }, 1500);
+                setTimeout(() => {
+                    window.location.href = "dashboard-medico.html";
+                }, 1500);
+            } catch (error) {
+                console.error('Erro no login:', error);
+                showPopup("Erro ao fazer login. Tente novamente.");
+                btn.innerHTML = 'Acessar como Médico';
+                btn.style.opacity = "1";
+                btn.disabled = false;
+            }
         });
     }
 });
