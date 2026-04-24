@@ -9,6 +9,7 @@ import rateLimit from "express-rate-limit";
 // Importa as rotas de autenticação definidas no arquivo auth.routes.js 
 import authRoutes from "./routes/auth.routes.js"; 
 import authAdvancedRoutes from "./routes/auth.advanced.routes.js";
+import messageRoutes from "./routes/messages.routes.js";
 
 // Exporta como named export para ser usada em outros arquivos (como server.js) 
 export const app = express(); 
@@ -61,6 +62,7 @@ app.use("/api/auth", authRoutes);
 // Registra as rotas de autenticação avançada sob o prefixo "/auth"
 // Endpoints: /auth/login/universal, /auth/register/patient, /auth/register/doctor, /auth/register/clinic
 app.use("/auth", authAdvancedRoutes); 
+app.use("/messages", messageRoutes);
 // ============================================ 
 // ENDPOINT DE HEALTH CHECK 
 // ============================================ 
