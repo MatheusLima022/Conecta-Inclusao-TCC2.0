@@ -246,3 +246,12 @@ function loadPatientsData() {
         </tr>
     `).join('');
 }
+
+async function handleLogout() {
+    const result = await showPopup('Deseja realmente sair?', 'confirm');
+    if (result) {
+        window.location.href = 'login-medico.html';
+    }
+}
+
+window.handleLogout = handleLogout;

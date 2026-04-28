@@ -23,6 +23,11 @@ body {
     display: flex;
     flex-direction: column;
     padding: 30px 20px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    overflow-y: auto;
 }
 
 .logo-section {
@@ -61,12 +66,28 @@ body {
     padding-top: 20px;
 }
 
-.logout { color: #ef4444 !important; }
+.btn-logout {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: #ef4444;
+    background: none;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.3s ease;
+}
+
+.btn-logout:hover {
+    color: #dc2626;
+}
 
 /* Main Content */
 .main-content {
     flex-grow: 1;
     padding: 30px;
+    margin-left: 260px;
 }
 
 .top-bar {
