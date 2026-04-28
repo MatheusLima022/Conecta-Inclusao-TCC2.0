@@ -1,11 +1,32 @@
 function showPopup(message, type = 'info') {
     return new Promise((resolve) => {
-        // Create modal
+        if (window.__activePopupState?.modal?.parentNode) {
+            window.__activePopupState.modal.parentNode.removeChild(window.__activePopupState.modal);
+            window.__activePopupState.resolve(window.__activePopupState.type === 'confirm' ? false : undefined);
+        }
+
         const modal = document.createElement('div');
         modal.className = 'popup-modal';
         document.body.appendChild(modal);
 
-        // Common styles
+        const cleanup = (result) => {
+            if (modal.parentNode) {
+                modal.parentNode.removeChild(modal);
+            }
+
+            if (window.__activePopupState?.modal === modal) {
+                window.__activePopupState = null;
+            }
+
+            resolve(result);
+        };
+
+        window.__activePopupState = {
+            modal,
+            resolve,
+            type
+        };
+
         modal.style.position = 'fixed';
         modal.style.top = '0';
         modal.style.left = '0';
@@ -56,15 +77,9 @@ function showPopup(message, type = 'info') {
             noBtn.style.cursor = 'pointer';
             content.appendChild(noBtn);
 
-            yesBtn.addEventListener('click', () => {
-                document.body.removeChild(modal);
-                resolve(true);
-            });
+            yesBtn.addEventListener('click', () => cleanup(true));
 
-            noBtn.addEventListener('click', () => {
-                document.body.removeChild(modal);
-                resolve(false);
-            });
+            noBtn.addEventListener('click', () => cleanup(false));
         } else {
             const closeBtn = document.createElement('button');
             closeBtn.className = 'popup-close';
@@ -78,10 +93,7 @@ function showPopup(message, type = 'info') {
             closeBtn.style.cursor = 'pointer';
             content.appendChild(closeBtn);
 
-            closeBtn.addEventListener('click', () => {
-                document.body.removeChild(modal);
-                resolve();
-            });
+            closeBtn.addEventListener('click', () => cleanup());
         }
     });
 }

@@ -63,13 +63,18 @@ CREATE TABLE medicos (
 -- 6. Tabela de Agendamentos (Consultas)
 CREATE TABLE agendamentos (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    clinica_id INT NOT NULL,
     paciente_id INT NOT NULL,
-    medico_id INT NOT NULL,
-    data_hora DATETIME NOT NULL,
-    status ENUM('pendente', 'confirmado', 'cancelado', 'realizado') DEFAULT 'pendente',
+    profissional_id INT NOT NULL,
+    data_agendamento DATETIME NOT NULL,
+    especialidade VARCHAR(100),
+    tipo_consulta ENUM('presencial', 'online', 'telefone') DEFAULT 'presencial',
+    observacoes TEXT,
+    status ENUM('confirmado', 'aguardando', 'cancelado', 'realizado', 'faltou') DEFAULT 'aguardando',
     link_reuniao VARCHAR(255), -- Para a consulta online
+    FOREIGN KEY (clinica_id) REFERENCES clinicas(id) ON DELETE CASCADE,
     FOREIGN KEY (paciente_id) REFERENCES pacientes(id) ON DELETE CASCADE,
-    FOREIGN KEY (medico_id) REFERENCES medicos(id) ON DELETE CASCADE
+    FOREIGN KEY (profissional_id) REFERENCES medicos(id) ON DELETE CASCADE
 );
 
 -- 7. Tabela de Relatórios Médicos (Histórico e Registros)

@@ -1,4 +1,3 @@
-// ===== FUNÇÕES DO MODAL ESQUECEU A SENHA =====
 function openForgotPasswordModal(event) {
     event.preventDefault();
     document.getElementById('forgotPasswordModal').style.display = 'flex';
@@ -11,23 +10,24 @@ function closeForgotPasswordModal() {
 }
 
 function sendResetEmail(type) {
-    const email = document.getElementById('forgotEmail').value;
+    const email = document.getElementById('forgotEmail').value.trim();
 
     if (!email || email.length < 7) {
-        showPopup("Por favor, digite um Registro válido.");
+        showPopup('Por favor, digite um Registro valido.');
         return;
     }
 
     const btn = document.querySelector('#forgotPasswordModal .forgot-btn');
     if (!btn) return;
+
     btn.disabled = true;
     btn.innerHTML = '<i class="ph ph-circle-notch-bold" style="animation: spin 1s linear infinite;"></i> Enviando...';
 
     setTimeout(() => {
-        showPopup(`Um link de recuperação foi enviado para o e-mail cadastrado no Registro: ${email}. Verifique sua caixa de entrada.`);
+        showPopup(`Um link de recuperacao foi enviado para o e-mail cadastrado no Registro: ${email}. Verifique sua caixa de entrada.`);
         closeForgotPasswordModal();
         btn.disabled = false;
-        btn.innerHTML = 'Enviar Link de Recuperação';
+        btn.innerHTML = 'Enviar Link de Recuperacao';
     }, 1500);
 }
 
@@ -49,21 +49,24 @@ async function loginMedicoAPI(identifier, password) {
         const response = await fetch('http://localhost:3000/auth/login/universal', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({ identifier, password })
         });
         const result = await response.json();
         return { ok: response.ok, data: result };
     } catch (error) {
-        console.error('Erro na requisição:', error);
-        return { ok: false, data: { message: 'Erro de conexão' } };
+        console.error('Erro na requisicao:', error);
+        return { ok: false, data: { message: 'Erro de conexao' } };
     }
 }
 
-// Fechar modal ao clicar fora dele
 document.addEventListener('DOMContentLoaded', function() {
     const modal = document.getElementById('forgotPasswordModal');
+    const forgotInput = document.getElementById('forgotEmail');
+    const registryInput = document.getElementById('crm');
+    const loginForm = document.getElementById('loginForm');
+
     if (modal) {
         modal.addEventListener('click', function(event) {
             if (event.target === modal) {
@@ -72,36 +75,28 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Máscara para o registro
-    const registryInput = document.getElementById('crm');
+    if (forgotInput) {
+        forgotInput.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                sendResetEmail('crm');
+            }
+        });
+    }
+
     if (registryInput) {
-        // Pré-preencher CRM se vindo do cadastro
         const lastCRM = localStorage.getItem('lastCRM');
         if (lastCRM) {
             registryInput.value = lastCRM;
-            localStorage.removeItem('lastCRM'); // Limpar após usar
+            localStorage.removeItem('lastCRM');
             localStorage.removeItem('lastRegisteredCRM');
         }
-        
-        registryInput.addEventListener('input', function(e) {
-            e.target.value = formatRegistry(e.target.value);
+
+        registryInput.addEventListener('input', function(event) {
+            event.target.value = formatRegistry(event.target.value);
         });
     }
-});
 
-// CSS para animação
-const style = document.createElement('style');
-style.innerHTML = `
-    @keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-    }
-`;
-document.head.appendChild(style);
-
-// Form de login
-document.addEventListener('DOMContentLoaded', function() {
-    const loginForm = document.getElementById('loginForm');
     if (loginForm) {
         loginForm.addEventListener('submit', async function(event) {
             event.preventDefault();
@@ -115,35 +110,35 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const registryNormalized = registry.replace(/[\s-]/g, '').toUpperCase();
-
-            // Efeito visual no botão
             const btn = document.querySelector('.btn-login');
+
             btn.innerHTML = '<i class="ph ph-circle-notch-bold" style="animation: spin 1s linear infinite;"></i> Autenticando...';
-            btn.style.opacity = "0.7";
+            btn.style.opacity = '0.7';
             btn.disabled = true;
 
             const result = await loginMedicoAPI(registryNormalized, password);
 
             if (result.ok) {
-                // Salvar token e dados
                 localStorage.setItem('token', result.data.token);
-                localStorage.setItem('user', JSON.stringify(result.data.user));
-
-                // Store in sessionStorage
-                sessionStorage.setItem('professionalName', result.data.user.name);
-                sessionStorage.setItem('professionalRegistry', formatRegistry(registryNormalized));
-                sessionStorage.setItem('professionalUnit', result.data.user.unit || 'Unidade não definida');
-
-                showPopup("Acesso autorizado! Redirecionando para o painel...");
+                showPopup('Acesso autorizado! Redirecionando para o painel...');
                 setTimeout(() => {
-                    window.location.href = "dashboard-medico.html";
+                    window.location.href = 'dashboard-medico.html';
                 }, 800);
             } else {
-                showPopup(result.data.message || "Registro ou senha incorretos.");
-                btn.innerHTML = 'Acessar como Médico';
-                btn.style.opacity = "";
+                showPopup(result.data.message || 'Registro ou senha incorretos.');
+                btn.innerHTML = 'Acessar como Medico';
+                btn.style.opacity = '';
                 btn.disabled = false;
             }
         });
     }
 });
+
+const style = document.createElement('style');
+style.innerHTML = `
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+`;
+document.head.appendChild(style);

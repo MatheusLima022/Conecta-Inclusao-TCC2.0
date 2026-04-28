@@ -11,6 +11,7 @@ import authRoutes from "./routes/auth.routes.js";
 import authAdvancedRoutes from "./routes/auth.advanced.routes.js";
 import messageRoutes from "./routes/messages.routes.js";
 import clinicaRoutes from "./routes/clinica.routes.js";
+import agendamentosRoutes from "./routes/agendamentos.routes.js";
 
 // Exporta como named export para ser usada em outros arquivos (como server.js) 
 export const app = express(); 
@@ -67,6 +68,9 @@ app.use("/messages", messageRoutes);
 // Registra as rotas de clínicas sob o prefixo "/api/clinicas"
 // Endpoints: POST /api/clinicas/register, GET /api/clinicas, GET /api/clinicas/:id, PUT /api/clinicas/:id
 app.use("/api/clinicas", clinicaRoutes);
+// Registra as rotas de agendamentos sob o prefixo "/api/agendamentos"
+// Endpoints: POST /api/agendamentos, GET /api/agendamentos/clinica/:id, GET /api/agendamentos/profissional/:id, PUT /api/agendamentos/:id/status
+app.use("/api/agendamentos", agendamentosRoutes);
 // ============================================ 
 // ENDPOINT DE HEALTH CHECK 
 // ============================================ 

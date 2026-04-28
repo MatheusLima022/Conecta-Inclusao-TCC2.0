@@ -1,6 +1,35 @@
 const PROFESSIONALS_STORAGE_KEY = 'companyProfessionals';
 const PATIENT_MESSAGES_STORAGE_KEY = 'patientProfessionalMessages';
 let activeChatContactKey = '';
+let currentUser = null;
+
+async function loadUserInfo() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = 'login-paciente.html';
+        return;
+    }
+
+    try {
+        const response = await fetch('http://localhost:3000/auth/me', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        const result = await response.json();
+
+        if (response.ok) {
+            currentUser = result;
+        } else {
+            localStorage.removeItem('token');
+            window.location.href = 'login-paciente.html';
+        }
+    } catch (error) {
+        console.error('Erro ao carregar informações do usuário:', error);
+        localStorage.removeItem('token');
+        window.location.href = 'login-paciente.html';
+    }
+}
 
 function openModal() {
     populateProfessionalOptions();
@@ -124,8 +153,7 @@ function getAppointmentData() {
 }
 
 function getPatientName() {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    return user.name || 'Paciente';
+    return currentUser ? currentUser.name : 'Paciente';
 }
 
 function loadStoredConversations() {
@@ -423,6 +451,7 @@ function refreshDashboard() {
 async function handleLogout() {
     const result = await showPopup('Deseja realmente sair?', 'confirm');
     if (result) {
+        localStorage.removeItem('token');
         window.location.href = 'login-paciente.html';
     }
 }
@@ -476,7 +505,8 @@ async function cancelAppointment(button) {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadUserInfo();
     const navButtons = document.querySelectorAll('.nav-link');
     navButtons.forEach(button => {
         button.addEventListener('click', () => switchTab(button.dataset.tab));
@@ -573,12 +603,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Carregar dados do paciente
     function loadPatientData() {
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        const cpf = localStorage.getItem('patientCPF') || '';
+        const user = currentUser;
+        const cpf = user ? user.cpf : '';
         
         // Atualizar nome do paciente
         const profilePatientName = document.getElementById('profilePatientName');
-        if (profilePatientName && user.name) {
+        if (profilePatientName && user && user.name) {
             profilePatientName.textContent = user.name;
         }
         
