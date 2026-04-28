@@ -148,3 +148,101 @@ document.addEventListener('DOMContentLoaded', () => {
     // 5. Notificação Simples ao Carregar
     console.log("Dashboard Médico carregado. Bem-vindo, Dr. Ricardo.");
 });
+
+// ===== FUNÇÕES PARA AGENDA E PACIENTES =====
+
+// Função para mostrar a página inicial
+function showHome(event) {
+    event.preventDefault();
+    updateSidebarActive(event.target.closest('a'));
+    
+    // Esconder todas as seções específicas
+    document.getElementById('agendaSection').style.display = 'none';
+    document.getElementById('pacientesSection').style.display = 'none';
+}
+
+// Função para abrir a agenda médica
+function openAgendaMedica(event) {
+    if (event) {
+        event.preventDefault();
+        updateSidebarActive(event.target.closest('a'));
+    }
+    
+    showSection('agenda');
+    loadAgendaData();
+}
+
+// Função para toggle da lista de pacientes
+function togglePatientsList(event) {
+    if (event) {
+        event.preventDefault();
+        updateSidebarActive(event.target.closest('a'));
+    }
+    
+    showSection('pacientes');
+    loadPatientsData();
+}
+
+// Função para mostrar/esconder seções
+function showSection(section) {
+    // Esconder todas
+    document.getElementById('agendaSection').style.display = 'none';
+    document.getElementById('pacientesSection').style.display = 'none';
+    
+    // Mostrar a selecionada
+    if (section === 'agenda') {
+        document.getElementById('agendaSection').style.display = 'block';
+    } else if (section === 'pacientes') {
+        document.getElementById('pacientesSection').style.display = 'block';
+    }
+}
+
+// Função para atualizar o link ativo no sidebar
+function updateSidebarActive(element) {
+    document.querySelectorAll('.sidebar nav a').forEach(a => a.classList.remove('active'));
+    if (element) element.classList.add('active');
+}
+
+// Função para carregar dados da agenda
+function loadAgendaData() {
+    const agendaContent = document.querySelector('.appointments-table tbody');
+    if (!agendaContent) return;
+    
+    // Os dados já estão na tabela, então não precisa fazer nada
+    console.log("Agenda carregada");
+}
+
+// Dados de pacientes
+const patientsData = [
+    { name: 'Ana Maria Oliveira', cpf: '123.456.789-00', phone: '(11) 98765-4321', status: 'Ativo', lastConsultation: '12/04/2026' },
+    { name: 'Carlos Eduardo Souza', cpf: '987.654.321-00', phone: '(11) 99876-5432', status: 'Ativo', lastConsultation: '15/04/2026' },
+    { name: 'Juliana Mendes', cpf: '456.789.123-00', phone: '(11) 97654-3210', status: 'Ativo', lastConsultation: '10/04/2026' },
+    { name: 'Pedro Gomes Silva', cpf: '789.123.456-00', phone: '(11) 96543-2109', status: 'Ativo', lastConsultation: '08/04/2026' },
+    { name: 'Mariana Costa', cpf: '321.654.987-00', phone: '(11) 95432-1098', status: 'Inativo', lastConsultation: '01/03/2026' },
+    { name: 'Fernando Alves', cpf: '654.987.321-00', phone: '(11) 94321-0987', status: 'Ativo', lastConsultation: '20/04/2026' },
+    { name: 'Beatriz Ferreira', cpf: '159.357.486-00', phone: '(11) 93210-9876', status: 'Inativo', lastConsultation: '15/02/2026' },
+    { name: 'Ricardo Mendes', cpf: '753.159.486-00', phone: '(11) 92109-8765', status: 'Ativo', lastConsultation: '25/04/2026' },
+];
+
+// Função para carregar dados dos pacientes
+function loadPatientsData() {
+    const totalPatients = patientsData.length;
+    const activePatients = patientsData.filter(p => p.status === 'Ativo').length;
+    const inactivePatients = patientsData.filter(p => p.status === 'Inativo').length;
+
+    document.getElementById('totalPatients').innerText = totalPatients;
+    document.getElementById('activePatients').innerText = activePatients;
+    document.getElementById('inactivePatients').innerText = inactivePatients;
+
+    const tableBody = document.getElementById('patientsTableBody');
+    tableBody.innerHTML = patientsData.map(patient => `
+        <tr>
+            <td><strong>${patient.name}</strong></td>
+            <td>${patient.cpf}</td>
+            <td>${patient.phone}</td>
+            <td><span class="status ${patient.status === 'Ativo' ? 'confirm' : 'pending'}">${patient.status}</span></td>
+            <td>${patient.lastConsultation}</td>
+            <td><button class="btn-action-small" onclick="alert('Ver prontuário de ${patient.name}')">Ver Prontuário</button></td>
+        </tr>
+    `).join('');
+}

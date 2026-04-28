@@ -90,3 +90,18 @@ CREATE TABLE sessions (
     expires_at DATETIME NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+-- 9. Tabela de Mensagens
+-- Garante que a conversa fique vinculada a um mesmo atendimento/agendamento
+-- e possa ser validada por RBAC entre paciente e medico relacionados.
+CREATE TABLE mensagens (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    agendamento_id INT NOT NULL,
+    remetente_user_id INT NOT NULL,
+    destinatario_user_id INT NOT NULL,
+    conteudo TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (agendamento_id) REFERENCES agendamentos(id) ON DELETE CASCADE,
+    FOREIGN KEY (remetente_user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (destinatario_user_id) REFERENCES users(id) ON DELETE CASCADE
+);

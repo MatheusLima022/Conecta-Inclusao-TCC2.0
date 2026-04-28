@@ -155,6 +155,7 @@ function handleCompanyRegistration(event) {
             cnpj: cnpjDigits,
             password: password,
             name: companyName,
+            email: email,
             razaoSocial: companyLegalName,
             endereco: address,
             cidade: city,

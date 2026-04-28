@@ -15,12 +15,9 @@
                 <span>Conecta Inclusão</span>
             </div>
             <nav>
-                <a href="#" class="active"><i class="ph ph-house"></i> Início</a>
-                <a href="#"><i class="ph ph-calendar-blank"></i> Agenda</a>
-                <a href="#"><i class="ph ph-users"></i> Pacientes</a>
-                <a href="#" id="recordsNavLink" class="records-nav-link"><i class="ph ph-clipboard-text"></i> Prontuários</a>
-                <a href="#"><i class="ph ph-chart-line"></i> Relatórios</a>
-                <a href="#"><i class="ph ph-gear"></i> Configurações</a>
+                <a href="#" class="active" onclick="showHome(event)"><i class="ph ph-house"></i> Início</a>
+                <a href="#" onclick="openAgendaMedica(event)"><i class="ph ph-calendar-blank"></i> Agenda</a>
+                <a href="#" onclick="togglePatientsList(event)"><i class="ph ph-users"></i> Pacientes</a>
             </nav>
             <div class="sidebar-footer">
                 <a href="lndex.html" class="logout"><i class="ph ph-sign-out"></i> Sair</a>
@@ -70,19 +67,13 @@
                         <p>Aguardando</p>
                     </div>
                 </div>
-                <div class="card records-card" id="recordsCard">
-                    <i class="ph ph-file-text purple"></i>
-                    <div>
-                        <h3>Acessar</h3>
-                        <p>Prontuários</p>
-                    </div>
-                </div>
+               
             </div>
 
-            <section class="appointments-section">
+            <!-- Seção Agenda -->
+            <section class="appointments-section" id="agendaSection" style="display: none;">
                 <div class="section-header">
                     <h3>Próximos Atendimentos</h3>
-                    <button class="btn-primary">Ver Agenda Completa</button>
                 </div>
                 <table class="appointments-table">
                     <thead>
@@ -118,6 +109,67 @@
                         </tr>
                     </tbody>
                 </table>
+            </section>
+
+            <!-- Seção Pacientes -->
+            <section class="patients-section" id="pacientesSection" style="display: none;">
+                <div class="section-header">
+                    <h3>Meus Pacientes</h3>
+                </div>
+                <div id="patientsList" class="patients-list">
+                    <div class="patients-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Total de Pacientes:</span>
+                            <span class="stat-value" id="totalPatients">42</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Ativos:</span>
+                            <span class="stat-value green" id="activePatients">38</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Inativos:</span>
+                            <span class="stat-value orange" id="inactivePatients">4</span>
+                        </div>
+                    </div>
+                    <table class="patients-table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>CPF</th>
+                                <th>Telefone</th>
+                                <th>Status</th>
+                                <th>Última Consulta</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="patientsTableBody">
+                            <tr>
+                                <td><strong>Ana Maria Oliveira</strong></td>
+                                <td>123.456.789-00</td>
+                                <td>(11) 98765-4321</td>
+                                <td><span class="status confirm">Ativo</span></td>
+                                <td>12/04/2026</td>
+                                <td><button class="btn-action-small">Ver Prontuário</button></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Carlos Eduardo Souza</strong></td>
+                                <td>987.654.321-00</td>
+                                <td>(11) 99876-5432</td>
+                                <td><span class="status confirm">Ativo</span></td>
+                                <td>15/04/2026</td>
+                                <td><button class="btn-action-small">Ver Prontuário</button></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Juliana Mendes</strong></td>
+                                <td>456.789.123-00</td>
+                                <td>(11) 97654-3210</td>
+                                <td><span class="status confirm">Ativo</span></td>
+                                <td>10/04/2026</td>
+                                <td><button class="btn-action-small">Ver Prontuário</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </section>
 
             <section class="team-section">

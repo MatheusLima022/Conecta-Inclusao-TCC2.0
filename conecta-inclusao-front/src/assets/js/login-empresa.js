@@ -91,14 +91,6 @@ document.addEventListener('DOMContentLoaded', function() {
 document.addEventListener('DOMContentLoaded', function() {
     const cnpjInput = document.getElementById('cnpj');
     if (cnpjInput) {
-        // Pré-preencher CNPJ se vindo do cadastro
-        const lastCNPJ = localStorage.getItem('lastCNPJ');
-        if (lastCNPJ) {
-            cnpjInput.value = lastCNPJ;
-            localStorage.removeItem('lastCNPJ'); // Limpar após usar
-            localStorage.removeItem('lastRegisteredCNPJ');
-        }
-        
         cnpjInput.addEventListener('input', function(e) {
             let v = e.target.value.replace(/\D/g, "");
             if (v.length > 14) v = v.slice(0, 14);
@@ -140,8 +132,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const cnpj = document.getElementById('cnpj').value;
             const password = document.getElementById('password').value;
 
-            if (cnpj.length < 18 || password.length < 4) {
-                showPopup("Por favor, verifique seus dados de acesso.");
+            if (cnpj.length < 18 || password.length < 6) {
+                showPopup("Por favor, informe um CNPJ valido e uma senha com no minimo 6 caracteres.");
                 return;
             }
 

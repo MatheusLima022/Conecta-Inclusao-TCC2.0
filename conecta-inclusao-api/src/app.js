@@ -10,6 +10,7 @@ import rateLimit from "express-rate-limit";
 import authRoutes from "./routes/auth.routes.js"; 
 import authAdvancedRoutes from "./routes/auth.advanced.routes.js";
 import messageRoutes from "./routes/messages.routes.js";
+import clinicaRoutes from "./routes/clinica.routes.js";
 
 // Exporta como named export para ser usada em outros arquivos (como server.js) 
 export const app = express(); 
@@ -63,6 +64,9 @@ app.use("/api/auth", authRoutes);
 // Endpoints: /auth/login/universal, /auth/register/patient, /auth/register/doctor, /auth/register/clinic
 app.use("/auth", authAdvancedRoutes); 
 app.use("/messages", messageRoutes);
+// Registra as rotas de clínicas sob o prefixo "/api/clinicas"
+// Endpoints: POST /api/clinicas/register, GET /api/clinicas, GET /api/clinicas/:id, PUT /api/clinicas/:id
+app.use("/api/clinicas", clinicaRoutes);
 // ============================================ 
 // ENDPOINT DE HEALTH CHECK 
 // ============================================ 

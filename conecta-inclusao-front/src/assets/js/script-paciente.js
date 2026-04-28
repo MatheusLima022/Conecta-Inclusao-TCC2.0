@@ -64,14 +64,6 @@ document.addEventListener('DOMContentLoaded', function() {
 document.addEventListener('DOMContentLoaded', function() {
     const cpfInput = document.getElementById('cpf');
     if (cpfInput) {
-        // Pré-preencher CPF se vindo do cadastro
-        const lastCPF = localStorage.getItem('lastCPF');
-        if (lastCPF) {
-            cpfInput.value = lastCPF;
-            localStorage.removeItem('lastCPF'); // Limpar após usar
-            localStorage.removeItem('lastRegisteredCPF');
-        }
-        
         cpfInput.addEventListener('input', function(e) {
             let v = e.target.value.replace(/\D/g, "");
             if (v.length > 11) v = v.slice(0, 11);
@@ -114,8 +106,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const cpf = document.getElementById('cpf').value;
             const password = document.getElementById('password').value;
 
-            if (!validarCPF(cpf) || password.length < 4) {
-                showPopup("Por favor, verifique seus dados de acesso. CPF inválido.");
+            if (cpf.length < 11 || password.length < 4) {
+                showPopup("Por favor, informe um CPF e uma senha com no mínimo 4 caracteres.");
                 return;
             }
 
@@ -132,6 +124,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Salvar token e dados
                 localStorage.setItem('token', result.data.token);
                 localStorage.setItem('user', JSON.stringify(result.data.user));
+                localStorage.setItem('patientCPF', cpfDigits);
 
                 // Redireciona para a tela
                 setTimeout(() => {
