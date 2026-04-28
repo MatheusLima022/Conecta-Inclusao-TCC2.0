@@ -19,6 +19,7 @@
                 <button class="nav-link" data-tab="appointments"><i class="ph ph-calendar-check"></i> Agendamentos</button>
                 <button class="nav-link" data-tab="search"><i class="ph ph-magnifying-glass"></i> Buscar Atendimento</button>
                 <button class="nav-link" data-tab="messages"><i class="ph ph-chat-circle-text"></i> Mensagem</button>
+                <button class="nav-link" data-tab="guardians"><i class="ph ph-users-three"></i> Responsaveis</button>
                 <button class="nav-link" data-tab="profile"><i class="ph ph-user-circle"></i> Meu Perfil</button>
             </nav>
             <div class="sidebar-footer">
@@ -216,27 +217,11 @@
                 <section class="table-card">
                     <div class="section-header">
                         <div>
-                            <h3>Resultados sugeridos</h3>
-                            <p>Locais e especialidades mais procurados a partir do seu perfil.</p>
+                            <h3>Especialidades Disponíveis</h3>
+                            <p>Profissionais e especialidades cadastrados no sistema.</p>
                         </div>
                     </div>
-                    <div class="suggestion-grid">
-                        <div class="suggestion-card">
-                            <strong>Cardiologia</strong>
-                            <span>Hospital Central</span>
-                            <p>Atendimento com equipe experiente e agenda para o proximo mes.</p>
-                        </div>
-                        <div class="suggestion-card">
-                            <strong>Clinico Geral</strong>
-                            <span>Unidade Botafogo</span>
-                            <p>Consultas de rotina e acompanhamento continuo em local de facil acesso.</p>
-                        </div>
-                        <div class="suggestion-card">
-                            <strong>Pediatria</strong>
-                            <span>Clinica Santa Maria</span>
-                            <p>Estrutura preparada para acolhimento familiar e agendamento rapido.</p>
-                        </div>
-                    </div>
+                    <div id="suggestionGrid" class="suggestion-grid"></div>
                 </section>
             </section>
 
@@ -284,6 +269,22 @@
                         </div>
                     </div>
                 </section>
+            </section>
+
+            <section class="tab-content" id="guardians">
+                <div class="section-header">
+                    <div>
+                        <h2>Responsáveis do Paciente</h2>
+                        <p>Gerencie os responsáveis autorizados a acessar informações e agendamentos do paciente.</p>
+                    </div>
+                    <button class="btn-primary" type="button" onclick="openGuardianModal()">
+                        <i class="ph ph-plus"></i> Adicionar Responsável
+                    </button>
+                </div>
+
+                <div class="guardians-container">
+                    <div id="guardiansList" class="guardians-list"></div>
+                </div>
             </section>
 
             <section class="tab-content" id="profile">
@@ -368,6 +369,73 @@
                 <div class="modal-footer">
                     <button type="button" onclick="closeModal()" class="btn-secondary">Voltar</button>
                     <button type="submit" class="btn-primary">Agendar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="guardianModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h3>Adicionar Responsável</h3>
+                    <p>Autorize uma pessoa a acessar informações e agendamentos deste paciente.</p>
+                </div>
+                <button class="modal-close" type="button" onclick="closeGuardianModal()" aria-label="Fechar modal">
+                    <i class="ph ph-x"></i>
+                </button>
+            </div>
+            <form id="formNewGuardian" class="modal-form">
+                <div class="input-group">
+                    <label for="guardianName">Nome Completo</label>
+                    <input type="text" id="guardianName" required placeholder="Digite o nome do responsável">
+                </div>
+                <div class="input-group">
+                    <label for="guardianRelationship">Parentesco/Relação</label>
+                    <select id="guardianRelationship" required>
+                        <option value="">Selecione...</option>
+                        <option value="Mae">Mãe</option>
+                        <option value="Pai">Pai</option>
+                        <option value="Avo">Avó</option>
+                        <option value="Avo">Avó</option>
+                        <option value="Irmao">Irmão</option>
+                        <option value="Irma">Irmã</option>
+                        <option value="Tutor">Tutor Legal</option>
+                        <option value="Outro">Outro</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="guardianPhone">Telefone</label>
+                    <input type="tel" id="guardianPhone" required placeholder="(00) 00000-0000">
+                </div>
+                <div class="input-group">
+                    <label for="guardianEmail">E-mail</label>
+                    <input type="email" id="guardianEmail" required placeholder="email@exemplo.com">
+                </div>
+                <div class="input-group">
+                    <label for="guardianPermissions">Permissões</label>
+                    <div class="permissions-grid">
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="permissions" value="view_appointments" checked>
+                            <span>Ver agendamentos</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="permissions" value="manage_appointments">
+                            <span>Gerenciar agendamentos</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="permissions" value="view_records" checked>
+                            <span>Ver registros médicos</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="permissions" value="send_messages">
+                            <span>Enviar mensagens</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" onclick="closeGuardianModal()" class="btn-secondary">Cancelar</button>
+                    <button type="submit" class="btn-primary">Adicionar Responsável</button>
                 </div>
             </form>
         </div>

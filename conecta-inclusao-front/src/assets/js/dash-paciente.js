@@ -1,6 +1,221 @@
 const PROFESSIONALS_STORAGE_KEY = 'companyProfessionals';
 const PATIENT_MESSAGES_STORAGE_KEY = 'patientProfessionalMessages';
+const GUARDIANS_STORAGE_KEY = 'patientGuardians';
 let activeChatContactKey = '';
+
+// Função para abrir modal de responsável
+function openGuardianModal() {
+    const modal = document.getElementById('guardianModal');
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+// Função para fechar modal de responsável
+function closeGuardianModal() {
+    const modal = document.getElementById('guardianModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    const form = document.getElementById('formNewGuardian');
+    if (form) {
+        form.reset();
+    }
+}
+
+// Carregar responsáveis do localStorage
+function loadGuardians() {
+    try {
+        const data = localStorage.getItem(GUARDIANS_STORAGE_KEY);
+        return data ? JSON.parse(data) : [];
+    } catch (error) {
+        console.error('Erro ao carregar responsáveis:', error);
+        return [];
+    }
+}
+
+// Salvar responsáveis no localStorage
+function saveGuardians(guardians) {
+    localStorage.setItem(GUARDIANS_STORAGE_KEY, JSON.stringify(guardians));
+}
+
+// Renderizar lista de responsáveis
+function renderGuardians() {
+    const guardiansList = document.getElementById('guardiansList');
+    if (!guardiansList) return;
+
+    const guardians = loadGuardians();
+
+    if (guardians.length === 0) {
+        guardiansList.innerHTML = `
+            <div class="guardians-empty">
+                <i class="ph ph-users-three"></i>
+                <p>Nenhum responsável cadastrado ainda.</p>
+            </div>
+        `;
+        return;
+    }
+
+    guardiansList.innerHTML = '';
+
+    guardians.forEach((guardian, index) => {
+        const permissionsText = (guardian.permissions || [])
+            .map(p => {
+                const permissionMap = {
+                    'view_appointments': 'Ver agendamentos',
+                    'manage_appointments': 'Gerenciar agendamentos',
+                    'view_records': 'Ver registros',
+                    'send_messages': 'Enviar mensagens'
+                };
+                return permissionMap[p] || p;
+            })
+            .join(', ');
+
+        const card = document.createElement('div');
+        card.className = 'guardian-card';
+        card.innerHTML = `
+            <div class="guardian-card-header">
+                <div class="guardian-info">
+                    <strong>${guardian.name}</strong>
+                    <span>${guardian.relationship}</span>
+                    <span>${guardian.phone}</span>
+                </div>
+                <div class="guardian-actions">
+                    <button class="btn-secondary" type="button" onclick="editGuardian(${index})">
+                        <i class="ph ph-pencil"></i>
+                    </button>
+                    <button class="btn-danger" type="button" onclick="removeGuardian(${index})">
+                        <i class="ph ph-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="guardian-details">
+                <div class="guardian-detail">
+                    <label>E-mail</label>
+                    <p>${guardian.email}</p>
+                </div>
+                <div class="guardian-detail">
+                    <label>Acesso desde</label>
+                    <p>${guardian.dateAdded || 'Hoje'}</p>
+                </div>
+            </div>
+            <div class="guardian-permissions">
+                <div class="guardian-permissions-label">Permissões concedidas:</div>
+                <div class="permissions-list">
+                    ${permissionsText ? permissionsText.split(', ').map(p => `<span class="permission-badge"><i class="ph ph-check-circle"></i>${p}</span>`).join('') : '<span style="color: #64748b;">Nenhuma permissão</span>'}
+                </div>
+            </div>
+        `;
+        guardiansList.appendChild(card);
+    });
+}
+
+// Remover responsável
+function removeGuardian(index) {
+    const guardians = loadGuardians();
+    if (index >= 0 && index < guardians.length) {
+        const guardian = guardians[index];
+        guardians.splice(index, 1);
+        saveGuardians(guardians);
+        renderGuardians();
+        showPopup(`Responsável ${guardian.name} removido com sucesso.`);
+    }
+}
+
+// Editar responsável
+function editGuardian(index) {
+    const guardians = loadGuardians();
+    if (index >= 0 && index < guardians.length) {
+        const guardian = guardians[index];
+        
+        // Preencher o formulário com os dados do responsável
+        document.getElementById('guardianName').value = guardian.name;
+        document.getElementById('guardianRelationship').value = guardian.relationship;
+        document.getElementById('guardianPhone').value = guardian.phone;
+        document.getElementById('guardianEmail').value = guardian.email;
+
+        // Selecionar as permissões
+        const checkboxes = document.querySelectorAll('input[name="permissions"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = guardian.permissions.includes(checkbox.value);
+        });
+
+        // Armazenar o índice para atualização
+        document.getElementById('formNewGuardian').dataset.editIndex = index;
+        document.querySelector('.modal-header div h3').textContent = 'Editar Responsável';
+        document.querySelector('button[type="submit"]').textContent = 'Atualizar Responsável';
+
+        openGuardianModal();
+    }
+}
+
+// Renderizar sugestões de atendimento baseadas em profissionais cadastrados
+function renderSuggestions() {
+    const suggestionGrid = document.getElementById('suggestionGrid');
+    if (!suggestionGrid) return;
+
+    const professionals = loadRegisteredProfessionals();
+    const specialtiesMap = new Map();
+
+    // Agrupar profissionais por especialidade
+    professionals.forEach(prof => {
+        if (!specialtiesMap.has(prof.role)) {
+            specialtiesMap.set(prof.role, []);
+        }
+        specialtiesMap.get(prof.role).push(prof);
+    });
+
+    // Se não há profissionais, mostrar mensagem vazia
+    if (specialtiesMap.size === 0) {
+        suggestionGrid.innerHTML = `
+            <div class="suggestion-empty">
+                <i class="ph ph-stethoscope"></i>
+                <p>Nenhum profissional cadastrado no momento.</p>
+            </div>
+        `;
+        return;
+    }
+
+    suggestionGrid.innerHTML = '';
+
+    // Renderizar cards para cada especialidade
+    let cardCount = 0;
+    specialtiesMap.forEach((professionals, specialty) => {
+        if (cardCount >= 6) return; // Limitar a 6 sugestões
+
+        const firstProf = professionals[0];
+        const countText = professionals.length > 1 ? `${professionals.length} profissionais` : '1 profissional';
+
+        const card = document.createElement('div');
+        card.className = 'suggestion-card';
+        card.innerHTML = `
+            <strong>${specialty}</strong>
+            <span>${firstProf.unit || 'Unidade não informada'}</span>
+            <p>${countText} disponível${professionals.length > 1 ? 's' : ''}. Agenda aberta para agendamentos.</p>
+            <button class="btn-schedule-suggestion" type="button" onclick="scrollToSpecialty('${specialty}')">
+                Agendar
+            </button>
+        `;
+        suggestionGrid.appendChild(card);
+        cardCount++;
+    });
+}
+
+// Função auxiliar para scroll até a especialidade
+function scrollToSpecialty(specialty) {
+    switchTab('appointments');
+    const select = document.getElementById('modalProfessional');
+    if (select) {
+        // Encontrar a opção correspondente
+        const professionals = loadRegisteredProfessionals();
+        const prof = professionals.find(p => p.role === specialty);
+        if (prof) {
+            select.value = prof.registry;
+            updateSelectedProfessionalDetails();
+            openModal();
+        }
+    }
+}
 
 function openModal() {
     populateProfessionalOptions();
@@ -418,6 +633,8 @@ function refreshDashboard() {
     renderAppointmentsState();
     renderMessageContacts();
     renderActiveConversation();
+    renderGuardians();
+    renderSuggestions();
 }
 
 async function handleLogout() {
@@ -571,6 +788,76 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const guardianModal = document.getElementById('guardianModal');
+    if (guardianModal) {
+        guardianModal.addEventListener('click', event => {
+            if (event.target === guardianModal) {
+                closeGuardianModal();
+            }
+        });
+    }
+
+    const guardianForm = document.getElementById('formNewGuardian');
+    if (guardianForm) {
+        guardianForm.addEventListener('submit', async event => {
+            event.preventDefault();
+
+            const name = document.getElementById('guardianName')?.value.trim();
+            const relationship = document.getElementById('guardianRelationship')?.value;
+            const phone = document.getElementById('guardianPhone')?.value.trim();
+            const email = document.getElementById('guardianEmail')?.value.trim();
+
+            if (!name || !relationship || !phone || !email) {
+                await showPopup('Por favor, preencha todos os campos obrigatórios.');
+                return;
+            }
+
+            const permissions = Array.from(document.querySelectorAll('input[name="permissions"]:checked'))
+                .map(checkbox => checkbox.value);
+
+            if (permissions.length === 0) {
+                await showPopup('Selecione pelo menos uma permissão.');
+                return;
+            }
+
+            const guardians = loadGuardians();
+            const editIndex = guardianForm.dataset.editIndex;
+
+            if (editIndex !== undefined && editIndex !== '') {
+                // Atualizar responsável existente
+                guardians[parseInt(editIndex)] = {
+                    name,
+                    relationship,
+                    phone,
+                    email,
+                    permissions,
+                    dateAdded: guardians[parseInt(editIndex)].dateAdded
+                };
+                await showPopup(`Responsável ${name} atualizado com sucesso.`);
+            } else {
+                // Adicionar novo responsável
+                const today = new Date().toLocaleDateString('pt-BR');
+                guardians.push({
+                    name,
+                    relationship,
+                    phone,
+                    email,
+                    permissions,
+                    dateAdded: today
+                });
+                await showPopup(`Responsável ${name} adicionado com sucesso.`);
+            }
+
+            saveGuardians(guardians);
+            guardianForm.reset();
+            delete guardianForm.dataset.editIndex;
+            document.querySelector('.modal-header div h3').textContent = 'Adicionar Responsável';
+            document.querySelector('button[type="submit"]').textContent = 'Adicionar Responsável';
+            closeGuardianModal();
+            renderGuardians();
+        });
+    }
+
     // Carregar dados do paciente
     function loadPatientData() {
         const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -608,3 +895,9 @@ window.switchTab = switchTab;
 window.handleLogout = handleLogout;
 window.filterResults = filterResults;
 window.cancelAppointment = cancelAppointment;
+window.openGuardianModal = openGuardianModal;
+window.closeGuardianModal = closeGuardianModal;
+window.removeGuardian = removeGuardian;
+window.editGuardian = editGuardian;
+window.renderGuardians = renderGuardians;
+window.scrollToSpecialty = scrollToSpecialty;

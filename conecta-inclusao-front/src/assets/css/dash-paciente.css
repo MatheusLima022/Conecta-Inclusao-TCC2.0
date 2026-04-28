@@ -673,6 +673,9 @@ body {
     border: 1px solid #dbe7f0;
     border-radius: 16px;
     padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
 .suggestion-card strong {
@@ -687,6 +690,49 @@ body {
     color: #475569;
     line-height: 1.6;
     font-size: 14px;
+    flex-grow: 1;
+}
+
+.btn-schedule-suggestion {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: 1px solid #0f4dbf;
+    background: #eef4ff;
+    color: #0f4dbf;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 8px;
+    align-self: flex-start;
+}
+
+.btn-schedule-suggestion:hover {
+    background: #0f4dbf;
+    color: #ffffff;
+}
+
+.suggestion-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 60px 20px;
+    color: #64748b;
+}
+
+.suggestion-empty i {
+    font-size: 48px;
+    color: #cbd5e1;
+    margin-bottom: 16px;
+}
+
+.suggestion-empty p {
+    font-size: 16px;
 }
 
 .profile-list {
@@ -756,6 +802,174 @@ body {
     text-align: center;
     color: #64748b;
     box-shadow: 0 18px 45px rgba(15, 77, 191, 0.06);
+}
+
+.guardians-container {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 28px;
+    box-shadow: 0 18px 45px rgba(15, 77, 191, 0.06);
+}
+
+.guardians-list {
+    display: grid;
+    gap: 20px;
+}
+
+.guardians-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: #64748b;
+}
+
+.guardians-empty i {
+    font-size: 48px;
+    color: #cbd5e1;
+    margin-bottom: 16px;
+    display: block;
+}
+
+.guardians-empty p {
+    font-size: 16px;
+}
+
+.guardian-card {
+    background: #f8fbff;
+    border: 2px solid #dbe7f0;
+    border-radius: 18px;
+    padding: 24px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.guardian-card:hover {
+    border-color: #0f4dbf;
+    box-shadow: 0 12px 24px rgba(15, 77, 191, 0.1);
+}
+
+.guardian-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.guardian-info {
+    flex-grow: 1;
+}
+
+.guardian-info strong {
+    display: block;
+    font-size: 20px;
+    color: #0f172a;
+    margin-bottom: 6px;
+}
+
+.guardian-info span {
+    display: block;
+    color: #64748b;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.guardian-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: #eef4ff;
+    color: #0f4dbf;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.guardian-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.guardian-details {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #dbe7f0;
+}
+
+.guardian-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.guardian-detail label {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.guardian-detail p {
+    font-size: 15px;
+    color: #0f172a;
+}
+
+.guardian-permissions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.guardian-permissions-label {
+    font-size: 14px;
+    color: #475569;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.permissions-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.permission-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: #e0f7eb;
+    color: #0f8a5f;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.permissions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.checkbox-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #0f4dbf;
+}
+
+.checkbox-item span {
+    color: #475569;
+    font-size: 14px;
+    user-select: none;
 }
 
 @media (max-width: 1080px) {
