@@ -5,9 +5,19 @@ import { pool } from "../db.js";
 
 const MAX = Number(process.env.MAX_LOGIN_ATTEMPTS || 3);
 const LOCK_MINUTES = Number(process.env.LOCK_MINUTES || 5);
+const TEMP_PASSWORD_RESET_EXPIRES_IN = process.env.TEMP_PASSWORD_RESET_EXPIRES_IN || "15m";
 
 function nowPlusMinutes(min) {
   return new Date(Date.now() + min * 60 * 1000);
+}
+
+function isStrongPassword(password) {
+  return typeof password === "string" &&
+    password.length >= 8 &&
+    /[a-z]/.test(password) &&
+    /[A-Z]/.test(password) &&
+    /\d/.test(password) &&
+    /[^A-Za-z0-9]/.test(password);
 }
 
 // Middleware de autenticação JWT
@@ -82,7 +92,8 @@ async function loginWithCRM(crm, password) {
   try {
     const [rows] = await pool.execute(
       `SELECT u.id, u.name, u.email, u.password_hash, u.profile, u.status, 
-              u.failed_attempts, u.locked_until, m.crm, m.unidade, m.especialidade
+              u.failed_attempts, u.locked_until, u.must_change_password, u.temporary_password_token,
+              u.temporary_password_expires_at, m.crm, m.unidade, m.especialidade
        FROM users u
        INNER JOIN medicos m ON u.id = m.usuario_id
        WHERE m.crm = ? AND u.profile = 'medico' LIMIT 1`,
@@ -214,6 +225,38 @@ async function validateUserPassword(user, password, expectedProfile = null) {
       [user.id]
     );
   }
+
+  if (expectedProfile === 'medico' && user.must_change_password && user.temporary_password_token) {
+    if (user.temporary_password_expires_at && new Date(user.temporary_password_expires_at) < new Date()) {
+      return { ok: false, statusCode: 403, message: "Senha temporária expirada. Solicite uma nova senha à empresa." };
+    }
+
+    const resetToken = jwt.sign(
+      { sub: String(user.id), profile: user.profile, type: 'temporary_password_reset' },
+      process.env.JWT_SECRET,
+      { expiresIn: TEMP_PASSWORD_RESET_EXPIRES_IN }
+    );
+
+    return {
+      ok: true,
+      statusCode: 200,
+      data: {
+        requiresPasswordReset: true,
+        resetToken,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          profile: user.profile,
+          crm: user.crm || null,
+          registry: user.crm || null,
+          unit: user.unidade || null,
+          unidade: user.unidade || null,
+          specialty: user.especialidade || null
+        }
+      }
+    };
+  }
   
   // Gera token JWT
   const token = jwt.sign(
@@ -232,7 +275,10 @@ async function validateUserPassword(user, password, expectedProfile = null) {
         name: user.name, 
         email: user.email, 
         profile: user.profile,
+        crm: user.crm || null,
+        registry: user.crm || null,
         unit: user.unidade || null,
+        unidade: user.unidade || null,
         specialty: user.especialidade || null
       }
     }
@@ -267,6 +313,91 @@ export async function loginUniversal({ identifier, password }) {
 }
 
 // Função de registro (cadastro) de usuário com suporte a diferentes perfis
+export async function resetTemporaryProfessionalPassword({ resetToken, newPassword }) {
+  try {
+    if (!isStrongPassword(newPassword)) {
+      return {
+        ok: false,
+        statusCode: 400,
+        message: "A nova senha deve ter no mínimo 8 caracteres, com maiúscula, minúscula, número e caractere especial."
+      };
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(resetToken, process.env.JWT_SECRET);
+    } catch (error) {
+      return { ok: false, statusCode: 401, message: "Token temporário inválido ou expirado." };
+    }
+
+    if (decoded.type !== 'temporary_password_reset' || decoded.profile !== 'medico') {
+      return { ok: false, statusCode: 403, message: "Token temporário inválido." };
+    }
+
+    const [rows] = await pool.execute(
+      `SELECT u.id, u.name, u.email, u.password_hash, u.profile, u.status,
+              u.must_change_password, u.temporary_password_token, m.crm, m.unidade, m.especialidade
+       FROM users u
+       INNER JOIN medicos m ON u.id = m.usuario_id
+       WHERE u.id = ? AND u.profile = 'medico' LIMIT 1`,
+      [decoded.sub]
+    );
+
+    if (rows.length === 0) {
+      return { ok: false, statusCode: 404, message: "Profissional não encontrado." };
+    }
+
+    const user = rows[0];
+    if (!user.must_change_password || !user.temporary_password_token) {
+      return { ok: false, statusCode: 400, message: "Essa senha temporária já foi redefinida." };
+    }
+
+    const isSameAsTemporary = await bcrypt.compare(newPassword, user.temporary_password_token);
+    if (isSameAsTemporary) {
+      return { ok: false, statusCode: 400, message: "A nova senha não pode ser igual à senha temporária." };
+    }
+
+    const SALT_ROUNDS = 10;
+    const newPasswordHash = await bcrypt.hash(newPassword.trim(), SALT_ROUNDS);
+
+    await pool.execute(
+      `UPDATE users
+       SET password_hash = ?, must_change_password = FALSE, temporary_password_token = NULL,
+           temporary_password_expires_at = NULL, failed_attempts = 0, locked_until = NULL
+       WHERE id = ?`,
+      [newPasswordHash, user.id]
+    );
+
+    const token = jwt.sign(
+      { sub: String(user.id), profile: user.profile },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || "1h" }
+    );
+
+    return {
+      ok: true,
+      statusCode: 200,
+      data: {
+        token,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          profile: user.profile,
+          crm: user.crm || null,
+          registry: user.crm || null,
+          unit: user.unidade || null,
+          unidade: user.unidade || null,
+          specialty: user.especialidade || null
+        }
+      }
+    };
+  } catch (err) {
+    console.error("Erro em resetTemporaryProfessionalPassword:", err);
+    return { ok: false, statusCode: 500, message: "Erro ao redefinir senha temporária." };
+  }
+}
+
 export async function registerUser({ identifier, password, name, profile, userData = null }) {
   try {
     // Validações básicas
@@ -315,9 +446,9 @@ export async function registerUser({ identifier, password, name, profile, userDa
       // Cria registro específico do perfil
       if (profile === 'paciente') {
         await connection.execute(
-          `INSERT INTO pacientes (usuario_id, cpf, email, nome_responsavel, tipo_deficiencia, data_nascimento)
-           VALUES (?, ?, ?, ?, ?, ?)`,
-          [userId, identifierInfo.value, userData?.email || null, userData?.nomeResponsavel || null, userData?.tipoDeficiencia || null, userData?.dataNascimento || null]
+          `INSERT INTO pacientes (usuario_id, nome_paciente, cpf, email, nome_responsavel, tipo_deficiencia, data_nascimento)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [userId, name, identifierInfo.value, userData?.email || null, userData?.nomeResponsavel || null, userData?.tipoDeficiencia || null, userData?.dataNascimento || null]
         );
       } else if (profile === 'medico') {
         await connection.execute(
@@ -404,9 +535,9 @@ export async function registerProfessional({ crm, name, especialidade, clinicaId
 
       // Cria usuário com perfil de médico
       const [userResult] = await connection.execute(
-        `INSERT INTO users (name, email, password_hash, profile, status)
-         VALUES (?, ?, ?, 'medico', 'ACTIVE')`,
-        [name, email || `${crmInfo.value}@conecta.local`, password_hash]
+        `INSERT INTO users (name, email, password_hash, profile, status, must_change_password, temporary_password_token, temporary_password_expires_at)
+         VALUES (?, ?, ?, 'medico', 'ACTIVE', TRUE, ?, ?)`,
+        [name, email || `${crmInfo.value}@conecta.local`, password_hash, password_hash, nowPlusMinutes(60 * 24 * 7)]
       );
 
       const userId = userResult.insertId;

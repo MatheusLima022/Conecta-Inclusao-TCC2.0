@@ -1,7 +1,16 @@
 function loadProfessionalInfo() {
-    const name = sessionStorage.getItem('professionalName') || 'Dr. Nome';
-    const registry = sessionStorage.getItem('professionalRegistry') || 'Registro';
-    const unit = sessionStorage.getItem('professionalUnit') || 'Unidade não definida';
+    let storedUser = {};
+    try {
+        storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+    } catch (error) {
+        storedUser = {};
+    }
+
+    const rawName = sessionStorage.getItem('professionalName') || storedUser.name || 'Nome cadastrado';
+    const registry = sessionStorage.getItem('professionalRegistry') || storedUser.registry || storedUser.crm || 'Registro';
+    const unit = sessionStorage.getItem('professionalUnit') || storedUser.unidade || storedUser.unit || 'Unidade não definida';
+
+    const displayName = rawName;
 
     const nameEl = document.getElementById('professionalName');
     const registryEl = document.getElementById('professionalRegistry');
@@ -10,12 +19,12 @@ function loadProfessionalInfo() {
     const avatarEl = document.getElementById('professionalAvatar');
     const unitBadge = document.getElementById('unitBadge');
 
-    if (nameEl) nameEl.innerText = name;
+    if (nameEl) nameEl.innerText = displayName;
     if (registryEl) registryEl.innerText = registry;
     if (unitEl) unitEl.innerText = unit;
-    if (unitBadge) unitBadge.innerText = `Unidade ${unit}`;
-    if (welcomeEl) welcomeEl.innerText = `Bom dia, ${name.split(' ')[0]}`;
-    if (avatarEl) avatarEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0073e6&color=fff`;
+    if (unitBadge) unitBadge.innerText = unit;
+    if (welcomeEl) welcomeEl.innerText = `Bom dia, ${displayName}`;
+    if (avatarEl) avatarEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(rawName)}&background=0073e6&color=fff`;
 }
 
 // Dados simulados de equipes por unidade
@@ -146,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 5. Notificação Simples ao Carregar
-    console.log("Dashboard Médico carregado. Bem-vindo, Dr. Ricardo.");
+    console.log("Dashboard Médico carregado.");
 });
 
 // ===== FUNÇÕES PARA AGENDA E PACIENTES =====

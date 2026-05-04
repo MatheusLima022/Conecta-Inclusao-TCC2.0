@@ -136,19 +136,19 @@
                         <p>Adicione um novo médico à sua clínica. A senha temporária será gerada automaticamente.</p>
                     </div>
                 </div>
-                <form id="registerDoctorForm" class="professional-form">
+                <form id="registerProfessionalForm" class="professional-form">
                     <div class="form-grid">
                         <div class="input-group">
-                            <label for="docName">Nome Completo <span style="color: #e74c3c;">*</span></label>
-                            <input type="text" id="docName" placeholder="Dr. João Silva" required>
+                            <label for="professionalName">Nome Completo <span style="color: #e74c3c;">*</span></label>
+                            <input type="text" id="professionalName" placeholder="Dr. João Silva" required>
                         </div>
                         <div class="input-group">
-                            <label for="docCRM">CRM <span style="color: #e74c3c;">*</span></label>
-                            <input type="text" id="docCRM" placeholder="ABC1234" maxlength="7" required>
+                            <label for="professionalCRM">CRM <span style="color: #e74c3c;">*</span></label>
+                            <input type="text" id="professionalCRM" placeholder="ABC1234" maxlength="7" required>
                         </div>
                         <div class="input-group">
-                            <label for="docEspecialidade">Especialidade <span style="color: #e74c3c;">*</span></label>
-                            <select id="docEspecialidade" required>
+                            <label for="professionalEspecialidade">Especialidade <span style="color: #e74c3c;">*</span></label>
+                            <select id="professionalEspecialidade" required>
                                 <option value="">Selecione uma especialidade...</option>
                                 <option value="Cardiologia">Cardiologia</option>
                                 <option value="Dermatologia">Dermatologia</option>
@@ -164,12 +164,12 @@
                             </select>
                         </div>
                         <div class="input-group">
-                            <label for="docEmail">E-mail</label>
-                            <input type="email" id="docEmail" placeholder="medico@example.com">
+                            <label for="professionalEmail">E-mail</label>
+                            <input type="email" id="professionalEmail" placeholder="medico@example.com">
                         </div>
                         <div class="input-group">
-                            <label for="docUnit">Unidade <span style="color: #e74c3c;">*</span></label>
-                            <select id="docUnit" required>
+                            <label for="professionalUnit">Unidade <span style="color: #e74c3c;">*</span></label>
+                            <select id="professionalUnit" required>
                                 <option value="">Selecione uma unidade...</option>
                                 <option value="Unidade A">Unidade A</option>
                                 <option value="Unidade B">Unidade B</option>
@@ -177,16 +177,16 @@
                             </select>
                         </div>
                         <div class="input-group">
-                            <label for="docPassword">Senha <span style="color: #e74c3c;">*</span></label>
-                            <input type="password" id="docPassword" placeholder="Mínimo 6 caracteres" required>
+                            <label for="professionalPassword">Senha <span style="color: #e74c3c;">*</span></label>
+                            <input type="password" id="professionalPassword" placeholder="Mínimo 6 caracteres" required>
                         </div>
                         <div class="input-group">
-                            <label for="docConfirmPassword">Confirmar Senha <span style="color: #e74c3c;">*</span></label>
-                            <input type="password" id="docConfirmPassword" placeholder="Repita a senha" required>
+                            <label for="professionalConfirmPassword">Confirmar Senha <span style="color: #e74c3c;">*</span></label>
+                            <input type="password" id="professionalConfirmPassword" placeholder="Repita a senha" required>
                         </div>
                         <div class="input-group full-width">
-                            <label for="docBio">Biografia / Qualificações</label>
-                            <textarea id="docBio" placeholder="Descreva suas qualificações e experiência..." style="min-height: 100px;"></textarea>
+                            <label for="professionalBio">Biografia / Qualificações</label>
+                            <textarea id="professionalBio" placeholder="Descreva suas qualificações e experiência..." style="min-height: 100px;"></textarea>
                         </div>
                     </div>
                     <div style="margin-top: 2rem; display: flex; gap: 1rem;">
@@ -284,6 +284,7 @@
 
     <script src="../assets/js/utils.js"></script>
     <script src="../assets/js/dashboard-empresa.js"></script>
+    <script src="../assets/js/dashboard-empresa-profissionais.js"></script>
     <script src="../assets/js/register-doctor-dashboard.js"></script>
 </body>
 </html>

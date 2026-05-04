@@ -64,6 +64,15 @@ document.addEventListener('DOMContentLoaded', function() {
 document.addEventListener('DOMContentLoaded', function() {
     const cpfInput = document.getElementById('cpf');
     if (cpfInput) {
+        const lastCPF = localStorage.getItem('lastCPF');
+        const lastRegisteredCPF = localStorage.getItem('lastRegisteredCPF');
+
+        if (lastCPF || lastRegisteredCPF) {
+            cpfInput.value = lastCPF || lastRegisteredCPF;
+            localStorage.removeItem('lastCPF');
+            localStorage.removeItem('lastRegisteredCPF');
+        }
+
         cpfInput.addEventListener('input', function(e) {
             let v = e.target.value.replace(/\D/g, "");
             if (v.length > 11) v = v.slice(0, 11);

@@ -1,7 +1,22 @@
 const PROFESSIONALS_STORAGE_KEY = 'companyProfessionals';
 const PATIENT_MESSAGES_STORAGE_KEY = 'patientProfessionalMessages';
 const GUARDIANS_STORAGE_KEY = 'patientGuardians';
-let activeChatContactKey = '';
+const DEMO_PROFESSIONAL_REGISTRIES = ['CRM 123456'];
+const CHATBOT_CONTACT = {
+    key: 'conecta-chatbot',
+    name: 'Assistente Conecta',
+    specialty: 'Chatbot de apoio',
+    hospital: 'Portal do Paciente',
+    type: 'bot'
+};
+const CHATBOT_QUICK_ACTIONS = [
+    'Quero agendar uma consulta',
+    'Quais sao meus proximos agendamentos?',
+    'O que levar para a consulta?',
+    'Como desmarcar uma consulta?'
+];
+let activeChatContactKey = CHATBOT_CONTACT.key;
+let chatbotScheduleDraft = null;
 
 // Função para abrir modal de responsável
 function openGuardianModal() {
@@ -250,6 +265,47 @@ function formatDate(dateString) {
     return `${day}/${month}/${year}`;
 }
 
+function formatProfessionalListForChat(professionals) {
+    return professionals
+        .map((professional, index) => `${index + 1}. ${professional.name} - ${professional.role} (${professional.unit || 'Unidade a confirmar'})`)
+        .join('\n');
+}
+
+function parseDateFromMessage(message) {
+    const normalizedMessage = normalizeText(message);
+
+    if (normalizedMessage.includes('amanha')) {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        return tomorrow.toISOString().slice(0, 10);
+    }
+
+    const isoMatch = message.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);
+    if (isoMatch) {
+        return isoMatch[0];
+    }
+
+    const brMatch = message.match(/\b(\d{1,2})\/(\d{1,2})\/(\d{4})\b/);
+    if (brMatch) {
+        const day = brMatch[1].padStart(2, '0');
+        const month = brMatch[2].padStart(2, '0');
+        return `${brMatch[3]}-${month}-${day}`;
+    }
+
+    return '';
+}
+
+function isValidAppointmentDate(dateString) {
+    if (!dateString) return false;
+
+    const date = parseAppointmentDate(dateString);
+    if (Number.isNaN(date.getTime())) return false;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return date >= today;
+}
+
 function formatDateTime(date = new Date()) {
     return date.toLocaleString('pt-BR', {
         day: '2-digit',
@@ -272,18 +328,25 @@ function loadRegisteredProfessionals() {
             return [];
         }
 
-        return parsed.filter(professional =>
-            professional &&
-            professional.name &&
-            professional.role &&
-            professional.registry &&
-            professional.registry.toUpperCase().includes('CRM') &&
-            professional.status !== 'Inativo'
-        );
+        return parsed.filter(isAvailableRegisteredDoctor);
     } catch (error) {
         console.error('Erro ao carregar profissionais cadastrados:', error);
         return [];
     }
+}
+
+function isAvailableRegisteredDoctor(professional) {
+    if (!professional || !professional.name || !professional.role || !professional.registry) {
+        return false;
+    }
+
+    const registry = String(professional.registry).trim().toUpperCase();
+    const isDemoProfessional = DEMO_PROFESSIONAL_REGISTRIES.includes(registry);
+    const normalizedRegistry = registry.replace(/^CRM\s*/i, '').replace(/[\s-]/g, '');
+    const isDoctorRegistry = registry.includes('CRM') || /^[A-Z0-9]{4,7}$/.test(normalizedRegistry);
+    const isAvailable = ['Ativo', 'Trabalhando'].includes(professional.status);
+
+    return isDoctorRegistry && isAvailable && !isDemoProfessional;
 }
 
 function getProfessionalByRegistry(registry) {
@@ -312,6 +375,16 @@ function populateProfessionalOptions() {
 
     professionalSelect.innerHTML = '<option value="">Selecione um profissional...</option>';
 
+    if (!professionals.length) {
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = 'Nenhum médico cadastrado disponível';
+        option.disabled = true;
+        professionalSelect.appendChild(option);
+        updateSelectedProfessionalDetails();
+        return;
+    }
+
     professionals.forEach(professional => {
         const option = document.createElement('option');
         option.value = professional.registry;
@@ -324,6 +397,32 @@ function populateProfessionalOptions() {
     }
 
     updateSelectedProfessionalDetails();
+}
+
+function populateSearchFilters() {
+    const specialtySelect = document.getElementById('searchSpecialty');
+    const unitSelect = document.getElementById('searchHospital');
+    if (!specialtySelect || !unitSelect) return;
+
+    const professionals = loadRegisteredProfessionals();
+    const specialties = Array.from(new Set(professionals.map(professional => professional.role).filter(Boolean))).sort();
+    const units = Array.from(new Set(professionals.map(professional => professional.unit).filter(Boolean))).sort();
+
+    specialtySelect.innerHTML = '<option value="">Todas as areas</option>';
+    specialties.forEach(specialty => {
+        const option = document.createElement('option');
+        option.value = specialty;
+        option.textContent = specialty;
+        specialtySelect.appendChild(option);
+    });
+
+    unitSelect.innerHTML = '<option value="">Todas as unidades</option>';
+    units.forEach(unit => {
+        const option = document.createElement('option');
+        option.value = unit;
+        option.textContent = unit;
+        unitSelect.appendChild(option);
+    });
 }
 
 function getAppointmentData() {
@@ -358,6 +457,22 @@ function saveStoredConversations(conversations) {
     localStorage.setItem(PATIENT_MESSAGES_STORAGE_KEY, JSON.stringify(conversations));
 }
 
+function escapeHTML(value) {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function normalizeText(value) {
+    return String(value)
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+}
+
 function getMessageContacts() {
     const contactsMap = new Map();
 
@@ -375,10 +490,23 @@ function getMessageContacts() {
         }
     });
 
-    return Array.from(contactsMap.values()).sort((first, second) => first.name.localeCompare(second.name, 'pt-BR'));
+    const appointmentContacts = Array.from(contactsMap.values())
+        .sort((first, second) => first.name.localeCompare(second.name, 'pt-BR'));
+
+    return [CHATBOT_CONTACT, ...appointmentContacts];
 }
 
 function createInitialConversation(contact) {
+    if (contact.type === 'bot') {
+        return [
+            {
+                sender: 'bot',
+                content: `Ola, ${getPatientName()}. Sou a Assistente Conecta. Posso te ajudar com agendamentos, preparo para consultas, documentos, responsaveis e orientacoes gerais do portal.`,
+                timestamp: formatDateTime()
+            }
+        ];
+    }
+
     return [
         {
             sender: 'professional',
@@ -407,6 +535,10 @@ function getActiveContact() {
 }
 
 function buildAiReply(contact, userMessage) {
+    if (contact.type === 'bot') {
+        return buildChatbotReply(userMessage);
+    }
+
     const normalizedMessage = userMessage.toLowerCase();
 
     if (normalizedMessage.includes('horario') || normalizedMessage.includes('hora') || normalizedMessage.includes('dia')) {
@@ -426,6 +558,149 @@ function buildAiReply(contact, userMessage) {
     }
 
     return `Recebi sua mensagem e deixei tudo organizado para o atendimento com ${contact.name}. Se quiser, me diga se sua duvida e sobre preparo, horario, documentos ou sintomas antes da consulta.`;
+}
+
+function handleChatbotScheduling(userMessage) {
+    const professionals = loadRegisteredProfessionals();
+    const normalizedMessage = normalizeText(userMessage);
+
+    if (!chatbotScheduleDraft && !isScheduleIntent(userMessage)) {
+        return null;
+    }
+
+    if (!professionals.length) {
+        chatbotScheduleDraft = null;
+        return 'No momento nao ha medicos cadastrados disponiveis para agendamento. Assim que a empresa cadastrar medicos ativos, eles aparecerao para agendar aqui no chat.';
+    }
+
+    if (!chatbotScheduleDraft) {
+        chatbotScheduleDraft = { step: 'professional' };
+        return `Claro, vamos agendar por aqui. Escolha o medico pelo numero:\n${formatProfessionalListForChat(professionals)}`;
+    }
+
+    if (normalizedMessage.includes('cancelar') || normalizedMessage.includes('sair')) {
+        chatbotScheduleDraft = null;
+        return 'Tudo bem, cancelei o agendamento pelo chat. Quando quiser tentar novamente, escreva "agendar consulta".';
+    }
+
+    if (chatbotScheduleDraft.step === 'professional') {
+        const selectedIndex = Number((userMessage.match(/\d+/) || [])[0]) - 1;
+        const selectedProfessional = professionals[selectedIndex] || professionals.find(professional =>
+            normalizeText(professional.name).includes(normalizedMessage) ||
+            normalizeText(professional.role).includes(normalizedMessage)
+        );
+
+        if (!selectedProfessional) {
+            return `Nao encontrei esse medico na lista. Responda com o numero do profissional:\n${formatProfessionalListForChat(professionals)}`;
+        }
+
+        chatbotScheduleDraft = {
+            step: 'date',
+            professionalRegistry: selectedProfessional.registry
+        };
+
+        return `Perfeito. Para ${selectedProfessional.name} - ${selectedProfessional.role}, qual data voce deseja? Use DD/MM/AAAA, por exemplo 20/05/2026.`;
+    }
+
+    if (chatbotScheduleDraft.step === 'date') {
+        const selectedProfessional = getProfessionalByRegistry(chatbotScheduleDraft.professionalRegistry);
+        const date = parseDateFromMessage(userMessage);
+
+        if (!selectedProfessional) {
+            chatbotScheduleDraft = null;
+            return 'Esse medico nao esta mais disponivel. Escreva "agendar consulta" para iniciar novamente.';
+        }
+
+        if (!isValidAppointmentDate(date)) {
+            return 'Nao consegui entender a data ou ela esta no passado. Envie no formato DD/MM/AAAA, por exemplo 20/05/2026.';
+        }
+
+        const created = addAppointmentToDashboard(selectedProfessional, date);
+        chatbotScheduleDraft = null;
+
+        if (!created) {
+            return 'Nao consegui criar o agendamento agora. Tente novamente pela aba Agendamentos.';
+        }
+
+        return `Consulta agendada com sucesso para ${formatDate(date)} com ${selectedProfessional.name}, em ${selectedProfessional.unit || 'Unidade a confirmar'}. Ja coloquei na area de consultas agendadas.`;
+    }
+
+    chatbotScheduleDraft = null;
+    return null;
+}
+
+function buildChatbotReply(userMessage) {
+    const normalizedMessage = normalizeText(userMessage);
+    const appointments = getAppointmentData();
+    const professionals = loadRegisteredProfessionals();
+
+    const schedulingReply = handleChatbotScheduling(userMessage);
+    if (schedulingReply) {
+        return schedulingReply;
+    }
+
+    if (normalizedMessage.includes('oi') || normalizedMessage.includes('ola') || normalizedMessage.includes('bom dia') || normalizedMessage.includes('boa tarde') || normalizedMessage.includes('boa noite')) {
+        return 'Ola. Eu posso te ajudar com agendamentos, consultas marcadas, preparo, documentos, responsaveis e uso do portal. Me diga o que voce precisa fazer agora.';
+    }
+
+    if (normalizedMessage.includes('emergencia') || normalizedMessage.includes('urgente') || normalizedMessage.includes('falta de ar') || normalizedMessage.includes('dor forte') || normalizedMessage.includes('desmaio') || normalizedMessage.includes('sangramento')) {
+        return 'Se for uma urgencia, procure atendimento imediato na unidade de emergencia mais proxima ou acione o servico de emergencia da sua regiao. O chatbot nao substitui avaliacao medica em situacoes graves.';
+    }
+
+    if (normalizedMessage.includes('agendar') || normalizedMessage.includes('marcar') || normalizedMessage.includes('consulta nova')) {
+        if (!professionals.length) {
+            return 'No momento nao ha medicos cadastrados disponiveis para agendamento. Assim que a empresa cadastrar medicos ativos, eles aparecerao em Agendamentos > Novo Agendamento.';
+        }
+
+        const specialties = Array.from(new Set(professionals.map(professional => professional.role))).slice(0, 4).join(', ');
+        return `Temos ${professionals.length} medico(s) disponivel(is)${specialties ? `, incluindo ${specialties}` : ''}. Escreva "agendar consulta" para eu marcar pelo chat.`;
+    }
+
+    if (normalizedMessage.includes('proximo') || normalizedMessage.includes('minhas consultas') || normalizedMessage.includes('agendamento') || normalizedMessage.includes('horario')) {
+        if (!appointments.length) {
+            return 'Voce ainda nao possui consultas agendadas. Para marcar uma, va em Agendamentos e clique em Novo Agendamento.';
+        }
+
+        const nextAppointment = appointments[0];
+        return `Sua proxima consulta esta marcada para ${formatDate(nextAppointment.date)} com ${nextAppointment.doctor}, em ${nextAppointment.hospital}, na especialidade ${nextAppointment.specialty}.`;
+    }
+
+    if (normalizedMessage.includes('desmarcar') || normalizedMessage.includes('cancelar') || normalizedMessage.includes('remarcar')) {
+        return 'Para desmarcar, abra Agendamentos e clique em Desmarcar na consulta desejada. O sistema permite cancelar apenas com no minimo 2 semanas de antecedencia.';
+    }
+
+    if (normalizedMessage.includes('documento') || normalizedMessage.includes('levar') || normalizedMessage.includes('exame') || normalizedMessage.includes('preparo')) {
+        return 'Para a consulta, leve documento com foto, CPF, carteirinha do plano se houver, exames recentes e receitas em uso. Se a consulta tiver preparo especifico, confirme com a unidade antes do atendimento.';
+    }
+
+    if (normalizedMessage.includes('responsavel') || normalizedMessage.includes('autorizado') || normalizedMessage.includes('permissao')) {
+        return 'Voce pode gerenciar responsaveis na aba Responsaveis. La e possivel adicionar contatos autorizados e definir permissoes como ver agendamentos, registros e enviar mensagens.';
+    }
+
+    if (normalizedMessage.includes('cpf') || normalizedMessage.includes('perfil') || normalizedMessage.includes('meus dados') || normalizedMessage.includes('cadastro')) {
+        return 'Seus dados principais ficam em Meu Perfil. Confira nome, CPF e responsavel cadastrado. Para alterar informacoes sensiveis, procure o suporte da unidade responsavel.';
+    }
+
+    if (normalizedMessage.includes('medico') || normalizedMessage.includes('profissional') || normalizedMessage.includes('especialidade')) {
+        if (!professionals.length) {
+            return 'Ainda nao ha medicos cadastrados disponiveis no sistema. Quando houver, eles aparecerao em Buscar Atendimento e no modal de Novo Agendamento.';
+        }
+
+        return `Encontrei ${professionals.length} medico(s) disponivel(is). Voce pode ver as especialidades em Buscar Atendimento ou iniciar um agendamento pela aba Agendamentos.`;
+    }
+
+    if (normalizedMessage.includes('obrigad')) {
+        return 'Por nada. Quando precisar, me chame por aqui e eu te ajudo a navegar pelo portal.';
+    }
+
+    return 'Entendi. Posso te ajudar com: agendar consulta, ver proximos agendamentos, saber o que levar, desmarcar consulta, gerenciar responsaveis ou conferir dados do perfil. Escreva uma dessas opcoes para eu te orientar.';
+}
+
+function isScheduleIntent(message) {
+    const normalizedMessage = normalizeText(message);
+    return normalizedMessage.includes('agendar') ||
+        normalizedMessage.includes('marcar') ||
+        normalizedMessage.includes('consulta nova');
 }
 
 function renderMessageContacts() {
@@ -459,9 +734,9 @@ function renderMessageContacts() {
         button.type = 'button';
         button.className = `chat-contact-card${contact.key === activeChatContactKey ? ' active' : ''}`;
         button.innerHTML = `
-            <strong>${contact.name}</strong>
-            <span>${contact.specialty}</span>
-            <small>${contact.hospital}</small>
+            <strong>${escapeHTML(contact.name)}</strong>
+            <span>${escapeHTML(contact.specialty)}</span>
+            <small>${escapeHTML(contact.hospital)}</small>
         `;
         button.addEventListener('click', () => {
             activeChatContactKey = contact.key;
@@ -478,21 +753,23 @@ function renderActiveConversation() {
     const contactMeta = document.getElementById('chatContactMeta');
     const messageInput = document.getElementById('messageInput');
     const sendMessageButton = document.getElementById('sendMessageButton');
+    const quickActions = document.getElementById('chatbotQuickActions');
 
     if (!messagesList || !contactName || !contactMeta || !messageInput || !sendMessageButton) return;
 
     const contact = getActiveContact();
 
     if (!contact) {
-        contactName.textContent = 'Selecione um profissional';
-        contactMeta.textContent = 'As mensagens sao respondidas por uma assistente virtual do profissional.';
+        contactName.textContent = CHATBOT_CONTACT.name;
+        contactMeta.textContent = 'Chatbot de apoio ao paciente.';
         messageInput.value = '';
-        messageInput.disabled = true;
-        sendMessageButton.disabled = true;
+        messageInput.disabled = false;
+        sendMessageButton.disabled = false;
+        if (quickActions) quickActions.innerHTML = '';
         messagesList.innerHTML = `
             <div class="chat-empty">
                 <i class="ph ph-chat-circle-dots"></i>
-                <p>Escolha um profissional para iniciar a conversa.</p>
+                <p>Envie uma mensagem para iniciar o atendimento virtual.</p>
             </div>
         `;
         return;
@@ -500,7 +777,9 @@ function renderActiveConversation() {
 
     const messages = ensureConversationExists(contact.key);
     contactName.textContent = contact.name;
-    contactMeta.textContent = `${contact.specialty} • ${contact.hospital} • Resposta assistida por IA.`;
+    contactMeta.textContent = contact.type === 'bot'
+        ? 'Chatbot de apoio ao paciente. Para urgencias, procure atendimento imediato.'
+        : `${contact.specialty} - ${contact.hospital} - Resposta assistida por IA.`;
     messageInput.disabled = false;
     sendMessageButton.disabled = false;
 
@@ -510,13 +789,37 @@ function renderActiveConversation() {
         const bubble = document.createElement('div');
         bubble.className = `chat-bubble ${message.sender}`;
         bubble.innerHTML = `
-            <div>${message.content}</div>
-            <span class="chat-bubble-meta">${message.sender === 'patient' ? getPatientName() : contact.name} • ${message.timestamp}</span>
+            <div>${escapeHTML(message.content)}</div>
+            <span class="chat-bubble-meta">${escapeHTML(message.sender === 'patient' ? getPatientName() : contact.name)} - ${escapeHTML(message.timestamp)}</span>
         `;
         messagesList.appendChild(bubble);
     });
 
+    renderChatbotQuickActions(contact);
     messagesList.scrollTop = messagesList.scrollHeight;
+}
+
+function renderChatbotQuickActions(contact) {
+    const quickActions = document.getElementById('chatbotQuickActions');
+    const messageInput = document.getElementById('messageInput');
+    if (!quickActions || !messageInput) return;
+
+    if (contact.type !== 'bot') {
+        quickActions.innerHTML = '';
+        return;
+    }
+
+    quickActions.innerHTML = CHATBOT_QUICK_ACTIONS.map(action => `
+        <button type="button" class="chatbot-chip" data-message="${escapeHTML(action)}">${escapeHTML(action)}</button>
+    `).join('');
+
+    quickActions.querySelectorAll('.chatbot-chip').forEach(button => {
+        button.addEventListener('click', () => {
+            const message = button.dataset.message || '';
+            messageInput.value = '';
+            sendPatientMessage(message);
+        });
+    });
 }
 
 function appendMessageToConversation(contactKey, message) {
@@ -542,7 +845,7 @@ function sendPatientMessage(content) {
 
     window.setTimeout(() => {
         appendMessageToConversation(contact.key, {
-            sender: 'professional',
+            sender: contact.type === 'bot' ? 'bot' : 'professional',
             content: buildAiReply(contact, content),
             timestamp: formatDateTime()
         });
@@ -627,7 +930,41 @@ function renderAppointmentsState() {
     }
 }
 
+function addAppointmentToDashboard(selectedProfessional, date) {
+    const appointmentsList = document.getElementById('appointmentsList');
+    if (!appointmentsList || !selectedProfessional || !date) return false;
+
+    const specialty = selectedProfessional.role;
+    const unit = selectedProfessional.unit || 'Unidade a confirmar';
+    const appointmentCard = document.createElement('div');
+    appointmentCard.className = 'appointment-card';
+    appointmentCard.dataset.date = date;
+    appointmentCard.dataset.specialty = specialty;
+    appointmentCard.dataset.doctor = selectedProfessional.name;
+    appointmentCard.dataset.hospital = unit;
+    appointmentCard.innerHTML = `
+        <div class="card-top">
+            <span class="specialty-badge">${escapeHTML(specialty)}</span>
+            <span class="date-tag">${formatDate(date)}</span>
+        </div>
+        <div class="card-body">
+            <strong>${escapeHTML(selectedProfessional.name)}</strong>
+            <span>${escapeHTML(unit)}</span>
+        </div>
+        <div class="card-actions">
+            <button class="btn-secondary" type="button" onclick="switchTab('search')">Buscar outro horario</button>
+            <button class="btn-danger" type="button" onclick="cancelAppointment(this)">Desmarcar</button>
+        </div>
+    `;
+
+    appointmentsList.prepend(appointmentCard);
+    refreshDashboard();
+    switchTab('appointments');
+    return true;
+}
+
 function refreshDashboard() {
+    populateSearchFilters();
     updateOverviewCards();
     renderOverviewAppointments();
     renderAppointmentsState();
@@ -718,7 +1055,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const professionalRegistry = document.getElementById('modalProfessional')?.value;
             const specialty = document.getElementById('modalSpec')?.value;
             const unit = document.getElementById('modalUnit')?.value;
-            const appointmentsList = document.getElementById('appointmentsList');
             const selectedProfessional = getProfessionalByRegistry(professionalRegistry);
 
             if (!selectedProfessional) {
@@ -726,35 +1062,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            if (!date || !specialty || !appointmentsList) return;
+            if (!date || !specialty) return;
 
-            const appointmentCard = document.createElement('div');
-            appointmentCard.className = 'appointment-card';
-            appointmentCard.dataset.date = date;
-            appointmentCard.dataset.specialty = specialty;
-            appointmentCard.dataset.doctor = selectedProfessional.name;
-            appointmentCard.dataset.hospital = unit || 'Unidade a confirmar';
-            appointmentCard.innerHTML = `
-                <div class="card-top">
-                    <span class="specialty-badge">${specialty}</span>
-                    <span class="date-tag">${formatDate(date)}</span>
-                </div>
-                <div class="card-body">
-                    <strong>${selectedProfessional.name}</strong>
-                    <span>${unit || 'Unidade a confirmar'}</span>
-                </div>
-                <div class="card-actions">
-                    <button class="btn-secondary" type="button" onclick="switchTab('search')">Buscar outro horario</button>
-                    <button class="btn-danger" type="button" onclick="cancelAppointment(this)">Desmarcar</button>
-                </div>
-            `;
-
-            appointmentsList.prepend(appointmentCard);
+            addAppointmentToDashboard(selectedProfessional, date);
             appointmentForm.reset();
             updateSelectedProfessionalDetails();
             closeModal();
-            refreshDashboard();
-            switchTab('appointments');
             await showPopup(`Sucesso! Consulta com ${selectedProfessional.name} agendada para ${formatDate(date)}.`);
         });
     }

@@ -133,37 +133,7 @@
                     </button>
                 </div>
 
-                <div id="appointmentsList" class="cards-container">
-                    <div class="appointment-card" data-date="2026-05-20" data-specialty="Cardiologia" data-doctor="Dr. Ricardo Silva" data-hospital="Hospital Central">
-                        <div class="card-top">
-                            <span class="specialty-badge">Cardiologia</span>
-                            <span class="date-tag">20/05/2026</span>
-                        </div>
-                        <div class="card-body">
-                            <strong>Dr. Ricardo Silva</strong>
-                            <span>Hospital Central</span>
-                        </div>
-                        <div class="card-actions">
-                            <button class="btn-secondary" type="button" onclick="switchTab('search')">Buscar outro horario</button>
-                            <button class="btn-danger" type="button" onclick="cancelAppointment(this)">Desmarcar</button>
-                        </div>
-                    </div>
-
-                    <div class="appointment-card" data-date="2026-06-03" data-specialty="Clinico Geral" data-doctor="Dra. Juliana Mendes" data-hospital="Unidade Botafogo">
-                        <div class="card-top">
-                            <span class="specialty-badge">Clinico Geral</span>
-                            <span class="date-tag">03/06/2026</span>
-                        </div>
-                        <div class="card-body">
-                            <strong>Dra. Juliana Mendes</strong>
-                            <span>Unidade Botafogo</span>
-                        </div>
-                        <div class="card-actions">
-                            <button class="btn-secondary" type="button" onclick="switchTab('search')">Buscar outro horario</button>
-                            <button class="btn-danger" type="button" onclick="cancelAppointment(this)">Desmarcar</button>
-                        </div>
-                    </div>
-                </div>
+                <div id="appointmentsList" class="cards-container"></div>
             </section>
 
             <section class="tab-content" id="search">
@@ -237,8 +207,8 @@
                     <div class="chat-layout">
                         <aside class="chat-sidebar">
                             <div class="chat-sidebar-header">
-                                <h3>Profissionais</h3>
-                                <p>Converse com quem esta vinculado aos seus agendamentos.</p>
+                                <h3>Chatbot</h3>
+                                <p>Use a assistente virtual para tirar duvidas sobre consultas, preparo e proximos passos.</p>
                             </div>
                             <div id="messageContactsList" class="chat-contacts"></div>
                         </aside>
@@ -246,8 +216,8 @@
                         <div class="chat-panel">
                             <div class="chat-panel-header">
                                 <div>
-                                    <strong id="chatContactName">Selecione um profissional</strong>
-                                    <span id="chatContactMeta">As mensagens sao respondidas por uma assistente virtual do profissional.</span>
+                                    <strong id="chatContactName">Assistente Conecta</strong>
+                                    <span id="chatContactMeta">Chatbot de apoio ao paciente.</span>
                                 </div>
                                 <span class="chat-status-pill">Online</span>
                             </div>
@@ -255,13 +225,14 @@
                             <div id="chatMessagesList" class="chat-messages">
                                 <div class="chat-empty">
                                     <i class="ph ph-chat-circle-dots"></i>
-                                    <p>Escolha um profissional para iniciar a conversa.</p>
+                                    <p>Envie uma mensagem para iniciar o atendimento virtual.</p>
                                 </div>
                             </div>
+                            <div id="chatbotQuickActions" class="chatbot-quick-actions"></div>
 
                             <form id="messageForm" class="chat-form">
                                 <label class="sr-only" for="messageInput">Digite sua mensagem</label>
-                                <textarea id="messageInput" rows="3" placeholder="Digite sua mensagem para o profissional..." disabled></textarea>
+                                <textarea id="messageInput" rows="3" placeholder="Digite sua mensagem para o chatbot..."></textarea>
                                 <button type="submit" class="btn-primary" id="sendMessageButton" disabled>
                                     <i class="ph ph-paper-plane-tilt"></i> Enviar
                                 </button>

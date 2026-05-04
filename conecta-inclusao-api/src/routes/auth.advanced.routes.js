@@ -1,16 +1,21 @@
 // Rotas avanÃ§adas de autenticaÃ§Ã£o com suporte a CRM, CNPJ e CPF
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import { pool } from "../db.js";
 import {
   universalLoginSchema,
   registerPatientSchema,
   registerDoctorSchema,
-  registerClinicSchema
+  registerClinicSchema,
+  resetTemporaryPasswordSchema
 } from "../validators/auth.advanced.validators.js";
 import {
   loginUniversal,
   registerUser,
   registerProfessional,
+  resetTemporaryProfessionalPassword,
   authenticateToken,
   getClinicDetails
 } from "../services/auth.advanced.service.js";
@@ -43,6 +48,29 @@ router.post("/login/universal", loginLimiter, async (req, res, next) => {
     }
 
     const result = await loginUniversal(parsed.data);
+
+    if (!result.ok) {
+      return res.status(result.statusCode).json({ message: result.message });
+    }
+
+    return res.status(200).json(result.data);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/professional/reset-temporary-password", loginLimiter, async (req, res, next) => {
+  try {
+    const parsed = resetTemporaryPasswordSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      return res.status(400).json({
+        message: "Dados invalidos",
+        errors: parsed.error.errors
+      });
+    }
+
+    const result = await resetTemporaryProfessionalPassword(parsed.data);
 
     if (!result.ok) {
       return res.status(result.statusCode).json({ message: result.message });

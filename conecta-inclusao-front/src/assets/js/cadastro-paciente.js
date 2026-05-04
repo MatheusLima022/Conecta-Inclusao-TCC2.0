@@ -106,7 +106,7 @@ function handlePatientRegistration(event) {
             localStorage.setItem('lastRegisteredCPF', cpfDigits);
             
             setTimeout(() => {
-                window.location.href = 'lndex.html';
+                window.location.href = 'login-paciente.html';
             }, 1500);
         } else {
             showPopup(result.data.message || 'Erro ao cadastrar. Tente novamente.');
