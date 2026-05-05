@@ -118,7 +118,7 @@ export const registerDoctorSchema = z.object({
     .max(500)
     .optional(),
   unidade: z
-    .enum(["Unidade A", "Unidade B", "Unidade C"])
+    .enum(["Unidade Botafogo", "Unidade Copacabana", "Unidade Leblon"])
     .optional(),
   clinicaId: z
     .number()

@@ -63,27 +63,34 @@ export async function getClinicDetails(userId) {
 // Detecta o tipo de identificador baseado no padrão
 function detectIdentifierType(identifier) {
   const trimmed = identifier.trim();
-  
+  let normalized = trimmed.replace(/[\s-]/g, '');
+
+  // Aceita prefixes comuns de registro profissional: CRM, COREN, CREFITO
+  const prefixMatch = normalized.match(/^(CRM|COREN|CREFITO)([A-Z0-9]+)$/i);
+  if (prefixMatch) {
+    normalized = prefixMatch[2].toUpperCase();
+  }
+
   // CPF: 11 dígitos (xxx.xxx.xxx-xx ou xxxxxxxxxxx)
   if (/^\d{3}\.\d{3}\.\d{3}-\d{2}$|^\d{11}$/.test(trimmed)) {
     return { type: 'cpf', value: trimmed.replace(/\D/g, '') };
   }
-  
+
   // CNPJ: 14 dígitos (xx.xxx.xxx/xxxx-xx ou xxxxxxxxxxxxxx)
   if (/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$|^\d{14}$/.test(trimmed)) {
     return { type: 'cnpj', value: trimmed.replace(/\D/g, '') };
   }
-  
+
   // CRM: geralmente 4-7 caracteres alfanuméricos
-  if (/^[A-Z0-9]{4,7}$/i.test(trimmed)) {
-    return { type: 'crm', value: trimmed.toUpperCase() };
+  if (/^[A-Z0-9]{4,7}$/.test(normalized)) {
+    return { type: 'crm', value: normalized.toUpperCase() };
   }
-  
+
   // Email: contém @
   if (trimmed.includes('@')) {
     return { type: 'email', value: trimmed.toLowerCase() };
   }
-  
+
   return null;
 }
 
@@ -521,7 +528,7 @@ export async function registerProfessional({ crm, name, especialidade, clinicaId
     try {
       await connection.beginTransaction();
 
-      if (!["Unidade A", "Unidade B", "Unidade C"].includes(unidade)) {
+      if (!["Unidade Botafogo", "Unidade Copacabana", "Unidade Leblon"].includes(unidade)) {
         return { ok: false, statusCode: 400, message: "Unidade inválida." };
       }
 
