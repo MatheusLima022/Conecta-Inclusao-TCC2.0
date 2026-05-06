@@ -1,5 +1,6 @@
 // Gerenciador de Profissionais da Empresa
 let api;
+let currentProfessionals = [];
 
 async function loadAPI() {
     if (!api) {
@@ -26,10 +27,14 @@ async function handleRegisterProfessional(event) {
     const crm = document.getElementById('professionalCRM').value.trim();
     const name = document.getElementById('professionalName').value.trim();
     const especialidade = document.getElementById('professionalEspecialidade').value.trim();
+    const unidade = document.getElementById('professionalUnit').value.trim();
+    const password = document.getElementById('professionalPassword').value.trim();
+    const confirmPassword = document.getElementById('professionalConfirmPassword').value.trim();
+    const email = document.getElementById('professionalEmail').value.trim();
     const bio = document.getElementById('professionalBio').value.trim();
     
     // Validações
-    if (!crm || !name || !especialidade) {
+    if (!crm || !name || !especialidade || !unidade || !password) {
         showPopup('Preencha todos os campos obrigatórios.');
         return;
     }
@@ -39,13 +44,19 @@ async function handleRegisterProfessional(event) {
         return;
     }
     
-    // Obter clinicaId do sessionStorage
-    const userId = sessionStorage.getItem('userId');
-    
-    if (!userId) {
-        showPopup('Erro: Clínica não identificada. Faça login novamente.');
+    if (password !== confirmPassword) {
+        showPopup('As senhas não coincidem.');
         return;
     }
+    
+    // Obter clinicaId do localStorage
+    const userData = localStorage.getItem('user');
+    if (!userData) {
+        showPopup('Erro: Dados do usuário não encontrados. Faça login novamente.');
+        return;
+    }
+    const user = JSON.parse(userData);
+    const userId = user.id;
     
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<i class="ph ph-circle-notch-bold" style="animation: spin 1s linear infinite;"></i> Registrando...';
@@ -53,21 +64,13 @@ async function handleRegisterProfessional(event) {
     try {
         const apiModule = await loadAPI();
         
-        // Buscar ID da clínica pelo userId
-        const clinicaId = await getClinicaIdByUserId(userId);
-        
-        if (!clinicaId) {
-            showPopup('Erro: Clínica não encontrada.');
-            submitBtn.disabled = false;
-            submitBtn.innerText = originalText;
-            return;
-        }
-        
         const result = await apiModule.registerProfessional(
             crm.toUpperCase(),
             name,
             especialidade,
-            clinicaId,
+            unidade,
+            password,
+            email,
             bio
         );
         
@@ -145,7 +148,8 @@ async function loadProfessionalsList() {
         if (!response.ok) return;
         
         const data = await response.json();
-        displayProfessionalsList(data);
+        currentProfessionals = Array.isArray(data) ? data : [];
+        displayProfessionalsList(currentProfessionals);
         
     } catch (error) {
         console.error('Erro ao carregar profissionais:', error);
@@ -154,60 +158,80 @@ async function loadProfessionalsList() {
 
 // Exibir lista de profissionais
 function displayProfessionalsList(professionals) {
-    const container = document.getElementById('professionalsList');
+    const teamBody = document.getElementById('teamFullTableBody');
+    const unitFilter = document.getElementById('unitFilterSelect');
     
-    if (!container) return;
+    if (!teamBody) return;
     
     if (!professionals || professionals.length === 0) {
-        container.innerHTML = '<p style="text-align: center; color: #999;">Nenhum profissional cadastrado ainda.</p>';
+        teamBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #999; padding: 1rem;">Nenhum profissional cadastrado ainda.</td></tr>';
+        updateTeamSummary([]);
+        updateUnitFilterOptions([]);
         return;
     }
     
-    let html = `
-        <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse;">
-                <thead>
-                    <tr style="background-color: #f5f5f5; border-bottom: 2px solid #ddd;">
-                        <th style="padding: 12px; text-align: left;">Nome</th>
-                        <th style="padding: 12px; text-align: left;">CRM</th>
-                        <th style="padding: 12px; text-align: left;">Especialidade</th>
-                        <th style="padding: 12px; text-align: center;">Status</th>
-                        <th style="padding: 12px; text-align: center;">Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-    `;
+    teamBody.innerHTML = professionals.map(prof => `
+        <tr>
+            <td>${prof.name || 'N/A'}</td>
+            <td>${prof.especialidade || 'Médico'}</td>
+            <td>${prof.crm || 'N/A'}</td>
+            <td><span class="status-dot active">Ativo</span></td>
+            <td>${prof.unidade || 'N/A'}</td>
+            <td>
+                <button onclick="editProfessional(${prof.id})" style="background: none; border: none; color: #667eea; cursor: pointer; margin: 0 4px;">
+                    <i class="ph ph-pencil"></i> Editar
+                </button>
+                <button onclick="deleteProfessional(${prof.id})" style="background: none; border: none; color: #f44336; cursor: pointer; margin: 0 4px;">
+                    <i class="ph ph-trash"></i> Remover
+                </button>
+            </td>
+        </tr>
+    `).join('');
     
-    professionals.forEach(prof => {
-        html += `
-            <tr style="border-bottom: 1px solid #eee;">
-                <td style="padding: 12px;">${prof.name || 'N/A'}</td>
-                <td style="padding: 12px;">${prof.crm || 'N/A'}</td>
-                <td style="padding: 12px;">${prof.especialidade || 'N/A'}</td>
-                <td style="padding: 12px; text-align: center;">
-                    <span style="background-color: #e8f5e9; color: #2e7d32; padding: 4px 12px; border-radius: 4px; font-size: 12px;">
-                        Ativo
-                    </span>
-                </td>
-                <td style="padding: 12px; text-align: center;">
-                    <button onclick="editProfessional(${prof.id})" style="background: none; border: none; color: #667eea; cursor: pointer; margin: 0 4px;">
-                        <i class="ph ph-pencil"></i> Editar
-                    </button>
-                    <button onclick="deleteProfessional(${prof.id})" style="background: none; border: none; color: #f44336; cursor: pointer; margin: 0 4px;">
-                        <i class="ph ph-trash"></i> Remover
-                    </button>
-                </td>
-            </tr>
-        `;
-    });
+    updateTeamSummary(professionals);
+    updateUnitFilterOptions(professionals);
+}
+
+function updateTeamSummary(professionals) {
+    const activeCountEl = document.getElementById('cardActiveCount');
+    const workingCountEl = document.getElementById('cardWorkingCount');
+    const breakCountEl = document.getElementById('cardBreakCount');
+
+    const active = professionals.length;
+    const working = professionals.filter(prof => prof.status && prof.status.toLowerCase() === 'trabalhando').length || active;
+    const onBreak = professionals.filter(prof => prof.status && ['férias', 'folga', 'licença'].includes(prof.status.toLowerCase())).length;
+
+    if (activeCountEl) activeCountEl.innerText = active;
+    if (workingCountEl) workingCountEl.innerText = working;
+    if (breakCountEl) breakCountEl.innerText = onBreak;
+}
+
+function updateUnitFilterOptions(professionals) {
+    const unitFilter = document.getElementById('unitFilterSelect');
+    if (!unitFilter) return;
+
+    const uniqueUnits = Array.from(new Set(professionals.map(prof => prof.unidade).filter(Boolean)));
+    const previousValue = unitFilter.value || 'Todas';
+
+    unitFilter.innerHTML = '<option value="Todas">Todas</option>' + uniqueUnits.map(unit => `
+        <option value="${unit}">${unit}</option>
+    `).join('');
+
+    if ([...unitFilter.options].some(opt => opt.value === previousValue)) {
+        unitFilter.value = previousValue;
+    }
+}
+
+function applyUnitFilter() {
+    const unitFilter = document.getElementById('unitFilterSelect');
+    if (!unitFilter) return;
     
-    html += `
-                </tbody>
-            </table>
-        </div>
-    `;
-    
-    container.innerHTML = html;
+    const selectedUnit = unitFilter.value;
+    const filtered = selectedUnit === 'Todas'
+        ? currentProfessionals
+        : currentProfessionals.filter(prof => prof.unidade === selectedUnit);
+
+    displayProfessionalsList(filtered);
 }
 
 // Editar profissional (placeholder)
@@ -261,6 +285,11 @@ document.addEventListener('DOMContentLoaded', function() {
         crmInput.addEventListener('input', function(e) {
             e.target.value = applyCRMMask(e.target.value);
         });
+    }
+
+    const filterButton = document.getElementById('btnApplyUnitFilter');
+    if (filterButton) {
+        filterButton.addEventListener('click', applyUnitFilter);
     }
     
     // Carregar lista de profissionais

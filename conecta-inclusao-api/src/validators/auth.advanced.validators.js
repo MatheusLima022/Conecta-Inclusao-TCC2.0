@@ -26,6 +26,23 @@ export const universalLoginSchema = z.object({
     .max(100, "Senha muito longa")
 });
 
+const strongPasswordSchema = z
+  .string()
+  .min(8, "Senha deve ter no mínimo 8 caracteres")
+  .max(100, "Senha muito longa")
+  .regex(/[a-z]/, "Senha deve conter letra minúscula")
+  .regex(/[A-Z]/, "Senha deve conter letra maiúscula")
+  .regex(/\d/, "Senha deve conter número")
+  .regex(/[^A-Za-z0-9]/, "Senha deve conter caractere especial");
+
+export const resetTemporaryPasswordSchema = z.object({
+  resetToken: z
+    .string()
+    .trim()
+    .min(20, "Token inválido"),
+  newPassword: strongPasswordSchema
+});
+
 // Schema para registro de paciente (CPF)
 export const registerPatientSchema = z.object({
   cpf: z
@@ -101,7 +118,7 @@ export const registerDoctorSchema = z.object({
     .max(500)
     .optional(),
   unidade: z
-    .enum(["Unidade A", "Unidade B", "Unidade C"])
+    .enum(["Unidade Botafogo", "Unidade Copacabana", "Unidade Leblon"])
     .optional(),
   clinicaId: z
     .number()

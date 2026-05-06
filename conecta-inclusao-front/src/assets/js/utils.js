@@ -86,6 +86,96 @@ function showPopup(message, type = 'info') {
     });
 }
 
+function setupPasswordVisibilityToggles() {
+    const passwordInputs = document.querySelectorAll('input[type="password"], input[data-password-toggle="true"]');
+
+    if (!passwordInputs.length) return;
+
+    if (!document.getElementById('passwordVisibilityStyles')) {
+        const style = document.createElement('style');
+        style.id = 'passwordVisibilityStyles';
+        style.textContent = `
+            .password-visibility-field {
+                position: relative;
+                display: flex;
+                align-items: center;
+                width: 100%;
+            }
+
+            .password-visibility-field input {
+                width: 100%;
+                padding-right: 3rem !important;
+            }
+
+            .password-visibility-toggle {
+                position: absolute;
+                right: 0.75rem;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 2rem;
+                height: 2rem;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                border: 0;
+                border-radius: 6px;
+                background: transparent;
+                color: #64748b;
+                cursor: pointer;
+                z-index: 2;
+            }
+
+            .password-visibility-toggle:hover,
+            .password-visibility-toggle:focus-visible {
+                color: #0073e6;
+                background: rgba(0, 115, 230, 0.08);
+                outline: none;
+            }
+
+            .password-visibility-toggle i {
+                font-size: 1.15rem;
+                line-height: 1;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    passwordInputs.forEach((input) => {
+        if (input.dataset.passwordToggleReady === 'true') return;
+        if (input.closest('.password-input-group')?.querySelector('.toggle-password')) return;
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'password-visibility-field';
+        input.parentNode.insertBefore(wrapper, input);
+        wrapper.appendChild(input);
+
+        const toggleButton = document.createElement('button');
+        toggleButton.type = 'button';
+        toggleButton.className = 'password-visibility-toggle';
+        toggleButton.setAttribute('aria-label', 'Mostrar senha');
+        toggleButton.setAttribute('title', 'Mostrar senha');
+        toggleButton.innerHTML = '<i class="ph ph-eye"></i>';
+
+        toggleButton.addEventListener('click', () => {
+            const showingPassword = input.type === 'text';
+            input.type = showingPassword ? 'password' : 'text';
+            input.dataset.passwordToggle = 'true';
+            toggleButton.setAttribute('aria-label', showingPassword ? 'Mostrar senha' : 'Ocultar senha');
+            toggleButton.setAttribute('title', showingPassword ? 'Mostrar senha' : 'Ocultar senha');
+            toggleButton.innerHTML = showingPassword ? '<i class="ph ph-eye"></i>' : '<i class="ph ph-eye-slash"></i>';
+        });
+
+        wrapper.appendChild(toggleButton);
+        input.dataset.passwordToggleReady = 'true';
+    });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupPasswordVisibilityToggles);
+} else {
+    setupPasswordVisibilityToggles();
+}
+
 // Função para validar CPF
 function validarCPF(cpf) {
     // Remove caracteres não numéricos

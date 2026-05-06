@@ -12,6 +12,9 @@ CREATE TABLE users (
     status VARCHAR(20) DEFAULT 'ACTIVE',
     failed_attempts INT DEFAULT 0,
     locked_until DATETIME NULL,
+    must_change_password BOOLEAN DEFAULT FALSE,
+    temporary_password_token VARCHAR(255) NULL,
+    temporary_password_expires_at DATETIME NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -19,6 +22,7 @@ CREATE TABLE users (
 CREATE TABLE pacientes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     usuario_id INT NOT NULL,
+    nome_paciente VARCHAR(100) NOT NULL,
     cpf VARCHAR(14) UNIQUE NOT NULL,
     email VARCHAR(100),
     nome_responsavel VARCHAR(100),

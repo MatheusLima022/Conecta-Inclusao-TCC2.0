@@ -1,0 +1,179 @@
+[33mcommit e0cf139dec6699f44a6403576a27da7a0c627f82[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mMiguel[m[33m)[m
+Author: Matheus Couto da Costa Lima <matheuscclima2018@gmail.com>
+Date:   Tue Apr 28 14:35:44 2026 -0300
+
+    Pronto para merge
+
+[33mcommit f1740bb3392d4b389036abe886157df985a6be5b[m
+Author: MiguelRezendeGomes <miguelrezendegomes@gmail.com>
+Date:   Tue Apr 28 14:09:45 2026 -0300
+
+    Refatorar os scripts de login e cadastro de pacientes; remover o preenchimento automático de CNPJ e CPF no armazenamento local, atualizar o comprimento da validação de senha. Excluir arquivos HTML não utilizados para registros e acesso a registros de autenticação. Aprimorar o painel do paciente com novas seções para agendamentos e mensagens, e melhorar o layout para uma melhor experiência do usuário. Adicionar seção de gerenciamento de pacientes no painel do médico.
+
+[33mcommit 9364de6bf0fb8b752fe5e1c91f42b67784f7ed01[m
+Author: MiguelRezendeGomes <miguelrezendegomes@gmail.com>
+Date:   Fri Apr 24 17:02:02 2026 -0300
+
+    pronto mano
+
+[33mcommit ba21c809a68d295bf6dd61dea208a94c344b9824[m
+Author: MiguelRezendeGomes <miguelrezendegomes@gmail.com>
+Date:   Wed Apr 22 17:11:47 2026 -0300
+
+    vamos vé
+
+[33mcommit 29e7337d662e105f8e04560fde0da7d0091effed[m
+Merge: 65994c2 c140057
+Author: MiguelRezendeGomes <miguelrezendegomes@gmail.com>
+Date:   Wed Apr 22 16:41:54 2026 -0300
+
+    Merging matheus
+
+[33mcommit c1400570cb571688a62b32aa2b5f425e397228d8[m
+Author: Matheus Couto da Costa Lima <matheuscclima2018@gmail.com>
+Date:   Wed Apr 22 16:23:21 2026 -0300
+
+    Toma miguel
+
+[33mcommit 65994c2911526e33e0cd4d52eb410dc73ced30e8[m
+Author: MiguelRezendeGomes <miguelrezendegomes@gmail.com>
+Date:   Wed Apr 22 16:16:17 2026 -0300
+
+    lll
+
+[33mcommit 03426b24efb417a024a58c7fa19aa5565801d0c3[m
+Merge: 4c0bbee c1f30c0
+Author: MiguelRezendeGomes <miguelrezendegomes@gmail.com>
+Date:   Wed Apr 22 14:39:07 2026 -0300
+
+    Merge branch 'main' - using remote changes from friend
+
+[33mcommit 4c0bbeee16d4d6ad744f2b70e32c000d3b145fb1[m
+Author: MiguelRezendeGomes <miguelrezendegomes@gmail.com>
+Date:   Wed Apr 22 14:37:53 2026 -0300
+
+    feat: adicionar autenticação de prontuários com CNPJ e CRM
+
+[33mcommit c1f30c01d0f3807360d0655f84e6bfc8f4d69787[m
+Author: Matheus Couto da Costa Lima <matheuscclima2018@gmail.com>
+Date:   Wed Apr 22 14:31:30 2026 -0300
+
+    Alteracoes no banco
+
+[33mcommit b3bbc48b4e9a75e1ed15481a2110203f181ce467[m
+Author: MiguelRezendeGomes <miguelrezendegomes@gmail.com>
+Date:   Fri Apr 17 17:06:06 2026 -0300
+
+    Modificacoes do banco de dados (ajustando rotas e funcoes)
+
+[33mcommit 6bedbd5013a199546b53c17cd14e3e0e1bf60a96[m[33m ([m[1;31morigin/Main[m[33m)[m
+Merge: 7b4255f 7ad1754
+Author: MiguelRezendeGomes <miguelrezendegomes@gmail.com>
+Date:   Fri Apr 17 15:08:03 2026 -0300
+
+    Merge branch 'Main' of https://github.com/MatheusLima022/Conecta-Inclusao-TCC2.0 into Main
+
+[33mcommit 7b4255fbe9c1dc7fc87651f47b99014a36d384e6[m
+Author: MIGUEL REZENDE GOMES <m.gomes@labcetec.net>
+Date:   Fri Apr 17 14:49:05 2026 -0300
+
+    Banco de dados
+
+[33mcommit 4dae2e545c45637a0c821a7a6c7c8536544501b5[m
+Author: wilianbraz-arch <wilian.braz@aluno.senai.br>
+Date:   Fri Apr 17 13:57:27 2026 -0300
+
+    Delete Banco de dados sql.txt
+
+[33mcommit d1de3327ce3916c2a1934caa3c81da27064b9711[m
+Author: wilianbraz-arch <wilian.braz@aluno.senai.br>
+Date:   Fri Apr 17 13:56:37 2026 -0300
+
+    Add files via upload
+
+[33mcommit 7ad175488bfb31107040d661252660914e25747e[m
+Author: Matheus Couto da Costa Lima <matheuscclima2018@gmail.com>
+Date:   Thu Apr 9 17:06:54 2026 -0300
+
+    The commit
+
+[33mcommit 0c52da355fd8799e5469b91eb92b68cc469101cf[m
+Merge: 3d56008 74e0b81
+Author: Matheus Couto da Costa Lima <matheuscclima2018@gmail.com>
+Date:   Thu Apr 9 14:03:30 2026 -0300
+
+    Merge branch 'Miguel' into Main
+
+[33mcommit 3d560089498988e19d48cf570fecfbd445389111[m
+Author: wilianbraz-arch <wilian.braz@aluno.senai.br>
+Date:   Wed Apr 8 14:25:17 2026 -0300
+
+    Add files via upload
+
+[33mcommit 74e0b8151e9dd9c0540772645540b9805ac15d80[m
+Author: Matheus Couto da Costa Lima <matheuscclima2018@gmail.com>
+Date:   Tue Apr 7 17:04:59 2026 -0300
+
+    Algumas mudanças
+
+[33mcommit 9d170159278cab9f45852458f12520e1a93a7eea[m
+Author: Matheus Couto da Costa Lima <matheuscclima2018@gmail.com>
+Date:   Mon Apr 6 23:13:22 2026 -0300
+
+    Front Esqueceu a senha; cadastro e dashboard da empresa; cadastro de profissional
+
+[33mcommit 6b84c031ae65a8c2367317414bcd7aca46876ba4[m
+Author: Mauricio de Jesus Davel <mdavel.vitoria@vitoria.acad.net>
+Date:   Mon Apr 6 17:14:06 2026 -0300
+
+    Adicionamento de mais telas e no index, continuar na tela de cadastro e esqueci senha (resolver acesso do admin)
+
+[33mcommit 2effa08ac9930857e4d03c7c171259f51b971b7f[m
+Author: Miguel Rezende Gomes <miguelrezendegomes@gmail.com>
+Date:   Thu Apr 2 17:04:10 2026 -0300
+
+    continuaçõa
+
+[33mcommit 5c82749c656747b99902c214d0850b3ab956f9f4[m
+Author: Miguel Rezende Gomes <miguelrezendegomes@gmail.com>
+Date:   Thu Apr 2 16:43:02 2026 -0300
+
+    dashboard paciente
+
+[33mcommit 4c0e72dd2984e399568e46d3fd3edf2597cb67e2[m
+Author: Tha1s24 <thaisrangefisio@gmail.com>
+Date:   Thu Apr 2 16:26:12 2026 -0300
+
+    Revise README for Conecta Inclusão platform
+    
+    Updated the README to provide detailed information about the Conecta Inclusão platform, including its purpose, target audience, features, technologies, and execution instructions.
+
+[33mcommit 4812088c7b20565e830c88052aa32fe1cbdc3d1a[m
+Author: Mauricio de Jesus Davel <mdavel.vitoria@vitoria.acad.net>
+Date:   Wed Apr 1 16:48:34 2026 -0300
+
+    Atual atual
+
+[33mcommit fea8a6dab92b8fc4c47211a1034babd8884bc1eb[m
+Author: Mauricio de Jesus Davel <mdavel.vitoria@vitoria.acad.net>
+Date:   Wed Apr 1 16:20:44 2026 -0300
+
+    massa
+
+[33mcommit 5d5b275fa09414024ad4c1f8e72839772b103d3b[m
+Author: Mauricio de Jesus Davel <mdavel.vitoria@vitoria.acad.net>
+Date:   Wed Apr 1 14:21:41 2026 -0300
+
+    legal
+
+[33mcommit 52fc25c8f12a268818dc96884dc935b28e7c998f[m
+Author: Matheus Couto da Costa Lima <matheuscclima2018@gmail.com>
+Date:   Tue Mar 31 13:40:27 2026 -0300
+
+    Atual
+
+[33mcommit a84953def0515ee10f027420b3fa9633187e2e13[m
+Author: MATHEUS COUTO DA COSTA LIMA <m.lima@labcetec.net>
+Date:   Tue Mar 31 13:38:17 2026 -0300
+
+    first commit

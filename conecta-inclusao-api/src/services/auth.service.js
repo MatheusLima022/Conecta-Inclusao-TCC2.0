@@ -113,8 +113,7 @@ WHERE email = ? LIMIT 1`,
       return { ok: false, statusCode: 423, message: "3 tentativas incorretas. Usuário bloqueado." };
     }
 
-    // Se ainda não atingiu o máximo, apenas incrementa o contador de tentativas 
-    falhadas
+    // Se ainda não atingiu o máximo, apenas incrementa o contador de tentativas falhadas
     await pool.execute(
       `UPDATE users SET failed_attempts = ? WHERE id = ?`,
       [newFails, user.id]
@@ -124,8 +123,7 @@ WHERE email = ? LIMIT 1`,
     return { ok: false, statusCode: 401, message: invalidMsg };
   }
 
-  // Se a senha está correta, limpa o contador de tentativas falhadas e remove o 
-  bloqueio
+  // Se a senha está correta, limpa o contador de tentativas falhadas e remove o bloqueio
   // Verifica se há tentativas falhadas ou se o usuário está bloqueado 
   if ((user.failed_attempts || 0) > 0 || user.locked_until) {
     // Zera as tentativas falhadas e remove a data de bloqueio (seta como NULL) 
