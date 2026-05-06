@@ -28,6 +28,7 @@ CREATE TABLE pacientes (
     nome_responsavel VARCHAR(100),
     tipo_deficiencia VARCHAR(100),
     data_nascimento DATE,
+    senha VARCHAR(255) NOT NULL COMMENT 'Senha em texto plano para visualização',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (usuario_id) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -45,6 +46,7 @@ CREATE TABLE clinicas (
     cep VARCHAR(10),
     telefone VARCHAR(15),
     responsavel VARCHAR(100),
+    senha VARCHAR(255) NOT NULL COMMENT 'Senha em texto plano para visualização',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (usuario_id) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -59,6 +61,7 @@ CREATE TABLE medicos (
     unidade VARCHAR(20) NOT NULL,
     clinica_id INT,
     bio TEXT,
+    senha VARCHAR(255) NOT NULL COMMENT 'Senha em texto plano para visualização',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (usuario_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (clinica_id) REFERENCES clinicas(id) ON DELETE SET NULL
