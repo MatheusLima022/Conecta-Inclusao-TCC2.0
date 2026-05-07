@@ -71,7 +71,7 @@ CREATE TABLE agendamentos (
     tipo_consulta ENUM('presencial', 'online', 'telefone') DEFAULT 'presencial',
     observacoes TEXT,
     status ENUM('confirmado', 'aguardando', 'cancelado', 'realizado', 'faltou') DEFAULT 'aguardando',
-    link_reuniao VARCHAR(255), -- Para a consulta online
+    link_reuniao VARCHAR(255), -- Para a consulta online'
     FOREIGN KEY (clinica_id) REFERENCES clinicas(id) ON DELETE CASCADE,
     FOREIGN KEY (paciente_id) REFERENCES pacientes(id) ON DELETE CASCADE,
     FOREIGN KEY (profissional_id) REFERENCES medicos(id) ON DELETE CASCADE
