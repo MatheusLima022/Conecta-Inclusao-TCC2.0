@@ -7,7 +7,6 @@ import cors from "cors";
 // Importa o express-rate-limit para limitar o número de requisições por IP 
 import rateLimit from "express-rate-limit"; 
 // Importa as rotas de autenticação definidas no arquivo auth.routes.js 
-import authRoutes from "./routes/auth.routes.js"; 
 import authAdvancedRoutes from "./routes/auth.advanced.routes.js";
 import messageRoutes from "./routes/messages.routes.js";
 import clinicaRoutes from "./routes/clinica.routes.js";
@@ -58,7 +57,6 @@ limit: 300
 // ============================================ 
 // Registra as rotas de autenticação sob o prefixo "/api/auth" 
 // Exemplo: POST /api/auth/login executará a rota definida em authRoutes 
-app.use("/api/auth", authRoutes); 
 
 // Registra as rotas de autenticação avançada sob o prefixo "/auth"
 // Endpoints: /auth/login/universal, /auth/register/patient, /auth/register/doctor, /auth/register/clinic

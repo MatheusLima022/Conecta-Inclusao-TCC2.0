@@ -1,0 +1,7 @@
+# Ignorar em qualquer pasta que aparecer
+node_modules/
+.env
+
+# Se quiser ser bem específico:
+conecta-inclusao-api/.env
+conecta-inclusao-api/node_modules/

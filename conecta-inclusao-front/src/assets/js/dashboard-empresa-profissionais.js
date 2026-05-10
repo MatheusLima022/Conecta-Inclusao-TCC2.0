@@ -1,6 +1,7 @@
 // Gerenciador de Profissionais da Empresa
 let api;
 let currentProfessionals = [];
+const AUTH_API_BASE = 'http://localhost:3000/auth';
 
 async function loadAPI() {
     if (!api) {
@@ -75,14 +76,15 @@ async function handleRegisterProfessional(event) {
         );
         
         if (!result.ok) {
-            showPopup(`Erro: ${result.error}`);
+            showPopup(`Erro: ${result.data?.message || result.error || 'Erro ao registrar profissional'}`);
             submitBtn.disabled = false;
             submitBtn.innerText = originalText;
             return;
         }
         
+        const registeredCRM = result.data?.data?.crm || result.data?.crm || crm.toUpperCase();
         // Sucesso
-        showPopup(`Profissional ${name} registrado com sucesso! CRM: ${result.data.crm}`);
+        showPopup(`Profissional ${name} registrado com sucesso! CRM: ${registeredCRM}`);
         
         // Limpar formulário
         form.reset();
@@ -133,11 +135,11 @@ async function loadProfessionalsList() {
         const token = apiModule.getToken();
         
         if (!token) {
-            console.log('Usuário não autenticado');
+            console.log('UsuÃ¡rio não autenticado');
             return;
         }
         
-        const response = await fetch('http://localhost:3000/clinic/professionals', {
+        const response = await fetch(`${AUTH_API_BASE}/clinic/professionals`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -150,6 +152,7 @@ async function loadProfessionalsList() {
         const data = await response.json();
         currentProfessionals = Array.isArray(data) ? data : [];
         displayProfessionalsList(currentProfessionals);
+        await loadCompanyDashboardSummary();
         
     } catch (error) {
         console.error('Erro ao carregar profissionais:', error);
@@ -159,12 +162,16 @@ async function loadProfessionalsList() {
 // Exibir lista de profissionais
 function displayProfessionalsList(professionals) {
     const teamBody = document.getElementById('teamFullTableBody');
+    const overviewBody = document.getElementById('teamTableBody');
     const unitFilter = document.getElementById('unitFilterSelect');
     
     if (!teamBody) return;
     
     if (!professionals || professionals.length === 0) {
         teamBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #999; padding: 1rem;">Nenhum profissional cadastrado ainda.</td></tr>';
+        if (overviewBody) {
+            overviewBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #999; padding: 1rem;">Nenhum profissional cadastrado ainda.</td></tr>';
+        }
         updateTeamSummary([]);
         updateUnitFilterOptions([]);
         return;
@@ -175,7 +182,7 @@ function displayProfessionalsList(professionals) {
             <td>${prof.name || 'N/A'}</td>
             <td>${prof.especialidade || 'Médico'}</td>
             <td>${prof.crm || 'N/A'}</td>
-            <td><span class="status-dot active">Ativo</span></td>
+            <td><span class="status-dot ${getStatusClass(prof.status)}">${formatProfessionalStatus(prof.status)}</span></td>
             <td>${prof.unidade || 'N/A'}</td>
             <td>
                 <button onclick="editProfessional(${prof.id})" style="background: none; border: none; color: #667eea; cursor: pointer; margin: 0 4px;">
@@ -187,23 +194,113 @@ function displayProfessionalsList(professionals) {
             </td>
         </tr>
     `).join('');
+
+    if (overviewBody) {
+        overviewBody.innerHTML = professionals.slice(0, 3).map(prof => `
+            <tr>
+                <td>${prof.name || 'N/A'}</td>
+                <td>${prof.especialidade || 'Médico'}</td>
+                <td><span class="status-dot ${getStatusClass(prof.status)}">${formatProfessionalStatus(prof.status)}</span></td>
+                <td>${prof.unidade || 'N/A'}</td>
+            </tr>
+        `).join('');
+    }
     
     updateTeamSummary(professionals);
     updateUnitFilterOptions(professionals);
 }
 
 function updateTeamSummary(professionals) {
+    const activeTopEl = document.getElementById('activeCount');
+    const workingTopEl = document.getElementById('workingCount');
+    const breakTopEl = document.getElementById('breakCount');
     const activeCountEl = document.getElementById('cardActiveCount');
     const workingCountEl = document.getElementById('cardWorkingCount');
     const breakCountEl = document.getElementById('cardBreakCount');
 
-    const active = professionals.length;
-    const working = professionals.filter(prof => prof.status && prof.status.toLowerCase() === 'trabalhando').length || active;
-    const onBreak = professionals.filter(prof => prof.status && ['férias', 'folga', 'licença'].includes(prof.status.toLowerCase())).length;
+    const active = professionals.filter(prof => isActiveStatus(prof.status)).length;
+    const working = professionals.filter(prof => normalizeStatus(prof.status) === 'trabalhando').length;
+    const onBreak = professionals.filter(prof => ['ferias', 'férias', 'folga', 'licenca', 'licença'].includes(normalizeStatus(prof.status))).length;
 
+    if (activeTopEl) activeTopEl.innerText = active;
+    if (workingTopEl) workingTopEl.innerText = working;
+    if (breakTopEl) breakTopEl.innerText = onBreak;
     if (activeCountEl) activeCountEl.innerText = active;
     if (workingCountEl) workingCountEl.innerText = working;
     if (breakCountEl) breakCountEl.innerText = onBreak;
+}
+
+function normalizeStatus(status) {
+    return String(status || 'ACTIVE').trim().toLowerCase();
+}
+
+function isActiveStatus(status) {
+    return normalizeStatus(status) !== 'inativo';
+}
+
+function formatProfessionalStatus(status) {
+    const normalized = normalizeStatus(status);
+    const labels = {
+        active: 'Ativo',
+        ativo: 'Ativo',
+        trabalhando: 'Trabalhando',
+        ferias: 'Férias',
+        'férias': 'Férias',
+        folga: 'Folga',
+        licenca: 'Licença',
+        'licença': 'Licença',
+        inativo: 'Inativo'
+    };
+    return labels[normalized] || 'Ativo';
+}
+
+function getStatusClass(status) {
+    const normalized = normalizeStatus(status);
+    if (normalized === 'trabalhando') return 'working';
+    if (['ferias', 'férias', 'folga', 'licenca', 'licença'].includes(normalized)) return 'break';
+    return 'active';
+}
+
+async function loadCompanyDashboardSummary() {
+    try {
+        const apiModule = await loadAPI();
+        const token = apiModule.getToken();
+
+        if (!token) return;
+
+        const response = await fetch(`${AUTH_API_BASE}/clinic/dashboard-summary`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) return;
+
+        updateDashboardSummary(await response.json());
+    } catch (error) {
+        console.error('Erro ao carregar resumo do dashboard:', error);
+    }
+}
+
+function updateDashboardSummary(summary) {
+    const values = {
+        activeCount: summary.activeEmployees,
+        workingCount: summary.workingEmployees,
+        breakCount: summary.breakEmployees,
+        cardActiveCount: summary.activeEmployees,
+        cardWorkingCount: summary.workingEmployees,
+        cardBreakCount: summary.breakEmployees,
+        upcomingAppointmentsCount: summary.upcomingAppointments,
+        pendingRequestsCount: summary.pendingRequests,
+        documentsToValidateCount: summary.documentsToValidate
+    };
+
+    Object.entries(values).forEach(([id, value]) => {
+        const element = document.getElementById(id);
+        if (element) element.innerText = Number(value || 0);
+    });
 }
 
 function updateUnitFilterOptions(professionals) {
@@ -294,6 +391,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Carregar lista de profissionais
     loadProfessionalsList();
+    loadCompanyDashboardSummary();
     
     // Animação de carregamento
     const style = document.createElement('style');

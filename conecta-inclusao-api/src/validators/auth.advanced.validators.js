@@ -43,6 +43,23 @@ export const resetTemporaryPasswordSchema = z.object({
   newPassword: strongPasswordSchema
 });
 
+export const forgotPasswordSchema = z.object({
+  type: z.enum(["cpf", "crm", "cnpj"]),
+  identifier: z
+    .string()
+    .trim()
+    .min(4, "Identificador invalido")
+    .max(30, "Identificador muito longo")
+});
+
+export const resetPasswordSchema = z.object({
+  token: z
+    .string()
+    .trim()
+    .min(20, "Token invalido"),
+  newPassword: strongPasswordSchema
+});
+
 // Schema para registro de paciente (CPF)
 export const registerPatientSchema = z.object({
   cpf: z
@@ -118,7 +135,10 @@ export const registerDoctorSchema = z.object({
     .max(500)
     .optional(),
   unidade: z
-    .enum(["Unidade Botafogo", "Unidade Copacabana", "Unidade Leblon"])
+    .string()
+    .trim()
+    .min(1)
+    .max(100)
     .optional(),
   clinicaId: z
     .number()

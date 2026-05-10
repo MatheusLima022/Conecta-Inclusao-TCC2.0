@@ -1,11 +1,14 @@
-// Serviço avançado de autenticação com suporte a CRM, CNPJ e CPF
 import bcrypt from "bcrypt";
+import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import { pool } from "../db.js";
+import { sendPasswordResetEmail } from "./email.service.js";
 
 const MAX = Number(process.env.MAX_LOGIN_ATTEMPTS || 3);
 const LOCK_MINUTES = Number(process.env.LOCK_MINUTES || 5);
 const TEMP_PASSWORD_RESET_EXPIRES_IN = process.env.TEMP_PASSWORD_RESET_EXPIRES_IN || "15m";
+const SALT_ROUNDS = 10;
+const PASSWORD_RESET_MINUTES = Number(process.env.PASSWORD_RESET_MINUTES || 30);
 
 function nowPlusMinutes(min) {
   return new Date(Date.now() + min * 60 * 1000);
@@ -20,39 +23,115 @@ function isStrongPassword(password) {
     /[^A-Za-z0-9]/.test(password);
 }
 
-// Middleware de autenticação JWT
+function signAccessToken(record) {
+  return jwt.sign(
+    { sub: String(record.id), profile: record.profile },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRES_IN || "1h" }
+  );
+}
+
+function publicUser(record) {
+  return {
+    id: record.id,
+    name: record.name,
+    email: record.email,
+    profile: record.profile,
+    cpf: record.cpf || null,
+    cnpj: record.cnpj || null,
+    crm: record.crm || null,
+    registry: record.crm || null,
+    unit: record.unidade || null,
+    unidade: record.unidade || null,
+    specialty: record.especialidade || null,
+    clinicaId: record.clinica_id || null
+  };
+}
+
+function detectIdentifierType(identifier) {
+  const trimmed = String(identifier || "").trim();
+  let normalized = trimmed.replace(/[\s-]/g, "");
+
+  const prefixMatch = normalized.match(/^(CRM|COREN|CREFITO)([A-Z0-9]+)$/i);
+  if (prefixMatch) normalized = prefixMatch[2].toUpperCase();
+
+  if (/^\d{3}\.\d{3}\.\d{3}-\d{2}$|^\d{11}$/.test(trimmed)) {
+    return { type: "cpf", value: trimmed.replace(/\D/g, "") };
+  }
+
+  if (/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$|^\d{14}$/.test(trimmed)) {
+    return { type: "cnpj", value: trimmed.replace(/\D/g, "") };
+  }
+
+  if (/^[A-Z0-9]{4,7}$/.test(normalized)) {
+    return { type: "crm", value: normalized.toUpperCase() };
+  }
+
+  if (trimmed.includes("@")) {
+    return { type: "email", value: trimmed.toLowerCase() };
+  }
+
+  return null;
+}
+
+function tableForProfile(profile) {
+  return {
+    paciente: "pacientes",
+    medico: "medicos",
+    clinica: "clinicas"
+  }[profile];
+}
+
+function maskEmail(email) {
+  const [name, domain] = String(email || "").split("@");
+  if (!name || !domain) return email;
+  const visible = name.slice(0, 2);
+  return `${visible}${"*".repeat(Math.max(name.length - 2, 3))}@${domain}`;
+}
+
+function normalizeIdentifierByType(type, identifier) {
+  const value = String(identifier || "").trim();
+  if (type === "cpf" || type === "cnpj") return value.replace(/\D/g, "");
+  if (type === "crm") return value.replace(/[\s-]/g, "").replace(/^CRM/i, "").toUpperCase();
+  return value;
+}
+
+function buildResetUrl(token) {
+  const baseUrl = process.env.FRONTEND_BASE_URL || "http://localhost:5500/conecta-inclusao-front/src/pages";
+  return `${baseUrl.replace(/\/$/, "")}/reset-password.html?token=${encodeURIComponent(token)}`;
+}
+
 export function authenticateToken(req, res, next) {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(" ")[1];
 
   if (!token) {
-    return res.status(401).json({ message: 'Token de acesso não fornecido.' });
+    return res.status(401).json({ message: "Token de acesso nao fornecido." });
   }
 
   jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
     if (err) {
-      return res.status(403).json({ message: 'Token inválido ou expirado.' });
+      return res.status(403).json({ message: "Token invalido ou expirado." });
     }
-    
-    req.user = decoded; // { sub: userId, profile: 'clinica', iat, exp }
+
+    req.user = decoded;
     next();
   });
 }
 
-// Busca detalhes da clínica do usuário autenticado
-export async function getClinicDetails(userId) {
+export async function getClinicDetails(clinicaId) {
   try {
     const [rows] = await pool.execute(
-      `SELECT c.id as clinicaId, c.cnpj, c.razao_social, c.endereco, c.cidade, c.estado, c.cep, c.telefone, c.responsavel
-       FROM clinicas c
-       WHERE c.usuario_id = ? LIMIT 1`,
-      [userId]
+      `SELECT id AS clinicaId, cnpj, nome, razao_social, endereco, cidade, estado, cep, telefone, responsavel
+       FROM clinicas
+       WHERE id = ? LIMIT 1`,
+      [clinicaId]
     );
-    
+
     if (rows.length === 0) {
-      return { ok: false, statusCode: 404, message: "Clínica não encontrada." };
+      return { ok: false, statusCode: 404, message: "Clinica nao encontrada." };
     }
-    
+
     return { ok: true, data: rows[0] };
   } catch (err) {
     console.error("Erro em getClinicDetails:", err);
@@ -60,186 +139,128 @@ export async function getClinicDetails(userId) {
   }
 }
 
-// Detecta o tipo de identificador baseado no padrão
-function detectIdentifierType(identifier) {
-  const trimmed = identifier.trim();
-  let normalized = trimmed.replace(/[\s-]/g, '');
-
-  // Aceita prefixes comuns de registro profissional: CRM, COREN, CREFITO
-  const prefixMatch = normalized.match(/^(CRM|COREN|CREFITO)([A-Z0-9]+)$/i);
-  if (prefixMatch) {
-    normalized = prefixMatch[2].toUpperCase();
-  }
-
-  // CPF: 11 dígitos (xxx.xxx.xxx-xx ou xxxxxxxxxxx)
-  if (/^\d{3}\.\d{3}\.\d{3}-\d{2}$|^\d{11}$/.test(trimmed)) {
-    return { type: 'cpf', value: trimmed.replace(/\D/g, '') };
-  }
-
-  // CNPJ: 14 dígitos (xx.xxx.xxx/xxxx-xx ou xxxxxxxxxxxxxx)
-  if (/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$|^\d{14}$/.test(trimmed)) {
-    return { type: 'cnpj', value: trimmed.replace(/\D/g, '') };
-  }
-
-  // CRM: geralmente 4-7 caracteres alfanuméricos
-  if (/^[A-Z0-9]{4,7}$/.test(normalized)) {
-    return { type: 'crm', value: normalized.toUpperCase() };
-  }
-
-  // Email: contém @
-  if (trimmed.includes('@')) {
-    return { type: 'email', value: trimmed.toLowerCase() };
-  }
-
-  return null;
-}
-
-// Login com CRM (Médico)
-async function loginWithCRM(crm, password) {
-  try {
+async function findAuthRecord(identifierInfo) {
+  if (identifierInfo.type === "cpf") {
     const [rows] = await pool.execute(
-      `SELECT u.id, u.name, u.email, u.password_hash, u.profile, u.status, 
-              u.failed_attempts, u.locked_until, u.must_change_password, u.temporary_password_token,
-              u.temporary_password_expires_at, m.crm, m.unidade, m.especialidade
-       FROM users u
-       INNER JOIN medicos m ON u.id = m.usuario_id
-       WHERE m.crm = ? AND u.profile = 'medico' LIMIT 1`,
-      [crm]
+      `SELECT id, nome_paciente AS name, email, cpf, senha AS password_hash, status, failed_attempts, locked_until,
+              'paciente' AS profile
+       FROM pacientes
+       WHERE cpf = ? LIMIT 1`,
+      [identifierInfo.value]
     );
-    
-    if (rows.length === 0) {
-      return { ok: false, statusCode: 401, message: "CRM ou senha inválidos. Verifique seus dados de acesso." };
-    }
-    
-    return await validateUserPassword(rows[0], password, 'medico');
-  } catch (err) {
-    console.error("Erro em loginWithCRM:", err);
-    return { ok: false, statusCode: 500, message: "Erro interno do servidor." };
+    return rows[0] || null;
   }
-}
 
-// Login com CNPJ (Clínica)
-async function loginWithCNPJ(cnpj, password) {
-  try {
+  if (identifierInfo.type === "cnpj") {
     const [rows] = await pool.execute(
-      `SELECT u.id, u.name, u.email, u.password_hash, u.profile, u.status, 
-              u.failed_attempts, u.locked_until, c.cnpj
-       FROM users u
-       INNER JOIN clinicas c ON u.id = c.usuario_id
-       WHERE c.cnpj = ? AND u.profile = 'clinica' LIMIT 1`,
-      [cnpj]
+      `SELECT id, nome AS name, email, cnpj, senha AS password_hash, status, failed_attempts, locked_until,
+              'clinica' AS profile
+       FROM clinicas
+       WHERE cnpj = ? LIMIT 1`,
+      [identifierInfo.value]
     );
-    
-    if (rows.length === 0) {
-      return { ok: false, statusCode: 401, message: "CNPJ ou senha inválidos. Verifique seus dados de acesso." };
-    }
-    
-    return await validateUserPassword(rows[0], password, 'clinica');
-  } catch (err) {
-    console.error("Erro em loginWithCNPJ:", err);
-    return { ok: false, statusCode: 500, message: "Erro interno do servidor." };
+    return rows[0] || null;
   }
-}
 
-// Login com CPF (Paciente)
-async function loginWithCPF(cpf, password) {
-  try {
+  if (identifierInfo.type === "crm") {
     const [rows] = await pool.execute(
-      `SELECT u.id, u.name, u.email, u.password_hash, u.profile, u.status, 
-              u.failed_attempts, u.locked_until, p.cpf
-       FROM users u
-       INNER JOIN pacientes p ON u.id = p.usuario_id
-       WHERE p.cpf = ? AND u.profile = 'paciente' LIMIT 1`,
-      [cpf]
+      `SELECT id, name, email, crm, senha AS password_hash, status, failed_attempts, locked_until,
+              must_change_password, temporary_password_token, temporary_password_expires_at,
+              unidade, especialidade, clinica_id, 'medico' AS profile
+       FROM medicos
+       WHERE crm = ? LIMIT 1`,
+      [identifierInfo.value]
     );
-    
-    if (rows.length === 0) {
-      return { ok: false, statusCode: 401, message: "CPF ou senha inválidos. Verifique seus dados de acesso." };
-    }
-    
-    return await validateUserPassword(rows[0], password, 'paciente');
-  } catch (err) {
-    console.error("Erro em loginWithCPF:", err);
-    return { ok: false, statusCode: 500, message: "Erro interno do servidor." };
+    return rows[0] || null;
   }
+
+  const [patients] = await pool.execute(
+    `SELECT id, nome_paciente AS name, email, cpf, senha AS password_hash, status, failed_attempts, locked_until,
+            'paciente' AS profile
+     FROM pacientes
+     WHERE email = ? LIMIT 1`,
+    [identifierInfo.value]
+  );
+  if (patients[0]) return patients[0];
+
+  const [doctors] = await pool.execute(
+    `SELECT id, name, email, crm, senha AS password_hash, status, failed_attempts, locked_until,
+            must_change_password, temporary_password_token, temporary_password_expires_at,
+            unidade, especialidade, clinica_id, 'medico' AS profile
+     FROM medicos
+     WHERE email = ? LIMIT 1`,
+    [identifierInfo.value]
+  );
+  if (doctors[0]) return doctors[0];
+
+  const [clinics] = await pool.execute(
+    `SELECT id, nome AS name, email, cnpj, senha AS password_hash, status, failed_attempts, locked_until,
+            'clinica' AS profile
+     FROM clinicas
+     WHERE email = ? LIMIT 1`,
+    [identifierInfo.value]
+  );
+  return clinics[0] || null;
 }
 
-// Login com Email (compatibilidade com sistema antigo)
-async function loginWithEmail(email, password) {
-  try {
-    const [rows] = await pool.execute(
-      `SELECT id, name, email, password_hash, profile, status, failed_attempts, locked_until
-       FROM users
-       WHERE email = ? LIMIT 1`,
-      [email]
-    );
-    
-    if (rows.length === 0) {
-      return { ok: false, statusCode: 401, message: "Credenciais inválidas." };
-    }
-    
-    return await validateUserPassword(rows[0], password);
-  } catch (err) {
-    console.error("Erro em loginWithEmail:", err);
-    return { ok: false, statusCode: 500, message: "Erro interno do servidor." };
-  }
+async function updateAuthState(profile, id, fields) {
+  const table = tableForProfile(profile);
+  if (!table) return;
+
+  const entries = Object.entries(fields);
+  if (!entries.length) return;
+
+  const setSql = entries.map(([key]) => `${key} = ?`).join(", ");
+  await pool.execute(
+    `UPDATE ${table} SET ${setSql} WHERE id = ?`,
+    [...entries.map(([, value]) => value), id]
+  );
 }
 
-// Valida senha e retorna token JWT
-async function validateUserPassword(user, password, expectedProfile = null) {
-  // Verifica se o perfil do usuário corresponde ao esperado
-  if (expectedProfile && user.profile !== expectedProfile) {
-    return { ok: false, statusCode: 401, message: "Credenciais inválidas." };
+async function validatePassword(record, password, expectedProfile = null) {
+  if (expectedProfile && record.profile !== expectedProfile) {
+    return { ok: false, statusCode: 401, message: "Credenciais invalidas." };
   }
-  
-  // Verifica se o usuário está ativo
-  if (user.status !== "ACTIVE") {
-    return { ok: false, statusCode: 403, message: "Usuário inativo." };
+
+  if (record.status !== "ACTIVE" && record.status !== "ativo") {
+    return { ok: false, statusCode: 403, message: "Conta inativa." };
   }
-  
-  // Verifica bloqueio temporário
-  if (user.locked_until && new Date(user.locked_until) > new Date()) {
-    return { ok: false, statusCode: 423, message: "Usuário bloqueado temporariamente." };
+
+  if (record.locked_until && new Date(record.locked_until) > new Date()) {
+    return { ok: false, statusCode: 423, message: "Conta bloqueada temporariamente." };
   }
-  
-  // Valida a senha
-  const passOk = await bcrypt.compare(password, user.password_hash);
-  
+
+  const passOk = await bcrypt.compare(password, record.password_hash);
+
   if (!passOk) {
-    const newFails = Math.min((user.failed_attempts || 0) + 1, 255);
-    
+    const newFails = Math.min((record.failed_attempts || 0) + 1, 255);
+
     if (newFails >= MAX) {
-      const lockedUntil = nowPlusMinutes(LOCK_MINUTES);
-      await pool.execute(
-        `UPDATE users SET failed_attempts = ?, locked_until = ? WHERE id = ?`,
-        [newFails, lockedUntil, user.id]
-      );
-      return { ok: false, statusCode: 423, message: "Múltiplas tentativas incorretas. Usuário bloqueado por 5 minutos." };
+      await updateAuthState(record.profile, record.id, {
+        failed_attempts: newFails,
+        locked_until: nowPlusMinutes(LOCK_MINUTES)
+      });
+      return { ok: false, statusCode: 423, message: "Multiplas tentativas incorretas. Conta bloqueada por 5 minutos." };
     }
-    
-    await pool.execute(
-      `UPDATE users SET failed_attempts = ? WHERE id = ?`,
-      [newFails, user.id]
-    );
-    
-    return { ok: false, statusCode: 401, message: "Credenciais inválidas." };
-  }
-  
-  // Limpa tentativas falhadas em caso de login bem-sucedido
-  if ((user.failed_attempts || 0) > 0 || user.locked_until) {
-    await pool.execute(
-      `UPDATE users SET failed_attempts = 0, locked_until = NULL WHERE id = ?`,
-      [user.id]
-    );
+
+    await updateAuthState(record.profile, record.id, { failed_attempts: newFails });
+    return { ok: false, statusCode: 401, message: "Credenciais invalidas." };
   }
 
-  if (expectedProfile === 'medico' && user.must_change_password && user.temporary_password_token) {
-    if (user.temporary_password_expires_at && new Date(user.temporary_password_expires_at) < new Date()) {
-      return { ok: false, statusCode: 403, message: "Senha temporária expirada. Solicite uma nova senha à empresa." };
+  if ((record.failed_attempts || 0) > 0 || record.locked_until) {
+    await updateAuthState(record.profile, record.id, {
+      failed_attempts: 0,
+      locked_until: null
+    });
+  }
+
+  if (record.profile === "medico" && record.must_change_password && record.temporary_password_token) {
+    if (record.temporary_password_expires_at && new Date(record.temporary_password_expires_at) < new Date()) {
+      return { ok: false, statusCode: 403, message: "Senha temporaria expirada. Solicite uma nova senha a empresa." };
     }
 
     const resetToken = jwt.sign(
-      { sub: String(user.id), profile: user.profile, type: 'temporary_password_reset' },
+      { sub: String(record.id), profile: "medico", type: "temporary_password_reset" },
       process.env.JWT_SECRET,
       { expiresIn: TEMP_PASSWORD_RESET_EXPIRES_IN }
     );
@@ -250,341 +271,397 @@ async function validateUserPassword(user, password, expectedProfile = null) {
       data: {
         requiresPasswordReset: true,
         resetToken,
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          profile: user.profile,
-          crm: user.crm || null,
-          registry: user.crm || null,
-          unit: user.unidade || null,
-          unidade: user.unidade || null,
-          specialty: user.especialidade || null
-        }
+        user: publicUser(record)
       }
     };
   }
-  
-  // Gera token JWT
-  const token = jwt.sign(
-    { sub: String(user.id), profile: user.profile },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || "1h" }
-  );
-  
+
   return {
     ok: true,
     statusCode: 200,
     data: {
-      token,
-      user: { 
-        id: user.id, 
-        name: user.name, 
-        email: user.email, 
-        profile: user.profile,
-        crm: user.crm || null,
-        registry: user.crm || null,
-        unit: user.unidade || null,
-        unidade: user.unidade || null,
-        specialty: user.especialidade || null
-      }
+      token: signAccessToken(record),
+      user: publicUser(record)
     }
   };
 }
 
-// Função principal de login universal que detecta o tipo de identificador
 export async function loginUniversal({ identifier, password }) {
   if (!identifier || !password) {
-    return { ok: false, statusCode: 400, message: "Identificador e senha são obrigatórios." };
+    return { ok: false, statusCode: 400, message: "Identificador e senha sao obrigatorios." };
   }
-  
+
   const identifierInfo = detectIdentifierType(identifier);
-  
   if (!identifierInfo) {
-    return { ok: false, statusCode: 400, message: "Formato de identificador inválido." };
+    return { ok: false, statusCode: 400, message: "Formato de identificador invalido." };
   }
-  
-  // Roteia para a função apropriada baseado no tipo
-  switch (identifierInfo.type) {
-    case 'crm':
-      return await loginWithCRM(identifierInfo.value, password);
-    case 'cnpj':
-      return await loginWithCNPJ(identifierInfo.value, password);
-    case 'cpf':
-      return await loginWithCPF(identifierInfo.value, password);
-    case 'email':
-      return await loginWithEmail(identifierInfo.value, password);
-    default:
-      return { ok: false, statusCode: 400, message: "Tipo de identificador não suportado." };
+
+  const record = await findAuthRecord(identifierInfo);
+  if (!record) {
+    return { ok: false, statusCode: 401, message: "Credenciais invalidas." };
   }
+
+  const expectedProfile = {
+    cpf: "paciente",
+    cnpj: "clinica",
+    crm: "medico"
+  }[identifierInfo.type] || null;
+
+  return validatePassword(record, password, expectedProfile);
 }
 
-// Função de registro (cadastro) de usuário com suporte a diferentes perfis
 export async function resetTemporaryProfessionalPassword({ resetToken, newPassword }) {
   try {
     if (!isStrongPassword(newPassword)) {
       return {
         ok: false,
         statusCode: 400,
-        message: "A nova senha deve ter no mínimo 8 caracteres, com maiúscula, minúscula, número e caractere especial."
+        message: "A nova senha deve ter no minimo 8 caracteres, com maiuscula, minuscula, numero e caractere especial."
       };
     }
 
     let decoded;
     try {
       decoded = jwt.verify(resetToken, process.env.JWT_SECRET);
-    } catch (error) {
-      return { ok: false, statusCode: 401, message: "Token temporário inválido ou expirado." };
+    } catch {
+      return { ok: false, statusCode: 401, message: "Token temporario invalido ou expirado." };
     }
 
-    if (decoded.type !== 'temporary_password_reset' || decoded.profile !== 'medico') {
-      return { ok: false, statusCode: 403, message: "Token temporário inválido." };
+    if (decoded.type !== "temporary_password_reset" || decoded.profile !== "medico") {
+      return { ok: false, statusCode: 403, message: "Token temporario invalido." };
     }
 
     const [rows] = await pool.execute(
-      `SELECT u.id, u.name, u.email, u.password_hash, u.profile, u.status,
-              u.must_change_password, u.temporary_password_token, m.crm, m.unidade, m.especialidade
-       FROM users u
-       INNER JOIN medicos m ON u.id = m.usuario_id
-       WHERE u.id = ? AND u.profile = 'medico' LIMIT 1`,
+      `SELECT id, name, email, crm, senha AS password_hash, status, must_change_password,
+              temporary_password_token, unidade, especialidade, clinica_id, 'medico' AS profile
+       FROM medicos
+       WHERE id = ? LIMIT 1`,
       [decoded.sub]
     );
 
     if (rows.length === 0) {
-      return { ok: false, statusCode: 404, message: "Profissional não encontrado." };
+      return { ok: false, statusCode: 404, message: "Profissional nao encontrado." };
     }
 
-    const user = rows[0];
-    if (!user.must_change_password || !user.temporary_password_token) {
-      return { ok: false, statusCode: 400, message: "Essa senha temporária já foi redefinida." };
+    const doctor = rows[0];
+    if (!doctor.must_change_password || !doctor.temporary_password_token) {
+      return { ok: false, statusCode: 400, message: "Essa senha temporaria ja foi redefinida." };
     }
 
-    const isSameAsTemporary = await bcrypt.compare(newPassword, user.temporary_password_token);
+    const isSameAsTemporary = await bcrypt.compare(newPassword, doctor.temporary_password_token);
     if (isSameAsTemporary) {
-      return { ok: false, statusCode: 400, message: "A nova senha não pode ser igual à senha temporária." };
+      return { ok: false, statusCode: 400, message: "A nova senha nao pode ser igual a senha temporaria." };
     }
 
-    const SALT_ROUNDS = 10;
     const newPasswordHash = await bcrypt.hash(newPassword.trim(), SALT_ROUNDS);
-
     await pool.execute(
-      `UPDATE users
-       SET password_hash = ?, must_change_password = FALSE, temporary_password_token = NULL,
+      `UPDATE medicos
+       SET senha = ?, must_change_password = FALSE, temporary_password_token = NULL,
            temporary_password_expires_at = NULL, failed_attempts = 0, locked_until = NULL
        WHERE id = ?`,
-      [newPasswordHash, user.id]
-    );
-
-    const token = jwt.sign(
-      { sub: String(user.id), profile: user.profile },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || "1h" }
+      [newPasswordHash, doctor.id]
     );
 
     return {
       ok: true,
       statusCode: 200,
       data: {
-        token,
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          profile: user.profile,
-          crm: user.crm || null,
-          registry: user.crm || null,
-          unit: user.unidade || null,
-          unidade: user.unidade || null,
-          specialty: user.especialidade || null
-        }
+        token: signAccessToken(doctor),
+        user: publicUser(doctor)
       }
     };
   } catch (err) {
     console.error("Erro em resetTemporaryProfessionalPassword:", err);
-    return { ok: false, statusCode: 500, message: "Erro ao redefinir senha temporária." };
+    return { ok: false, statusCode: 500, message: "Erro ao redefinir senha temporaria." };
+  }
+}
+
+async function findPasswordResetAccount(type, identifier) {
+  const value = normalizeIdentifierByType(type, identifier);
+
+  if (type === "cpf") {
+    const [rows] = await pool.execute(
+      `SELECT id, nome_paciente AS name, email, 'paciente' AS profile
+       FROM pacientes
+       WHERE cpf = ? LIMIT 1`,
+      [value]
+    );
+    return rows[0] || null;
+  }
+
+  if (type === "crm") {
+    const [rows] = await pool.execute(
+      `SELECT id, name, email, 'medico' AS profile
+       FROM medicos
+       WHERE crm = ? LIMIT 1`,
+      [value]
+    );
+    return rows[0] || null;
+  }
+
+  if (type === "cnpj") {
+    const [rows] = await pool.execute(
+      `SELECT id, nome AS name, email, 'clinica' AS profile
+       FROM clinicas
+       WHERE cnpj = ? LIMIT 1`,
+      [value]
+    );
+    return rows[0] || null;
+  }
+
+  return null;
+}
+
+export async function requestPasswordReset({ type, identifier }) {
+  try {
+    const account = await findPasswordResetAccount(type, identifier);
+
+    if (!account) {
+      return { ok: false, statusCode: 404, message: "Cadastro nao encontrado para o identificador informado." };
+    }
+
+    if (!account.email) {
+      return { ok: false, statusCode: 400, message: "Este cadastro nao possui e-mail para recuperacao de senha." };
+    }
+
+    const token = crypto.randomBytes(32).toString("hex");
+    const tokenHash = await bcrypt.hash(token, SALT_ROUNDS);
+    const expiresAt = nowPlusMinutes(PASSWORD_RESET_MINUTES);
+    const table = tableForProfile(account.profile);
+
+    await pool.execute(
+      `UPDATE ${table}
+       SET password_reset_token = ?, password_reset_expires_at = ?
+       WHERE id = ?`,
+      [tokenHash, expiresAt, account.id]
+    );
+
+    const resetUrl = buildResetUrl(token);
+    await sendPasswordResetEmail({
+      to: account.email,
+      name: account.name,
+      token,
+      resetUrl
+    });
+
+    return {
+      ok: true,
+      statusCode: 200,
+      message: "Token de recuperacao enviado para o e-mail cadastrado.",
+      data: { email: maskEmail(account.email) }
+    };
+  } catch (err) {
+    console.error("Erro em requestPasswordReset:", err);
+    return { ok: false, statusCode: 500, message: "Erro ao enviar e-mail de recuperacao." };
+  }
+}
+
+async function findAccountByResetToken(token) {
+  const queries = [
+    {
+      profile: "paciente",
+      table: "pacientes",
+      sql: `SELECT id, nome_paciente AS name, email, password_reset_token, password_reset_expires_at
+            FROM pacientes
+            WHERE password_reset_token IS NOT NULL`
+    },
+    {
+      profile: "medico",
+      table: "medicos",
+      sql: `SELECT id, name, email, password_reset_token, password_reset_expires_at
+            FROM medicos
+            WHERE password_reset_token IS NOT NULL`
+    },
+    {
+      profile: "clinica",
+      table: "clinicas",
+      sql: `SELECT id, nome AS name, email, password_reset_token, password_reset_expires_at
+            FROM clinicas
+            WHERE password_reset_token IS NOT NULL`
+    }
+  ];
+
+  for (const query of queries) {
+    const [rows] = await pool.execute(query.sql);
+    for (const row of rows) {
+      const matches = await bcrypt.compare(token, row.password_reset_token);
+      if (matches) return { ...row, profile: query.profile, table: query.table };
+    }
+  }
+
+  return null;
+}
+
+export async function resetPasswordWithToken({ token, newPassword }) {
+  try {
+    if (!isStrongPassword(newPassword)) {
+      return {
+        ok: false,
+        statusCode: 400,
+        message: "A nova senha deve ter no minimo 8 caracteres, com maiuscula, minuscula, numero e caractere especial."
+      };
+    }
+
+    const account = await findAccountByResetToken(token);
+    if (!account) {
+      return { ok: false, statusCode: 401, message: "Token invalido." };
+    }
+
+    if (account.password_reset_expires_at && new Date(account.password_reset_expires_at) < new Date()) {
+      return { ok: false, statusCode: 401, message: "Token expirado. Solicite uma nova recuperacao." };
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword.trim(), SALT_ROUNDS);
+    const resetExtra = account.profile === "medico"
+      ? ", must_change_password = FALSE, temporary_password_token = NULL, temporary_password_expires_at = NULL"
+      : "";
+
+    await pool.execute(
+      `UPDATE ${account.table}
+       SET senha = ?, password_reset_token = NULL, password_reset_expires_at = NULL,
+           failed_attempts = 0, locked_until = NULL${resetExtra}
+       WHERE id = ?`,
+      [passwordHash, account.id]
+    );
+
+    return {
+      ok: true,
+      statusCode: 200,
+      message: "Senha redefinida com sucesso."
+    };
+  } catch (err) {
+    console.error("Erro em resetPasswordWithToken:", err);
+    return { ok: false, statusCode: 500, message: "Erro ao redefinir senha." };
   }
 }
 
 export async function registerUser({ identifier, password, name, profile, userData = null }) {
   try {
-    // Validações básicas
     if (!identifier || !password || !name || !profile) {
-      return { ok: false, statusCode: 400, message: "Todos os campos são obrigatórios." };
+      return { ok: false, statusCode: 400, message: "Todos os campos sao obrigatorios." };
     }
-    
-    if (!['paciente', 'medico', 'clinica'].includes(profile)) {
-      return { ok: false, statusCode: 400, message: "Perfil inválido." };
+
+    if (!["paciente", "medico", "clinica"].includes(profile)) {
+      return { ok: false, statusCode: 400, message: "Perfil invalido." };
     }
-    
+
     const identifierInfo = detectIdentifierType(identifier);
     if (!identifierInfo) {
-      return { ok: false, statusCode: 400, message: "Identificador inválido para o perfil." };
+      return { ok: false, statusCode: 400, message: "Identificador invalido para o perfil." };
     }
-    
-    // Valida correspondência entre perfil e tipo de identificador
+
     const validCombinations = {
-      'paciente': 'cpf',
-      'medico': 'crm',
-      'clinica': 'cnpj'
+      paciente: "cpf",
+      medico: "crm",
+      clinica: "cnpj"
     };
-    
+
     if (validCombinations[profile] !== identifierInfo.type) {
       return { ok: false, statusCode: 400, message: `Perfil ${profile} requer ${validCombinations[profile].toUpperCase()}.` };
     }
-    
-    // Hash da senha
-    const SALT_ROUNDS = 10;
-    const password_hash = await bcrypt.hash(password.trim(), SALT_ROUNDS);
-    
-    // Inicia transação
-    const connection = await pool.getConnection();
-    try {
-      await connection.beginTransaction();
-      
-      // Cria usuário
-      const [userResult] = await connection.execute(
-        `INSERT INTO users (name, email, password_hash, profile, status)
-         VALUES (?, ?, ?, ?, 'ACTIVE')`,
-        [name, userData?.email || `${identifierInfo.value}@conecta.local`, password_hash, profile]
-      );
-      
-      const userId = userResult.insertId;
-      
-      // Cria registro específico do perfil
-      if (profile === 'paciente') {
-        await connection.execute(
-          `INSERT INTO pacientes (usuario_id, nome_paciente, cpf, email, nome_responsavel, tipo_deficiencia, data_nascimento)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [userId, name, identifierInfo.value, userData?.email || null, userData?.nomeResponsavel || null, userData?.tipoDeficiencia || null, userData?.dataNascimento || null]
-        );
-      } else if (profile === 'medico') {
-        await connection.execute(
-          `INSERT INTO medicos (usuario_id, crm, email, especialidade, clinica_id, bio, unidade)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [userId, identifierInfo.value, userData?.email || null, userData?.especialidade || null, userData?.clinicaId || null, userData?.bio || null, userData?.unidade || null]
-        );
-      } else if (profile === 'clinica') {
-        // Salva todos os dados da clínica
-        await connection.execute(
-          `INSERT INTO clinicas (usuario_id, cnpj, email, razao_social, endereco, cidade, estado, cep, telefone, responsavel)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            userId,
-            identifierInfo.value,
-            userData?.email || null,
-            userData?.razaoSocial || name,
-            userData?.endereco || '',
-            userData?.cidade || '',
-            userData?.estado || '',
-            userData?.cep || '',
-            userData?.telefone || '',
-            userData?.responsavel || ''
-          ]
-        );
-      }
-      
-      await connection.commit();
-      
-      return {
-        ok: true,
-        statusCode: 201,
-        message: "Usuário registrado com sucesso.",
-        data: { userId, profile, identifier: identifierInfo.value }
-      };
-    } catch (err) {
-      await connection.rollback();
-      throw err;
-    } finally {
-      connection.release();
+
+    if (profile === "medico" && !userData?.unidade) {
+      return { ok: false, statusCode: 400, message: "Unidade e obrigatoria para cadastro de medico." };
     }
+
+    const passwordHash = await bcrypt.hash(password.trim(), SALT_ROUNDS);
+    let result;
+
+    if (profile === "paciente") {
+      [result] = await pool.execute(
+        `INSERT INTO pacientes (nome_paciente, cpf, email, nome_responsavel, tipo_deficiencia, data_nascimento, senha, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 'ACTIVE')`,
+        [name, identifierInfo.value, userData?.email || null, userData?.nomeResponsavel || null, userData?.tipoDeficiencia || null, userData?.dataNascimento || null, passwordHash]
+      );
+    } else if (profile === "medico") {
+      [result] = await pool.execute(
+        `INSERT INTO medicos (name, crm, email, especialidade, clinica_id, bio, unidade, senha, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE')`,
+        [name, identifierInfo.value, userData?.email || null, userData?.especialidade || null, userData?.clinicaId || null, userData?.bio || null, userData?.unidade, passwordHash]
+      );
+    } else {
+      [result] = await pool.execute(
+        `INSERT INTO clinicas (nome, cnpj, email, razao_social, endereco, cidade, estado, cep, telefone, responsavel, senha, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE')`,
+        [
+          name,
+          identifierInfo.value,
+          userData?.email || null,
+          userData?.razaoSocial || name,
+          userData?.endereco || "",
+          userData?.cidade || "",
+          userData?.estado || "",
+          userData?.cep || "",
+          userData?.telefone || "",
+          userData?.responsavel || "",
+          passwordHash
+        ]
+      );
+    }
+
+    return {
+      ok: true,
+      statusCode: 201,
+      message: "Cadastro realizado com sucesso.",
+      data: { id: result.insertId, profile, identifier: identifierInfo.value }
+    };
   } catch (err) {
     console.error("Erro em registerUser:", err);
-    
-    // Verifica duplicidade
-    if (err.code === 'ER_DUP_ENTRY') {
-      return { ok: false, statusCode: 409, message: "Identificador já cadastrado." };
+
+    if (err.code === "ER_DUP_ENTRY") {
+      return { ok: false, statusCode: 409, message: "Identificador ou email ja cadastrado." };
     }
-    
-    return { ok: false, statusCode: 500, message: "Erro ao registrar usuário." };
+
+    return { ok: false, statusCode: 500, message: "Erro ao registrar usuario." };
   }
 }
 
-// Função para registrar profissional (médico) quando a clínica o cadastra
 export async function registerProfessional({ crm, name, especialidade, clinicaId, bio = null, unidade, password, email = null }) {
   try {
-    // Validações básicas
     if (!crm || !name || !clinicaId || !unidade || !password) {
-      return { ok: false, statusCode: 400, message: "Todos os campos obrigatórios não foram preenchidos." };
+      return { ok: false, statusCode: 400, message: "Todos os campos obrigatorios nao foram preenchidos." };
     }
 
-    // Validar CRM
     const crmInfo = detectIdentifierType(crm);
-    if (!crmInfo || crmInfo.type !== 'crm') {
-      return { ok: false, statusCode: 400, message: "CRM inválido." };
+    if (!crmInfo || crmInfo.type !== "crm") {
+      return { ok: false, statusCode: 400, message: "CRM invalido." };
     }
 
-    // Inicia transação
-    const connection = await pool.getConnection();
-    try {
-      await connection.beginTransaction();
-
-      if (!["Unidade Botafogo", "Unidade Copacabana", "Unidade Leblon"].includes(unidade)) {
-        return { ok: false, statusCode: 400, message: "Unidade inválida." };
-      }
-
-      if (password.trim().length < 6) {
-        return { ok: false, statusCode: 400, message: "Senha deve ter no mínimo 6 caracteres." };
-      }
-
-      const SALT_ROUNDS = 10;
-      const defaultPassword = password.trim();
-      const password_hash = await bcrypt.hash(defaultPassword, SALT_ROUNDS);
-
-      // Cria usuário com perfil de médico
-      const [userResult] = await connection.execute(
-        `INSERT INTO users (name, email, password_hash, profile, status, must_change_password, temporary_password_token, temporary_password_expires_at)
-         VALUES (?, ?, ?, 'medico', 'ACTIVE', TRUE, ?, ?)`,
-        [name, email || `${crmInfo.value}@conecta.local`, password_hash, password_hash, nowPlusMinutes(60 * 24 * 7)]
-      );
-
-      const userId = userResult.insertId;
-
-      // Registra o médico vinculado à clínica
-      await connection.execute(
-        `INSERT INTO medicos (usuario_id, clinica_id, crm, especialidade, bio, unidade, email)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [userId, clinicaId, crmInfo.value, especialidade || null, bio || null, unidade, email]
-      );
-
-      await connection.commit();
-
-      return {
-        ok: true,
-        statusCode: 201,
-        message: "Profissional registrado com sucesso.",
-        data: {
-          userId,
-          crm: crmInfo.value,
-          defaultPassword,
-          name,
-          unidade
-        }
-      };
-    } catch (err) {
-      await connection.rollback();
-      throw err;
-    } finally {
-      connection.release();
+    if (password.trim().length < 6) {
+      return { ok: false, statusCode: 400, message: "Senha deve ter no minimo 6 caracteres." };
     }
+
+    const defaultPassword = password.trim();
+    const passwordHash = await bcrypt.hash(defaultPassword, SALT_ROUNDS);
+
+    const [result] = await pool.execute(
+      `INSERT INTO medicos
+       (name, clinica_id, crm, especialidade, bio, unidade, email, senha, status, must_change_password, temporary_password_token, temporary_password_expires_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE', TRUE, ?, ?)`,
+      [name, clinicaId, crmInfo.value, especialidade || null, bio || null, unidade, email, passwordHash, passwordHash, nowPlusMinutes(60 * 24 * 7)]
+    );
+
+    return {
+      ok: true,
+      statusCode: 201,
+      message: "Profissional registrado com sucesso.",
+      data: {
+        id: result.insertId,
+        crm: crmInfo.value,
+        defaultPassword,
+        name,
+        unidade
+      }
+    };
   } catch (err) {
     console.error("Erro em registerProfessional:", err);
 
-    if (err.code === 'ER_DUP_ENTRY') {
-      return { ok: false, statusCode: 409, message: "CRM já cadastrado." };
+    if (err.code === "ER_DUP_ENTRY") {
+      return { ok: false, statusCode: 409, message: "CRM ou email ja cadastrado." };
     }
 
-    if (err.message.includes('FK_medicos_clinica')) {
-      return { ok: false, statusCode: 404, message: "Clínica não encontrada." };
+    if (err.message?.includes("FK_medicos_clinica")) {
+      return { ok: false, statusCode: 404, message: "Clinica nao encontrada." };
     }
 
     return { ok: false, statusCode: 500, message: "Erro ao registrar profissional." };

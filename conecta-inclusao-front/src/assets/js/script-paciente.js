@@ -1,4 +1,4 @@
-// ===== FUNÇÕES DO MODAL ESQUECEU A SENHA =====
+﻿// ===== FUNÃ‡Ã•ES DO MODAL ESQUECEU A SENHA =====
 function openForgotPasswordModal(event) {
     event.preventDefault();
     document.getElementById('forgotPasswordModal').style.display = 'flex';
@@ -10,10 +10,11 @@ function closeForgotPasswordModal() {
     document.getElementById('forgotEmail').value = '';
 }
 
-function sendResetEmail(type) {
-    const email = document.getElementById('forgotEmail').value;
+async function sendResetEmail(type) {
+    const identifier = document.getElementById('forgotEmail').value;
+    const identifierDigits = identifier.replace(/\D/g, '');
 
-    if (!email || (type === 'cpf' && email.length < 14)) {
+    if (!identifierDigits || (type === 'cpf' && identifierDigits.length !== 11)) {
         showPopup("Por favor, digite um CPF válido.");
         return;
     }
@@ -23,12 +24,28 @@ function sendResetEmail(type) {
     btn.disabled = true;
     btn.innerHTML = '<i class="ph ph-circle-notch-bold" style="animation: spin 1s linear infinite;"></i> Enviando...';
 
-    setTimeout(() => {
-        showPopup(`Um link de recuperação foi enviado para o e-mail cadastrado no CPF: ${email}. Verifique sua caixa de entrada.`);
+    try {
+        const response = await fetch('http://localhost:3000/auth/password/forgot', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type, identifier: identifierDigits })
+        });
+        const result = await response.json();
+
+        if (!response.ok) {
+            showPopup(result.message || 'Erro ao enviar e-mail de recuperação.');
+            return;
+        }
+
+        showPopup(`Enviamos o token de recuperação para ${result.email}. Verifique sua caixa de entrada.`);
         closeForgotPasswordModal();
+    } catch (error) {
+        console.error('Erro ao solicitar recuperação:', error);
+        showPopup('Erro de conexão com o servidor.');
+    } finally {
         btn.disabled = false;
         btn.innerHTML = 'Enviar Link de Recuperação';
-    }, 1500);
+    }
 }
 
 async function loginPacienteAPI(identifier, password) {
@@ -43,8 +60,8 @@ async function loginPacienteAPI(identifier, password) {
         const result = await response.json();
         return { ok: response.ok, data: result };
     } catch (error) {
-        console.error('Erro na requisição:', error);
-        return { ok: false, data: { message: 'Erro de conexão' } };
+        console.error('Erro na requisiÃ§Ã£o:', error);
+        return { ok: false, data: { message: 'Erro de conexÃ£o' } };
     }
 }
 
@@ -60,7 +77,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Máscara de CPF automática (Melhorada para performance)
+// MÃ¡scara de CPF automÃ¡tica (Melhorada para performance)
 document.addEventListener('DOMContentLoaded', function() {
     const cpfInput = document.getElementById('cpf');
     if (cpfInput) {
@@ -85,7 +102,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Máscara no input do modal também
+    // MÃ¡scara no input do modal tambÃ©m
     const forgotEmailInput = document.getElementById('forgotEmail');
     if (forgotEmailInput) {
         forgotEmailInput.addEventListener('input', function(e) {
@@ -111,16 +128,16 @@ document.addEventListener('DOMContentLoaded', function() {
             const btn = e.target.querySelector('.btn-login');
             const originalText = btn.innerText;
 
-            // 1. Validação básica de segurança
+            // 1. ValidaÃ§Ã£o bÃ¡sica de seguranÃ§a
             const cpf = document.getElementById('cpf').value;
             const password = document.getElementById('password').value;
 
             if (cpf.length < 11 || password.length < 4) {
-                showPopup("Por favor, informe um CPF e uma senha com no mínimo 4 caracteres.");
+                showPopup("Por favor, informe um CPF e uma senha com no mÃ­nimo 4 caracteres.");
                 return;
             }
 
-            // 2. Efeito de "Carregando" no botão (Estilo Moderno)
+            // 2. Efeito de "Carregando" no botÃ£o (Estilo Moderno)
             btn.disabled = true;
             btn.innerHTML = '<i class="ph ph-circle-notch-bold" style="animation: spin 1s linear infinite;"></i> Acessando...';
             btn.style.opacity = "0.8";
@@ -150,7 +167,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Adicione este CSS via JS apenas para a animação do ícone de carregar
+// Adicione este CSS via JS apenas para a animaÃ§Ã£o do Ã­cone de carregar
 const style = document.createElement('style');
 style.innerHTML = `
     @keyframes spin {
