@@ -71,7 +71,7 @@ CREATE TABLE agendamentos (
     clinica_id INT NOT NULL,
     paciente_id INT NOT NULL,
     medico_id INT NOT NULL,
-    data_hora DATETIME NOT NULL,
+    data_agendamento DATETIME NOT NULL,
     status ENUM('pendente', 'confirmado', 'cancelado', 'realizado') DEFAULT 'pendente',
     link_reuniao VARCHAR(255), -- Para a consulta online
     FOREIGN KEY (clinica_id) REFERENCES clinicas(id) ON DELETE CASCADE,

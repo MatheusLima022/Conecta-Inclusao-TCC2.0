@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-=======
-﻿// ===== FUNÃ‡Ã•ES DO MODAL ESQUECEU A SENHA =====
->>>>>>> Miguel
+// ===== FUNÃ‡Ã•ES DO MODAL ESQUECEU A SENHA =====
 function openForgotPasswordModal(event) {
     event.preventDefault();
     document.getElementById('forgotPasswordModal').style.display = 'flex';
@@ -13,33 +10,20 @@ function closeForgotPasswordModal() {
     document.getElementById('forgotEmail').value = '';
 }
 
-<<<<<<< HEAD
-function sendResetEmail(type) {
-    const email = document.getElementById('forgotEmail').value.trim();
-
-    if (!email || email.length < 7) {
-        showPopup('Por favor, digite um Registro valido.');
-=======
 async function sendResetEmail(type) {
     const identifier = document.getElementById('forgotEmail').value;
     const normalizedIdentifier = identifier.replace(/[\s-]/g, '').replace(/^CRM/i, '').toUpperCase();
 
     if (!normalizedIdentifier || normalizedIdentifier.length < 4) {
         showPopup("Por favor, digite um Registro válido.");
->>>>>>> Miguel
         return;
     }
 
     const btn = document.querySelector('#forgotPasswordModal .forgot-btn');
     if (!btn) return;
-
     btn.disabled = true;
     btn.innerHTML = '<i class="ph ph-circle-notch-bold" style="animation: spin 1s linear infinite;"></i> Enviando...';
 
-<<<<<<< HEAD
-    setTimeout(() => {
-        showPopup(`Um link de recuperacao foi enviado para o e-mail cadastrado no Registro: ${email}. Verifique sua caixa de entrada.`);
-=======
     try {
         const response = await fetch('http://localhost:3000/auth/password/forgot', {
             method: 'POST',
@@ -54,20 +38,14 @@ async function sendResetEmail(type) {
         }
 
         showPopup(`Enviamos o token de recuperação para ${result.email}. Verifique sua caixa de entrada.`);
->>>>>>> Miguel
         closeForgotPasswordModal();
     } catch (error) {
         console.error('Erro ao solicitar recuperação:', error);
         showPopup('Erro de conexão com o servidor.');
     } finally {
         btn.disabled = false;
-<<<<<<< HEAD
-        btn.innerHTML = 'Enviar Link de Recuperacao';
-    }, 1500);
-=======
         btn.innerHTML = 'Enviar Link de Recuperação';
     }
->>>>>>> Miguel
 }
 
 function formatRegistry(value) {
@@ -88,20 +66,13 @@ async function loginMedicoAPI(identifier, password) {
         const response = await fetch('http://localhost:3000/auth/login/universal', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
             },
             body: JSON.stringify({ identifier, password })
         });
         const result = await response.json();
         return { ok: response.ok, data: result };
     } catch (error) {
-<<<<<<< HEAD
-        console.error('Erro na requisicao:', error);
-        return { ok: false, data: { message: 'Erro de conexao' } };
-    }
-}
-
-=======
         console.error('Erro na requisiÃ§Ã£o:', error);
         return { ok: false, data: { message: 'Erro de conexÃ£o' } };
     }
@@ -248,13 +219,8 @@ function showTemporaryPasswordModal(resetToken, registryFallback, loginButton) {
 }
 
 // Fechar modal ao clicar fora dele
->>>>>>> Miguel
 document.addEventListener('DOMContentLoaded', function() {
     const modal = document.getElementById('forgotPasswordModal');
-    const forgotInput = document.getElementById('forgotEmail');
-    const registryInput = document.getElementById('crm');
-    const loginForm = document.getElementById('loginForm');
-
     if (modal) {
         modal.addEventListener('click', function(event) {
             if (event.target === modal) {
@@ -263,22 +229,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-<<<<<<< HEAD
-    if (forgotInput) {
-        forgotInput.addEventListener('keydown', function(event) {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                sendResetEmail('crm');
-            }
-        });
-    }
-
-    if (registryInput) {
-        const lastCRM = localStorage.getItem('lastCRM');
-        if (lastCRM) {
-            registryInput.value = lastCRM;
-            localStorage.removeItem('lastCRM');
-=======
     // MÃ¡scara para o registro
     const registryInput = document.getElementById('crm');
     if (registryInput) {
@@ -287,17 +237,15 @@ document.addEventListener('DOMContentLoaded', function() {
         if (lastCRM) {
             registryInput.value = lastCRM;
             localStorage.removeItem('lastCRM'); // Limpar apÃ³s usar
->>>>>>> Miguel
             localStorage.removeItem('lastRegisteredCRM');
         }
-
-        registryInput.addEventListener('input', function(event) {
-            event.target.value = formatRegistry(event.target.value);
+        
+        registryInput.addEventListener('input', function(e) {
+            e.target.value = formatRegistry(e.target.value);
         });
     }
+});
 
-<<<<<<< HEAD
-=======
 // CSS para animaÃ§Ã£o
 const style = document.createElement('style');
 style.innerHTML = `
@@ -371,7 +319,6 @@ document.head.appendChild(style);
 // Form de login
 document.addEventListener('DOMContentLoaded', function() {
     const loginForm = document.getElementById('loginForm');
->>>>>>> Miguel
     if (loginForm) {
         loginForm.addEventListener('submit', async function(event) {
             event.preventDefault();
@@ -385,31 +332,16 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const registryNormalized = registry.replace(/[\s-]/g, '').toUpperCase();
-<<<<<<< HEAD
-=======
 
             // Efeito visual no botÃ£o
->>>>>>> Miguel
             const btn = document.querySelector('.btn-login');
-
             btn.innerHTML = '<i class="ph ph-circle-notch-bold" style="animation: spin 1s linear infinite;"></i> Autenticando...';
-            btn.style.opacity = '0.7';
+            btn.style.opacity = "0.7";
             btn.disabled = true;
 
             const result = await loginMedicoAPI(registryNormalized, password);
 
             if (result.ok) {
-<<<<<<< HEAD
-                localStorage.setItem('token', result.data.token);
-                showPopup('Acesso autorizado! Redirecionando para o painel...');
-                setTimeout(() => {
-                    window.location.href = 'dashboard-medico.html';
-                }, 800);
-            } else {
-                showPopup(result.data.message || 'Registro ou senha incorretos.');
-                btn.innerHTML = 'Acessar como Medico';
-                btn.style.opacity = '';
-=======
                 if (result.data.requiresPasswordReset) {
                     showTemporaryPasswordModal(result.data.resetToken, registryNormalized, btn);
                     return;
@@ -421,18 +353,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 showPopup(result.data.message || "Registro ou senha incorretos.");
                 btn.innerHTML = 'Acessar como MÃ©dico';
                 btn.style.opacity = "";
->>>>>>> Miguel
                 btn.disabled = false;
             }
         });
     }
 });
-
-const style = document.createElement('style');
-style.innerHTML = `
-    @keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-    }
-`;
-document.head.appendChild(style);
