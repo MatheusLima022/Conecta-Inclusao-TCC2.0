@@ -46,13 +46,48 @@ const equipePorUnidade = {
     ]
 };
 
+function normalizeUnitKey(unit) {
+    return String(unit || '')
+        .trim()
+        .replace(/^Unidade\s+/i, '')
+        .toUpperCase();
+}
+
+function loadStoredProfessionals() {
+    try {
+        const raw = localStorage.getItem('companyProfessionals');
+        const professionals = JSON.parse(raw || '[]');
+        return Array.isArray(professionals) ? professionals : [];
+    } catch (error) {
+        console.error('Erro ao carregar profissionais da unidade:', error);
+        return [];
+    }
+}
+
+function getProfessionalUnit() {
+    try {
+        const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+        return sessionStorage.getItem('professionalUnit') || storedUser.unidade || storedUser.unit || 'A';
+    } catch (error) {
+        return sessionStorage.getItem('professionalUnit') || 'A';
+    }
+}
+
 function loadTeam() {
-    const unit = sessionStorage.getItem('professionalUnit') || 'A';
+    const unit = getProfessionalUnit();
     const teamGrid = document.getElementById('teamGrid');
     
     if (!teamGrid) return;
 
-    const equipe = equipePorUnidade[unit] || [];
+    const unitKey = normalizeUnitKey(unit);
+    const storedTeam = loadStoredProfessionals()
+        .filter(member => normalizeUnitKey(member.unit || member.unidade) === unitKey)
+        .map(member => ({
+            name: member.name || 'Profissional cadastrado',
+            crm: member.registry || member.crm || 'Registro nao informado',
+            specialty: member.role || member.specialty || member.especialidade || 'Especialidade nao informada'
+        }));
+    const equipe = storedTeam.length ? storedTeam : (equipePorUnidade[unitKey] || []);
 
     if (equipe.length === 0) {
         teamGrid.innerHTML = `
@@ -255,15 +290,17 @@ function loadPatientsData() {
         </tr>
     `).join('');
 }
-<<<<<<< HEAD
 
 async function handleLogout() {
     const result = await showPopup('Deseja realmente sair?', 'confirm');
     if (result) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        sessionStorage.removeItem('professionalName');
+        sessionStorage.removeItem('professionalRegistry');
+        sessionStorage.removeItem('professionalUnit');
         window.location.href = 'login-medico.html';
     }
 }
 
 window.handleLogout = handleLogout;
-=======
->>>>>>> 4e60101d74b2edb971d682fc1950d22c39b30960
