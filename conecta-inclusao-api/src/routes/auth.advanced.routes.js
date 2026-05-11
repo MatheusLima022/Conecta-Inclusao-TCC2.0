@@ -106,6 +106,7 @@ router.post("/register/patient", registerLimiter, async (req, res, next) => {
         email: parsed.data.email,
         nomeResponsavel: parsed.data.nomeResponsavel,
         tipoDeficiencia: parsed.data.tipoDeficiencia,
+        planoAtual: parsed.data.planoAtual,
         dataNascimento: parsed.data.dataNascimento
       }
     });

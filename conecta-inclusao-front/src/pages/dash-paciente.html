@@ -333,9 +333,15 @@
                     <label for="modalUnit">Unidade</label>
                     <input type="text" id="modalUnit" readonly placeholder="Selecione um profissional">
                 </div>
-                <div class="input-group">
-                    <label for="modalDate">Data</label>
-                    <input type="date" id="modalDate" required>
+                <div class="input-group split-row">
+                    <div class="split-field">
+                        <label for="modalDate">Data</label>
+                        <input type="date" id="modalDate" required>
+                    </div>
+                    <div class="split-field">
+                        <label for="modalTime">Horário</label>
+                        <input type="time" id="modalTime" required>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" onclick="closeModal()" class="btn-secondary">Voltar</button>

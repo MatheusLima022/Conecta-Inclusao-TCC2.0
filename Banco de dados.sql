@@ -10,6 +10,7 @@ CREATE TABLE pacientes (
     email VARCHAR(100) UNIQUE,
     nome_responsavel VARCHAR(100),
     tipo_deficiencia VARCHAR(100),
+    plano_atual VARCHAR(100),
     data_nascimento DATE,
     senha VARCHAR(255) NOT NULL COMMENT 'Hash bcrypt da senha',
     status VARCHAR(20) DEFAULT 'ACTIVE',
