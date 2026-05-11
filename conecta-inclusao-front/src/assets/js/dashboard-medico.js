@@ -46,13 +46,48 @@ const equipePorUnidade = {
     ]
 };
 
+function normalizeUnitKey(unit) {
+    return String(unit || '')
+        .trim()
+        .replace(/^Unidade\s+/i, '')
+        .toUpperCase();
+}
+
+function loadStoredProfessionals() {
+    try {
+        const raw = localStorage.getItem('companyProfessionals');
+        const professionals = JSON.parse(raw || '[]');
+        return Array.isArray(professionals) ? professionals : [];
+    } catch (error) {
+        console.error('Erro ao carregar profissionais da unidade:', error);
+        return [];
+    }
+}
+
+function getProfessionalUnit() {
+    try {
+        const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+        return sessionStorage.getItem('professionalUnit') || storedUser.unidade || storedUser.unit || 'A';
+    } catch (error) {
+        return sessionStorage.getItem('professionalUnit') || 'A';
+    }
+}
+
 function loadTeam() {
-    const unit = sessionStorage.getItem('professionalUnit') || 'A';
+    const unit = getProfessionalUnit();
     const teamGrid = document.getElementById('teamGrid');
-    
+
     if (!teamGrid) return;
 
-    const equipe = equipePorUnidade[unit] || [];
+    const unitKey = normalizeUnitKey(unit);
+    const storedTeam = loadStoredProfessionals()
+        .filter(member => normalizeUnitKey(member.unit || member.unidade) === unitKey)
+        .map(member => ({
+            name: member.name || 'Profissional cadastrado',
+            crm: member.registry || member.crm || 'Registro nao informado',
+            specialty: member.role || member.specialty || member.especialidade || 'Especialidade nao informada'
+        }));
+    const equipe = storedTeam.length ? storedTeam : (equipePorUnidade[unitKey] || []);
 
     if (equipe.length === 0) {
         teamGrid.innerHTML = `
@@ -97,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const actionButtons = document.querySelectorAll('.btn-action');
 
     actionButtons.forEach(btn => {
-        btn.addEventListener('click', async function() {
+        btn.addEventListener('click', async function () {
             const row = this.closest('tr');
             const patientName = row.querySelector('.patient-td strong').innerText;
             const statusSpan = row.querySelector('.status');
@@ -105,13 +140,13 @@ document.addEventListener('DOMContentLoaded', () => {
             // Simula o início do atendimento
             if (this.innerText === 'Atender') {
                 const confirmar = await showPopup(`Deseja iniciar o atendimento de ${patientName}?`, 'confirm');
-                
+
                 if (confirmar) {
                     this.innerText = 'Finalizar';
                     this.style.backgroundColor = '#ef4444';
                     this.style.color = 'white';
                     this.style.borderColor = '#ef4444';
-                    
+
                     statusSpan.innerText = 'Em Atendimento';
                     statusSpan.className = 'status waiting'; // Amarelo
                 }
@@ -131,14 +166,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const navLinks = document.querySelectorAll('.sidebar nav a');
 
     navLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
+        link.addEventListener('click', function (e) {
             // Se for o link de prontuários, redirecionar para autenticação
             if (this.id === 'recordsNavLink') {
                 e.preventDefault();
                 window.location.href = 'auth-records-access.html';
                 return;
             }
-            
+
             // Remove active de todos
             navLinks.forEach(l => l.classList.remove('active'));
             // Adiciona no clicado
@@ -149,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4. Card de Prontuários - Redirecionar para autenticação
     const recordsCard = document.getElementById('recordsCard');
     if (recordsCard) {
-        recordsCard.addEventListener('click', function() {
+        recordsCard.addEventListener('click', function () {
             window.location.href = 'auth-records-access.html';
         });
     }
@@ -164,7 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function showHome(event) {
     event.preventDefault();
     updateSidebarActive(event.target.closest('a'));
-    
+
     // Esconder todas as seções específicas
     document.getElementById('agendaSection').style.display = 'none';
     document.getElementById('pacientesSection').style.display = 'none';
@@ -176,7 +211,7 @@ function openAgendaMedica(event) {
         event.preventDefault();
         updateSidebarActive(event.target.closest('a'));
     }
-    
+
     showSection('agenda');
     loadAgendaData();
 }
@@ -187,7 +222,7 @@ function togglePatientsList(event) {
         event.preventDefault();
         updateSidebarActive(event.target.closest('a'));
     }
-    
+
     showSection('pacientes');
     loadPatientsData();
 }
@@ -197,7 +232,7 @@ function showSection(section) {
     // Esconder todas
     document.getElementById('agendaSection').style.display = 'none';
     document.getElementById('pacientesSection').style.display = 'none';
-    
+
     // Mostrar a selecionada
     if (section === 'agenda') {
         document.getElementById('agendaSection').style.display = 'block';
@@ -216,7 +251,7 @@ function updateSidebarActive(element) {
 function loadAgendaData() {
     const agendaContent = document.querySelector('.appointments-table tbody');
     if (!agendaContent) return;
-    
+
     // Os dados já estão na tabela, então não precisa fazer nada
     console.log("Agenda carregada");
 }
@@ -255,15 +290,17 @@ function loadPatientsData() {
         </tr>
     `).join('');
 }
-<<<<<<< HEAD
 
 async function handleLogout() {
     const result = await showPopup('Deseja realmente sair?', 'confirm');
     if (result) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        sessionStorage.removeItem('professionalName');
+        sessionStorage.removeItem('professionalRegistry');
+        sessionStorage.removeItem('professionalUnit');
         window.location.href = 'login-medico.html';
     }
 }
 
 window.handleLogout = handleLogout;
-=======
->>>>>>> 4e60101d74b2edb971d682fc1950d22c39b30960
