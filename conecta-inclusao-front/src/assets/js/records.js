@@ -30,16 +30,18 @@ class RecordsManager {
     }
 
     loadProfessionalInfo() {
-        const name = sessionStorage.getItem('professionalName') || 'Dr. Nome';
+        const rawName = sessionStorage.getItem('professionalName') || 'Nome';
         const registry = sessionStorage.getItem('professionalRegistry') || 'CRM';
+
+        const displayName = rawName.startsWith('Dr.') ? rawName : `Dr. ${rawName}`;
 
         const nameEl = document.getElementById('professionalName');
         const registryEl = document.getElementById('professionalRegistry');
         const avatarEl = document.getElementById('professionalAvatar');
 
-        if (nameEl) nameEl.innerText = name;
+        if (nameEl) nameEl.innerText = displayName;
         if (registryEl) registryEl.innerText = registry;
-        if (avatarEl) avatarEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0073e6&color=fff`;
+        if (avatarEl) avatarEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(rawName)}&background=0073e6&color=fff`;
     }
 
     async loadRecords() {

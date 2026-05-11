@@ -1,4 +1,4 @@
-// ===== FUNÇÕES DO MODAL ESQUECEU A SENHA =====
+﻿// ===== FUNÃ‡Ã•ES DO MODAL ESQUECEU A SENHA =====
 function openForgotPasswordModal(event) {
     event.preventDefault();
     document.getElementById('forgotPasswordModal').style.display = 'flex';
@@ -10,10 +10,11 @@ function closeForgotPasswordModal() {
     document.getElementById('forgotEmail').value = '';
 }
 
-function sendResetEmail(type) {
-    const email = document.getElementById('forgotEmail').value;
+async function sendResetEmail(type) {
+    const identifier = document.getElementById('forgotEmail').value;
+    const identifierDigits = identifier.replace(/\D/g, '');
 
-    if (!email || (type === 'cnpj' && email.length < 18)) {
+    if (!identifierDigits || (type === 'cnpj' && identifierDigits.length !== 14)) {
         showPopup("Por favor, digite um CNPJ válido.");
         return;
     }
@@ -23,12 +24,28 @@ function sendResetEmail(type) {
     btn.disabled = true;
     btn.innerHTML = '<i class="ph ph-circle-notch-bold" style="animation: spin 1s linear infinite;"></i> Enviando...';
 
-    setTimeout(() => {
-        showPopup(`Um link de recuperação foi enviado para o e-mail cadastrado no CNPJ: ${email}. Verifique sua caixa de entrada.`);
+    try {
+        const response = await fetch('http://localhost:3000/auth/password/forgot', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type, identifier: identifierDigits })
+        });
+        const result = await response.json();
+
+        if (!response.ok) {
+            showPopup(result.message || 'Erro ao enviar e-mail de recuperação.');
+            return;
+        }
+
+        showPopup(`Enviamos o token de recuperação para ${result.email}. Verifique sua caixa de entrada.`);
         closeForgotPasswordModal();
+    } catch (error) {
+        console.error('Erro ao solicitar recuperação:', error);
+        showPopup('Erro de conexão com o servidor.');
+    } finally {
         btn.disabled = false;
         btn.innerHTML = 'Enviar Link de Recuperação';
-    }, 1500);
+    }
 }
 
 function formatCnpjDigits(value) {
@@ -56,8 +73,8 @@ async function loginEmpresaAPI(identifier, password) {
         const result = await response.json();
         return { ok: response.ok, data: result };
     } catch (error) {
-        console.error('Erro na requisição:', error);
-        return { ok: false, data: { message: 'Erro de conexão' } };
+        console.error('Erro na requisiÃ§Ã£o:', error);
+        return { ok: false, data: { message: 'Erro de conexÃ£o' } };
     }
 }
 
@@ -87,7 +104,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Máscara de CNPJ automática
+// MÃ¡scara de CNPJ automÃ¡tica
 document.addEventListener('DOMContentLoaded', function() {
     const cnpjInput = document.getElementById('cnpj');
     if (cnpjInput) {
@@ -104,7 +121,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Máscara no input do modal também
+    // MÃ¡scara no input do modal tambÃ©m
     const forgotEmailInput = document.getElementById('forgotEmail');
     if (forgotEmailInput) {
         forgotEmailInput.addEventListener('input', function(e) {
@@ -139,7 +156,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const cnpjDigits = formatCnpjDigits(cnpj);
             if (cnpjDigits.length !== 14) {
-                showPopup("Por favor, digite um CNPJ válido.");
+                showPopup("Por favor, digite um CNPJ vÃ¡lido.");
                 return;
             }
 
@@ -148,11 +165,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const result = await loginEmpresaAPI(cnpjDigits, password);
 
             if (result.ok) {
-                // Salvar token e dados do usuário
+                // Salvar token e dados do usuÃ¡rio
                 localStorage.setItem('token', result.data.token);
                 localStorage.setItem('user', JSON.stringify(result.data.user));
 
-                // Salvar dados da empresa na sessão
+                // Salvar dados da empresa na sessÃ£o
                 sessionStorage.setItem('empresaNomeFantasia', result.data.user.name);
                 sessionStorage.setItem('empresaCnpj', formatCnpjDisplay(cnpjDigits));
                 sessionStorage.setItem('empresaRazaoSocial', result.data.user.razaoSocial || '');
@@ -162,14 +179,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     window.location.href = "dashboard-empresa.html";
                 }, 800);
             } else {
-                showPopup(result.data.message || "Credenciais inválidas. Verifique seus dados.");
+                showPopup(result.data.message || "Credenciais invÃ¡lidas. Verifique seus dados.");
                 setLoginButtonLoading(btn, false);
             }
         });
     }
 });
 
-// CSS para animação
+// CSS para animaÃ§Ã£o
 const style = document.createElement('style');
 style.innerHTML = `
     @keyframes spin {

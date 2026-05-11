@@ -27,8 +27,8 @@ router.get("/contacts", authenticateToken, async (req, res) => {
   return res.status(200).json(result.data);
 });
 
-router.get("/thread/:targetUserId", authenticateToken, async (req, res) => {
-  const result = await getConversationWithUser(req.user, req.params.targetUserId);
+router.get("/thread/:targetProfileId", authenticateToken, async (req, res) => {
+  const result = await getConversationWithUser(req.user, req.params.targetProfileId);
 
   if (!result.ok) {
     return res.status(result.statusCode).json({ message: result.message });
@@ -37,7 +37,7 @@ router.get("/thread/:targetUserId", authenticateToken, async (req, res) => {
   return res.status(200).json(result.data);
 });
 
-router.post("/thread/:targetUserId", authenticateToken, async (req, res) => {
+router.post("/thread/:targetProfileId", authenticateToken, async (req, res) => {
   const parsed = sendMessageSchema.safeParse(req.body);
 
   if (!parsed.success) {
@@ -47,7 +47,7 @@ router.post("/thread/:targetUserId", authenticateToken, async (req, res) => {
     });
   }
 
-  const result = await sendMessageToUser(req.user, req.params.targetUserId, parsed.data.content);
+  const result = await sendMessageToUser(req.user, req.params.targetProfileId, parsed.data.content);
 
   if (!result.ok) {
     return res.status(result.statusCode).json({ message: result.message });

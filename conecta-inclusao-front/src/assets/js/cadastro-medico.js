@@ -112,25 +112,13 @@ function handleDoctorRegistration(event) {
         submitButton.innerText = 'Cadastrar Médico';
     });
 }
-            localStorage.setItem('lastRegisteredCRM', crm);
-            
-            setTimeout(() => {
-                window.history.back();
-            }, 1500);
-        } else {
-            showPopup(result.data.message || 'Erro ao cadastrar. Tente novamente.');
-        }
-
-        submitButton.disabled = false;
-        submitButton.innerText = 'Cadastrar Médico';
-    });
-}
 
 async function loadClinics() {
     // Esta função buscaria as clínicas do backend
     // Por enquanto, será uma lista estática/mock
     // No futuro, implementar: GET /auth/clinicas (com autenticação)
     const clinicaSelect = document.getElementById('clinicaId');
+    if (!clinicaSelect) return;
     
     // Mock de dados - substitua por chamada real quando endpoint disponível
     const clinicas = [

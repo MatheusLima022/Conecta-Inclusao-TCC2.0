@@ -1,6 +1,11 @@
 // API base URL - ajuste conforme necessário
 const API_BASE = 'http://localhost:3000/auth';
 
+// Função para obter token do localStorage
+export function getToken() {
+    return localStorage.getItem('token');
+}
+
 // Função genérica para fazer requisições
 async function apiRequest(endpoint, options = {}) {
     const url = `${API_BASE}${endpoint}`;
@@ -39,6 +44,21 @@ export async function registerClinic(data) {
     return apiRequest('/register/clinic', {
         method: 'POST',
         body: JSON.stringify(data)
+    });
+}
+
+export async function registerProfessional(crm, name, especialidade, unidade, password, email, bio) {
+    const token = getToken();
+    if (!token) {
+        return { ok: false, error: 'Token não encontrado' };
+    }
+    return apiRequest('/register/professional', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ crm, name, especialidade, unidade, password, email, bio })
     });
 }
 

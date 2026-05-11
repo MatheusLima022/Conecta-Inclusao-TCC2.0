@@ -2,38 +2,30 @@
 CREATE DATABASE IF NOT EXISTS conecta_inclusao;
 USE conecta_inclusao;
 
--- 2. Tabela de Usuários (Base para login e tipos de perfil)
-CREATE TABLE users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    profile ENUM('paciente', 'medico', 'clinica') NOT NULL,
-    status VARCHAR(20) DEFAULT 'ACTIVE',
-    failed_attempts INT DEFAULT 0,
-    locked_until DATETIME NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- 3. Tabela de Pacientes (Informações do responsável e PCD)
+-- 2. Tabela de Pacientes (Informações do responsável e PCD)
 CREATE TABLE pacientes (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    usuario_id INT NOT NULL,
+    nome_paciente VARCHAR(100) NOT NULL,
     cpf VARCHAR(14) UNIQUE NOT NULL,
-    email VARCHAR(100),
+    email VARCHAR(100) UNIQUE,
     nome_responsavel VARCHAR(100),
     tipo_deficiencia VARCHAR(100),
     data_nascimento DATE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (usuario_id) REFERENCES users(id) ON DELETE CASCADE
+    senha VARCHAR(255) NOT NULL COMMENT 'Hash bcrypt da senha',
+    status VARCHAR(20) DEFAULT 'ACTIVE',
+    failed_attempts INT DEFAULT 0,
+    locked_until DATETIME NULL,
+    password_reset_token VARCHAR(255) NULL,
+    password_reset_expires_at DATETIME NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 4. Tabela de Clínicas/Empresas (Detalhes das empresas)
+-- 3. Tabela de Clínicas/Empresas (Detalhes das empresas)
 CREATE TABLE clinicas (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    usuario_id INT NOT NULL,
     cnpj VARCHAR(18) UNIQUE NOT NULL,
-    email VARCHAR(100),
+    email VARCHAR(100) UNIQUE,
+    nome VARCHAR(100) NOT NULL,
     razao_social VARCHAR(100),
     endereco VARCHAR(255),
     cidade VARCHAR(100),
@@ -41,43 +33,53 @@ CREATE TABLE clinicas (
     cep VARCHAR(10),
     telefone VARCHAR(15),
     responsavel VARCHAR(100),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (usuario_id) REFERENCES users(id) ON DELETE CASCADE
+    senha VARCHAR(255) NOT NULL COMMENT 'Hash bcrypt da senha',
+    status VARCHAR(20) DEFAULT 'ACTIVE',
+    failed_attempts INT DEFAULT 0,
+    locked_until DATETIME NULL,
+    password_reset_token VARCHAR(255) NULL,
+    password_reset_expires_at DATETIME NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 5. Tabela de Médicos (Detalhes profissionais)
+-- 4. Tabela de Médicos (Detalhes profissionais)
 CREATE TABLE medicos (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    usuario_id INT NOT NULL,
+    name VARCHAR(100) NOT NULL,
     crm VARCHAR(20) UNIQUE NOT NULL,
-    email VARCHAR(100),
+    email VARCHAR(100) UNIQUE,
     especialidade VARCHAR(100),
     unidade VARCHAR(20) NOT NULL,
     clinica_id INT,
     bio TEXT,
+    senha VARCHAR(255) NOT NULL COMMENT 'Hash bcrypt da senha',
+    status VARCHAR(20) DEFAULT 'ACTIVE',
+    failed_attempts INT DEFAULT 0,
+    locked_until DATETIME NULL,
+    must_change_password BOOLEAN DEFAULT FALSE,
+    temporary_password_token VARCHAR(255) NULL,
+    temporary_password_expires_at DATETIME NULL,
+    password_reset_token VARCHAR(255) NULL,
+    password_reset_expires_at DATETIME NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (usuario_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (clinica_id) REFERENCES clinicas(id) ON DELETE SET NULL
 );
 
--- 6. Tabela de Agendamentos (Consultas)
+-- 5. Tabela de Agendamentos (Consultas)
 CREATE TABLE agendamentos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     clinica_id INT NOT NULL,
     paciente_id INT NOT NULL,
-    profissional_id INT NOT NULL,
-    data_agendamento DATETIME NOT NULL,
-    especialidade VARCHAR(100),
-    tipo_consulta ENUM('presencial', 'online', 'telefone') DEFAULT 'presencial',
-    observacoes TEXT,
-    status ENUM('confirmado', 'aguardando', 'cancelado', 'realizado', 'faltou') DEFAULT 'aguardando',
-    link_reuniao VARCHAR(255), -- Para a consulta online'
+    medico_id INT NOT NULL,
+    data_hora DATETIME NOT NULL,
+    status ENUM('pendente', 'confirmado', 'cancelado', 'realizado') DEFAULT 'pendente',
+    link_reuniao VARCHAR(255), -- Para a consulta online
     FOREIGN KEY (clinica_id) REFERENCES clinicas(id) ON DELETE CASCADE,
     FOREIGN KEY (paciente_id) REFERENCES pacientes(id) ON DELETE CASCADE,
-    FOREIGN KEY (profissional_id) REFERENCES medicos(id) ON DELETE CASCADE
+    FOREIGN KEY (medico_id) REFERENCES medicos(id) ON DELETE CASCADE
 );
 
--- 7. Tabela de Relatórios Médicos (Histórico e Registros)
+-- 6. Tabela de Relatórios Médicos (Histórico e Registros)
 CREATE TABLE relatorios (
     id INT AUTO_INCREMENT PRIMARY KEY,
     agendamento_id INT NOT NULL,
@@ -87,26 +89,26 @@ CREATE TABLE relatorios (
     FOREIGN KEY (agendamento_id) REFERENCES agendamentos(id) ON DELETE CASCADE
 );
 
--- 8. Tabela de Sessões (Para armazenar sessões de usuário no banco)
+-- 7. Tabela de Sessões (Para armazenar sessões de usuário no banco)
 CREATE TABLE sessions (
     session_id VARCHAR(255) PRIMARY KEY,
-    user_id INT NOT NULL,
+    profile ENUM('paciente', 'medico', 'clinica') NOT NULL,
+    profile_id INT NOT NULL,
     data TEXT,
-    expires_at DATETIME NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    expires_at DATETIME NOT NULL
 );
 
--- 9. Tabela de Mensagens
+-- 8. Tabela de Mensagens
 -- Garante que a conversa fique vinculada a um mesmo atendimento/agendamento
 -- e possa ser validada por RBAC entre paciente e medico relacionados.
 CREATE TABLE mensagens (
     id INT AUTO_INCREMENT PRIMARY KEY,
     agendamento_id INT NOT NULL,
-    remetente_user_id INT NOT NULL,
-    destinatario_user_id INT NOT NULL,
+    remetente_profile ENUM('paciente', 'medico') NOT NULL,
+    remetente_profile_id INT NOT NULL,
+    destinatario_profile ENUM('paciente', 'medico') NOT NULL,
+    destinatario_profile_id INT NOT NULL,
     conteudo TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (agendamento_id) REFERENCES agendamentos(id) ON DELETE CASCADE,
-    FOREIGN KEY (remetente_user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (destinatario_user_id) REFERENCES users(id) ON DELETE CASCADE
+    FOREIGN KEY (agendamento_id) REFERENCES agendamentos(id) ON DELETE CASCADE
 );
