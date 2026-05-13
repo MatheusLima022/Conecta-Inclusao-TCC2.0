@@ -10,6 +10,7 @@ CREATE TABLE pacientes (
     email VARCHAR(100) UNIQUE,
     nome_responsavel VARCHAR(100),
     tipo_deficiencia VARCHAR(100),
+    plano_atual VARCHAR(100),
     data_nascimento DATE,
     senha VARCHAR(255) NOT NULL COMMENT 'Hash bcrypt da senha',
     status VARCHAR(20) DEFAULT 'ACTIVE',
@@ -71,7 +72,7 @@ CREATE TABLE agendamentos (
     clinica_id INT NOT NULL,
     paciente_id INT NOT NULL,
     medico_id INT NOT NULL,
-    data_hora DATETIME NOT NULL,
+    data_agendamento DATETIME NOT NULL,
     status ENUM('pendente', 'confirmado', 'cancelado', 'realizado') DEFAULT 'pendente',
     link_reuniao VARCHAR(255), -- Para a consulta online
     FOREIGN KEY (clinica_id) REFERENCES clinicas(id) ON DELETE CASCADE,
