@@ -9,6 +9,7 @@ import {
     createAgendamento,
     listAgendamentosByClinica,
     listAgendamentosByProfissional,
+    listAgendamentosByPaciente,
     updateAgendamentoStatus
 } from "../services/agendamentos.service.js";
 
@@ -95,6 +96,32 @@ router.get("/profissional/:profissional_id", async (req, res, next) => {
         const offset = parseInt(req.query.offset) || 0;
 
         const result = await listAgendamentosByProfissional(profissional_id, limit, offset);
+
+        if (!result.ok) {
+            return res.status(result.statusCode).json({
+                ok: false,
+                message: result.message
+            });
+        }
+
+        return res.status(200).json({
+            ok: true,
+            data: result.data
+        });
+
+    } catch (err) {
+        next(err);
+    }
+});
+
+// GET /api/agendamentos/paciente/:paciente_id - Listar agendamentos por paciente
+router.get("/paciente/:paciente_id", async (req, res, next) => {
+    try {
+        const paciente_id = parseInt(req.params.paciente_id);
+        const limit = Math.min(parseInt(req.query.limit) || 10, 100);
+        const offset = parseInt(req.query.offset) || 0;
+
+        const result = await listAgendamentosByPaciente(paciente_id, limit, offset);
 
         if (!result.ok) {
             return res.status(result.statusCode).json({

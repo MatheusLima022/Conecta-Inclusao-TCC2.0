@@ -1,3 +1,5 @@
+import { getUserProfile, getPatientAppointments, getAvailableDoctors } from './api.js';
+
 const PROFESSIONALS_STORAGE_KEY = 'companyProfessionals';
 const PATIENT_MESSAGES_STORAGE_KEY = 'patientProfessionalMessages';
 const GUARDIANS_STORAGE_KEY = 'patientGuardians';
@@ -17,6 +19,179 @@ const CHATBOT_QUICK_ACTIONS = [
 ];
 let activeChatContactKey = CHATBOT_CONTACT.key;
 let chatbotScheduleDraft = null;
+let userProfile = null;
+let patientAppointments = [];
+let availableDoctors = [];
+
+// Função para carregar informações do usuário
+async function loadUserInfo() {
+    try {
+        const profileResponse = await getUserProfile();
+        if (profileResponse.ok) {
+            userProfile = profileResponse.data;
+            updateUserInterface();
+        } else {
+            console.error('Erro ao carregar perfil:', profileResponse.data);
+            userProfile = null;
+        }
+
+        if (userProfile && userProfile.id) {
+            const appointmentsResponse = await getPatientAppointments(userProfile.id);
+            if (appointmentsResponse.ok) {
+                patientAppointments = appointmentsResponse.data.data || [];
+            } else {
+                console.error('Erro ao carregar agendamentos:', appointmentsResponse.data);
+                patientAppointments = [];
+            }
+        } else {
+            patientAppointments = [];
+        }
+
+        // Carregar médicos disponíveis
+        const doctorsResponse = await getAvailableDoctors();
+        if (doctorsResponse.ok) {
+            availableDoctors = doctorsResponse.data || [];
+        } else {
+            console.error('Erro ao carregar médicos:', doctorsResponse.data);
+            availableDoctors = [];
+        }
+
+        // Sempre atualizar o dashboard após carregar tudo
+        updateDashboardData();
+    } catch (error) {
+        console.error('Erro ao carregar dados do usuário:', error);
+        userProfile = null;
+        patientAppointments = [];
+        availableDoctors = [];
+        updateDashboardData();
+    }
+}
+
+// Função para atualizar a interface com dados do usuário
+function updateUserInterface() {
+    if (!userProfile) return;
+
+    const patientHeaderName = document.getElementById('patientHeaderName');
+    if (patientHeaderName) {
+        patientHeaderName.textContent = userProfile.name || 'Paciente';
+    }
+
+    const patientHeaderSubtitle = document.getElementById('patientHeaderSubtitle');
+    if (patientHeaderSubtitle) {
+        patientHeaderSubtitle.textContent = 'Paciente ativo';
+    }
+
+    const patientAvatar = document.getElementById('patientAvatar');
+    if (patientAvatar) {
+        patientAvatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userProfile.name || 'Paciente')}&background=0073e6&color=fff`;
+    }
+
+    // Atualizar perfil
+    const profilePatientName = document.getElementById('profilePatientName');
+    if (profilePatientName) {
+        profilePatientName.textContent = userProfile.name || '';
+    }
+
+    const profilePatientCPF = document.getElementById('profilePatientCPF');
+    if (profilePatientCPF && userProfile.cpf) {
+        const cpfFormatted = userProfile.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+        profilePatientCPF.textContent = cpfFormatted;
+    }
+
+    const profileBirthDate = document.getElementById('profileBirthDate');
+    if (profileBirthDate && userProfile.data_nascimento) {
+        const date = new Date(userProfile.data_nascimento);
+        const formattedDate = date.toLocaleDateString('pt-BR');
+        profileBirthDate.textContent = formattedDate;
+    }
+
+    const profilePatientResponsible = document.getElementById('profilePatientResponsible');
+    if (profilePatientResponsible) {
+        profilePatientResponsible.textContent = userProfile.nome_responsavel || 'Não informado';
+    }
+
+    const profileDisabilityType = document.getElementById('profileDisabilityType');
+    if (profileDisabilityType) {
+        profileDisabilityType.textContent = userProfile.tipo_deficiencia || 'Não informado';
+    }
+
+    const profilePlan = document.getElementById('profilePlan');
+    if (profilePlan) {
+        profilePlan.textContent = userProfile.plano_atual || 'Não informado';
+    }
+
+    const profilePreferredUnit = document.getElementById('profilePreferredUnit');
+    if (profilePreferredUnit) {
+        // Por enquanto mantém o valor padrão, pode ser implementado depois
+        profilePreferredUnit.textContent = 'Hospital Central';
+    }
+}
+
+// Função para atualizar dados do dashboard
+function updateDashboardData() {
+    const totalAppointments = document.getElementById('totalAppointments');
+    if (totalAppointments) {
+        totalAppointments.textContent = patientAppointments.length;
+    }
+
+    const nextAppointmentDate = document.getElementById('nextAppointmentDate');
+    if (nextAppointmentDate) {
+        if (patientAppointments.length > 0) {
+            const nextAppointment = patientAppointments[0]; // Já ordenado por data
+            nextAppointmentDate.textContent = formatDateTime(nextAppointment.data_agendamento);
+        } else {
+            nextAppointmentDate.textContent = '--';
+        }
+    }
+
+    const specialtyCount = document.getElementById('specialtyCount');
+    if (specialtyCount) {
+        const uniqueSpecialties = new Set(patientAppointments.map(app => app.profissional_especialidade).filter(Boolean));
+        specialtyCount.textContent = uniqueSpecialties.size;
+    }
+
+    // Atualizar hospital frequente
+    const favoriteHospital = document.getElementById('favoriteHospital');
+    if (favoriteHospital) {
+        console.log('Atualizando hospital frequente. Agendamentos:', patientAppointments.length);
+        if (patientAppointments && patientAppointments.length > 0) {
+            const hospitalCounts = {};
+            patientAppointments.forEach(app => {
+                const hospital = app.clinica_nome;
+                console.log('Hospital do agendamento:', hospital);
+                if (hospital) {
+                    hospitalCounts[hospital] = (hospitalCounts[hospital] || 0) + 1;
+                }
+            });
+
+            console.log('Contagem de hospitais:', hospitalCounts);
+
+            if (Object.keys(hospitalCounts).length > 0) {
+                const mostFrequent = Object.keys(hospitalCounts).reduce((a, b) =>
+                    hospitalCounts[a] > hospitalCounts[b] ? a : b
+                );
+                console.log('Hospital mais frequente:', mostFrequent);
+                favoriteHospital.textContent = mostFrequent;
+            } else {
+                favoriteHospital.textContent = 'Nenhum';
+            }
+        } else {
+            favoriteHospital.textContent = 'Nenhum';
+        }
+        console.log('Hospital frequente final:', favoriteHospital.textContent);
+    }
+
+    // Atualizar plano atual
+    const currentPlan = document.getElementById('currentPlan');
+    console.log('Atualizando plano atual. userProfile:', userProfile);
+    if (currentPlan && userProfile) {
+        const planValue = userProfile.plano_atual || 'Não informado';
+        console.log('Plano atual:', planValue);
+        currentPlan.textContent = planValue;
+    } else {
+        console.log('Elemento currentPlan ou userProfile não encontrado');
+    }
+}
 
 // Função para abrir modal de responsável
 function openGuardianModal() {
@@ -169,15 +344,15 @@ function renderSuggestions() {
     const suggestionGrid = document.getElementById('suggestionGrid');
     if (!suggestionGrid) return;
 
-    const professionals = loadRegisteredProfessionals();
+    const professionals = availableDoctors;
     const specialtiesMap = new Map();
 
     // Agrupar profissionais por especialidade
     professionals.forEach(prof => {
-        if (!specialtiesMap.has(prof.role)) {
-            specialtiesMap.set(prof.role, []);
+        if (!specialtiesMap.has(prof.especialidade)) {
+            specialtiesMap.set(prof.especialidade, []);
         }
-        specialtiesMap.get(prof.role).push(prof);
+        specialtiesMap.get(prof.especialidade).push(prof);
     });
 
     // Se não há profissionais, mostrar mensagem vazia
@@ -205,7 +380,7 @@ function renderSuggestions() {
         card.className = 'suggestion-card';
         card.innerHTML = `
             <strong>${specialty}</strong>
-            <span>${firstProf.unit || 'Unidade não informada'}</span>
+            <span>${firstProf.unidade || 'Unidade não informada'}</span>
             <p>${countText} disponível${professionals.length > 1 ? 's' : ''}. Agenda aberta para agendamentos.</p>
             <button class="btn-schedule-suggestion" type="button" onclick="scrollToSpecialty('${specialty}')">
                 Agendar
@@ -222,10 +397,10 @@ function scrollToSpecialty(specialty) {
     const select = document.getElementById('modalProfessional');
     if (select) {
         // Encontrar a opção correspondente
-        const professionals = loadRegisteredProfessionals();
-        const prof = professionals.find(p => p.role === specialty);
+        const professionals = availableDoctors;
+        const prof = professionals.find(p => p.especialidade === specialty);
         if (prof) {
-            select.value = prof.registry;
+            select.value = prof.crm;
             updateSelectedProfessionalDetails();
             openModal();
         }
@@ -279,7 +454,7 @@ function combineDateTime(date, time) {
 
 function formatProfessionalListForChat(professionals) {
     return professionals
-        .map((professional, index) => `${index + 1}. ${professional.name} - ${professional.role} (${professional.unit || 'Unidade a confirmar'})`)
+        .map((professional, index) => `${index + 1}. ${professional.name} - ${professional.especialidade} (${professional.unidade || 'Unidade a confirmar'})`)
         .join('\n');
 }
 
@@ -336,38 +511,8 @@ function getAppointmentCards() {
     return Array.from(document.querySelectorAll('.appointment-card'));
 }
 
-function loadRegisteredProfessionals() {
-    try {
-        const raw = localStorage.getItem(PROFESSIONALS_STORAGE_KEY);
-        const parsed = raw ? JSON.parse(raw) : [];
-
-        if (!Array.isArray(parsed)) {
-            return [];
-        }
-
-        return parsed.filter(isAvailableRegisteredDoctor);
-    } catch (error) {
-        console.error('Erro ao carregar profissionais cadastrados:', error);
-        return [];
-    }
-}
-
-function isAvailableRegisteredDoctor(professional) {
-    if (!professional || !professional.name || !professional.role || !professional.registry) {
-        return false;
-    }
-
-    const registry = String(professional.registry).trim().toUpperCase();
-    const isDemoProfessional = DEMO_PROFESSIONAL_REGISTRIES.includes(registry);
-    const normalizedRegistry = registry.replace(/^CRM\s*/i, '').replace(/[\s-]/g, '');
-    const isDoctorRegistry = registry.includes('CRM') || /^[A-Z0-9]{4,7}$/.test(normalizedRegistry);
-    const isAvailable = ['Ativo', 'Trabalhando'].includes(professional.status);
-
-    return isDoctorRegistry && isAvailable && !isDemoProfessional;
-}
-
-function getProfessionalByRegistry(registry) {
-    return loadRegisteredProfessionals().find(professional => professional.registry === registry) || null;
+function getProfessionalByRegistry(crm) {
+    return availableDoctors.find(doctor => doctor.crm === crm) || null;
 }
 
 function updateSelectedProfessionalDetails() {
@@ -379,15 +524,15 @@ function updateSelectedProfessionalDetails() {
 
     const selectedProfessional = getProfessionalByRegistry(professionalSelect.value);
 
-    specialtyInput.value = selectedProfessional?.role || '';
-    unitInput.value = selectedProfessional?.unit || '';
+    specialtyInput.value = selectedProfessional?.especialidade || '';
+    unitInput.value = selectedProfessional?.unidade || '';
 }
 
 function populateProfessionalOptions() {
     const professionalSelect = document.getElementById('modalProfessional');
     if (!professionalSelect) return;
 
-    const professionals = loadRegisteredProfessionals();
+    const professionals = availableDoctors;
     const currentValue = professionalSelect.value;
 
     professionalSelect.innerHTML = '<option value="">Selecione um profissional...</option>';
@@ -404,12 +549,12 @@ function populateProfessionalOptions() {
 
     professionals.forEach(professional => {
         const option = document.createElement('option');
-        option.value = professional.registry;
-        option.textContent = `${professional.name} - ${professional.role}`;
+        option.value = professional.crm;
+        option.textContent = `${professional.name} - ${professional.especialidade} (${professional.unidade || 'Unidade não informada'})`;
         professionalSelect.appendChild(option);
     });
 
-    if (professionals.some(professional => professional.registry === currentValue)) {
+    if (professionals.some(professional => professional.crm === currentValue)) {
         professionalSelect.value = currentValue;
     }
 
@@ -421,9 +566,9 @@ function populateSearchFilters() {
     const unitSelect = document.getElementById('searchHospital');
     if (!specialtySelect || !unitSelect) return;
 
-    const professionals = loadRegisteredProfessionals();
-    const specialties = Array.from(new Set(professionals.map(professional => professional.role).filter(Boolean))).sort();
-    const units = Array.from(new Set(professionals.map(professional => professional.unit).filter(Boolean))).sort();
+    const professionals = availableDoctors;
+    const specialties = Array.from(new Set(professionals.map(professional => professional.especialidade).filter(Boolean))).sort();
+    const units = Array.from(new Set(professionals.map(professional => professional.unidade).filter(Boolean))).sort();
 
     specialtySelect.innerHTML = '<option value="">Todas as areas</option>';
     specialties.forEach(specialty => {
@@ -443,19 +588,19 @@ function populateSearchFilters() {
 }
 
 function getAppointmentData() {
-    return getAppointmentCards()
-        .map(card => ({
-            specialty: card.dataset.specialty || '',
-            doctor: card.dataset.doctor || '',
-            hospital: card.dataset.hospital || '',
-            date: card.dataset.date || '',
-            contactKey: `${card.dataset.doctor || ''}::${card.dataset.hospital || ''}::${card.dataset.specialty || ''}`
-        }))
-        .sort((first, second) => parseAppointmentDate(first.date) - parseAppointmentDate(second.date));
+    return patientAppointments.map(app => ({
+        specialty: app.profissional_especialidade || '',
+        doctor: app.profissional_nome || '',
+        crm: app.profissional_crm || '',
+        hospital: app.clinica_nome || '',
+        date: app.data_agendamento || '',
+        status: app.status || '',
+        id: app.id
+    })).sort((a, b) => new Date(a.date) - new Date(b.date));
 }
 
 function getPatientName() {
-    return currentUser ? currentUser.name : 'Paciente';
+    return userProfile ? userProfile.name : 'Paciente';
 }
 
 function loadStoredConversations() {
@@ -577,7 +722,7 @@ function buildAiReply(contact, userMessage) {
 }
 
 function handleChatbotScheduling(userMessage) {
-    const professionals = loadRegisteredProfessionals();
+    const professionals = availableDoctors;
     const normalizedMessage = normalizeText(userMessage);
 
     if (!chatbotScheduleDraft && !isScheduleIntent(userMessage)) {
@@ -603,7 +748,7 @@ function handleChatbotScheduling(userMessage) {
         const selectedIndex = Number((userMessage.match(/\d+/) || [])[0]) - 1;
         const selectedProfessional = professionals[selectedIndex] || professionals.find(professional =>
             normalizeText(professional.name).includes(normalizedMessage) ||
-            normalizeText(professional.role).includes(normalizedMessage)
+            normalizeText(professional.especialidade).includes(normalizedMessage)
         );
 
         if (!selectedProfessional) {
@@ -612,10 +757,10 @@ function handleChatbotScheduling(userMessage) {
 
         chatbotScheduleDraft = {
             step: 'date',
-            professionalRegistry: selectedProfessional.registry
+            professionalRegistry: selectedProfessional.crm
         };
 
-        return `Perfeito. Para ${selectedProfessional.name} - ${selectedProfessional.role}, qual data voce deseja? Use DD/MM/AAAA, por exemplo 20/05/2026.`;
+        return `Perfeito. Para ${selectedProfessional.name} - ${selectedProfessional.especialidade}, qual data voce deseja? Use DD/MM/AAAA, por exemplo 20/05/2026.`;
     }
 
     if (chatbotScheduleDraft.step === 'date') {
@@ -648,7 +793,7 @@ function handleChatbotScheduling(userMessage) {
 function buildChatbotReply(userMessage) {
     const normalizedMessage = normalizeText(userMessage);
     const appointments = getAppointmentData();
-    const professionals = loadRegisteredProfessionals();
+    const professionals = availableDoctors;
 
     const schedulingReply = handleChatbotScheduling(userMessage);
     if (schedulingReply) {
@@ -668,7 +813,7 @@ function buildChatbotReply(userMessage) {
             return 'No momento nao ha medicos cadastrados disponiveis para agendamento. Assim que a empresa cadastrar medicos ativos, eles aparecerao em Agendamentos > Novo Agendamento.';
         }
 
-        const specialties = Array.from(new Set(professionals.map(professional => professional.role))).slice(0, 4).join(', ');
+        const specialties = Array.from(new Set(professionals.map(professional => professional.especialidade))).slice(0, 4).join(', ');
         return `Temos ${professionals.length} medico(s) disponivel(is)${specialties ? `, incluindo ${specialties}` : ''}. Escreva "agendar consulta" para eu marcar pelo chat.`;
     }
 
@@ -889,7 +1034,7 @@ function renderOverviewAppointments() {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${appointment.specialty}</td>
-            <td>${appointment.doctor}</td>
+            <td>${appointment.doctor}${appointment.crm ? ` (CRM: ${appointment.crm})` : ''}</td>
             <td>${appointment.hospital}</td>
             <td>${formatDateTime(appointment.date)}</td>
         `;
@@ -921,37 +1066,56 @@ function updateOverviewCards() {
     }
 }
 
-function renderAppointmentsState() {
-    const list = document.getElementById('appointmentsList');
-    if (!list) return;
+function renderPatientAppointments() {
+    const appointmentsList = document.getElementById('appointmentsList');
+    if (!appointmentsList) return;
 
-    const cards = getAppointmentCards();
-    const emptyState = list.querySelector('.empty-state');
+    // Limpar agendamentos locais (se houver)
+    const existingCards = appointmentsList.querySelectorAll('.appointment-card');
+    existingCards.forEach(card => card.remove());
 
-    if (cards.length > 0) {
-        if (emptyState) {
-            emptyState.remove();
-        }
-        return;
-    }
+    // Renderizar agendamentos da API
+    patientAppointments.forEach(appointment => {
+        const appointmentCard = document.createElement('div');
+        appointmentCard.className = 'appointment-card';
+        appointmentCard.dataset.id = appointment.id;
+        appointmentCard.dataset.date = appointment.data_agendamento;
+        appointmentCard.dataset.status = appointment.status;
 
-    if (!emptyState) {
-        const message = document.createElement('div');
-        message.className = 'empty-state';
-        message.innerHTML = `
-            <i class="ph ph-calendar-x"></i>
-            <p>Voce ainda nao possui consultas agendadas.</p>
+        const statusClass = appointment.status === 'confirmado' ? 'status-confirmed' :
+                           appointment.status === 'cancelado' ? 'status-cancelled' :
+                           appointment.status === 'realizado' ? 'status-completed' : 'status-pending';
+
+        appointmentCard.innerHTML = `
+            <div class="card-top">
+                <span class="specialty-badge">${escapeHTML(appointment.profissional_especialidade || 'Especialidade não informada')}</span>
+                <span class="date-tag ${statusClass}">${formatDateTime(appointment.data_agendamento)}</span>
+            </div>
+            <div class="card-body">
+                <strong>${escapeHTML(appointment.profissional_nome || 'Médico não informado')}</strong>
+                ${appointment.profissional_crm ? `<span>CRM: ${appointment.profissional_crm}</span>` : ''}
+                <span>${escapeHTML(appointment.clinica_nome || 'Clínica não informada')}</span>
+                <span class="appointment-status">Status: ${appointment.status || 'Pendente'}</span>
+            </div>
+            <div class="card-actions">
+                <button class="btn-secondary" type="button" onclick="switchTab('messages')">Enviar mensagem</button>
+                ${appointment.status === 'confirmado' ? '<button class="btn-danger" type="button" onclick="cancelAppointmentApi(this)">Desmarcar</button>' : ''}
+            </div>
         `;
-        list.appendChild(message);
-    }
+
+        appointmentsList.appendChild(appointmentCard);
+    });
+
+    // Atualizar estado vazio se necessário
+    renderAppointmentsState();
 }
 
 function addAppointmentToDashboard(selectedProfessional, date) {
     const appointmentsList = document.getElementById('appointmentsList');
     if (!appointmentsList || !selectedProfessional || !date) return false;
 
-    const specialty = selectedProfessional.role;
-    const unit = selectedProfessional.unit || 'Unidade a confirmar';
+    const specialty = selectedProfessional.especialidade;
+    const unit = selectedProfessional.unidade || 'Unidade a confirmar';
     const appointmentCard = document.createElement('div');
     appointmentCard.className = 'appointment-card';
     appointmentCard.dataset.date = date;
@@ -984,6 +1148,7 @@ function refreshDashboard() {
     updateOverviewCards();
     renderOverviewAppointments();
     renderAppointmentsState();
+    renderPatientAppointments();
     renderMessageContacts();
     renderActiveConversation();
     renderGuardians();
@@ -1072,8 +1237,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             const date = document.getElementById('modalDate')?.value;
             const time = document.getElementById('modalTime')?.value;
             const professionalRegistry = document.getElementById('modalProfessional')?.value;
-            const specialty = document.getElementById('modalSpec')?.value;
-            const unit = document.getElementById('modalUnit')?.value;
             const selectedProfessional = getProfessionalByRegistry(professionalRegistry);
 
             if (!selectedProfessional) {
@@ -1081,7 +1244,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
 
-            if (!date || !time || !specialty) {
+            if (!date || !time) {
                 await showPopup('Informe a data e o horário do agendamento.');
                 return;
             }
@@ -1194,33 +1357,68 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // Carregar dados do paciente
-    function loadPatientData() {
-        const user = currentUser;
-        const cpf = user ? user.cpf : '';
-        
-        // Atualizar nome do paciente
-        const profilePatientName = document.getElementById('profilePatientName');
-        if (profilePatientName && user && user.name) {
-            profilePatientName.textContent = user.name;
+function renderAppointmentsState() {
+    const list = document.getElementById('appointmentsList');
+    if (!list) return;
+
+    const localCards = list.querySelectorAll('.appointment-card');
+    const hasApiAppointments = patientAppointments && patientAppointments.length > 0;
+    const emptyState = list.querySelector('.empty-state');
+
+    if (localCards.length > 0 || hasApiAppointments) {
+        if (emptyState) {
+            emptyState.remove();
         }
-        
-        // Atualizar CPF do paciente
-        const profilePatientCPF = document.getElementById('profilePatientCPF');
-        if (profilePatientCPF && cpf) {
-            // Formatar CPF (XXX.XXX.XXX-XX)
-            const cpfFormatted = cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-            profilePatientCPF.textContent = cpfFormatted;
-        }
-        
-        // Atualizar cabeçalho com nome do paciente
-        const patientHeaderName = document.getElementById('patientHeaderName');
-        if (patientHeaderName && user.name) {
-            patientHeaderName.textContent = user.name;
-        }
+        return;
     }
 
-    loadPatientData();
+    if (!emptyState) {
+        const message = document.createElement('div');
+        message.className = 'empty-state';
+        message.innerHTML = `
+            <i class="ph ph-calendar-x"></i>
+            <p>Voce ainda nao possui consultas agendadas.</p>
+        `;
+        list.appendChild(message);
+    }
+}
+
+async function cancelAppointmentApi(button) {
+    const card = button.closest('.appointment-card');
+    if (!card) return;
+
+    const appointmentId = card.dataset.id;
+    if (!appointmentId) return;
+
+    const result = await showPopup('Tem certeza que deseja cancelar este agendamento?', 'confirm');
+    if (!result) return;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/agendamentos/${appointmentId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            await showPopup('Agendamento cancelado com sucesso!');
+            // Recarregar agendamentos
+            await loadPatientAppointments();
+            renderPatientAppointments();
+            updateOverviewCards();
+            renderOverviewAppointments();
+        } else {
+            const errorData = await response.json();
+            await showPopup(`Erro ao cancelar agendamento: ${errorData.message || 'Erro desconhecido'}`);
+        }
+    } catch (error) {
+        console.error('Erro ao cancelar agendamento:', error);
+        await showPopup('Erro ao cancelar agendamento. Tente novamente.');
+    }
+}
+
     populateProfessionalOptions();
     refreshDashboard();
 });

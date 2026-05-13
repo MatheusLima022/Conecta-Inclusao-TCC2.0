@@ -2,14 +2,12 @@ import { pool } from "../db.js";
 
 async function resolvePacienteId(pacienteId) {
     const [pacienteRows] = await pool.execute(
-        `SELECT p.id, p.usuario_id
+        `SELECT p.id
          FROM pacientes p
-         INNER JOIN users u ON u.id = p.usuario_id
-         WHERE (p.id = ? OR p.usuario_id = ?)
-           AND u.profile = 'paciente'
-           AND u.status = 'ACTIVE'
+         WHERE p.id = ?
+           AND p.status = 'ACTIVE'
          LIMIT 1`,
-        [pacienteId, pacienteId]
+        [pacienteId]
     );
 
     return pacienteRows[0] || null;
@@ -17,14 +15,12 @@ async function resolvePacienteId(pacienteId) {
 
 async function resolveProfissionalId(profissionalId) {
     const [profissionalRows] = await pool.execute(
-        `SELECT m.id, m.usuario_id, m.clinica_id, m.especialidade, m.unidade
+        `SELECT m.id, m.clinica_id, m.especialidade, m.unidade
          FROM medicos m
-         INNER JOIN users u ON u.id = m.usuario_id
-         WHERE (m.id = ? OR m.usuario_id = ?)
-           AND u.profile = 'medico'
-           AND u.status = 'ACTIVE'
+         WHERE m.id = ?
+           AND m.status = 'ACTIVE'
          LIMIT 1`,
-        [profissionalId, profissionalId]
+        [profissionalId]
     );
 
     return profissionalRows[0] || null;
@@ -32,7 +28,7 @@ async function resolveProfissionalId(profissionalId) {
 
 async function resolveClinicaId(clinicaId) {
     const [clinicaRows] = await pool.execute(
-        "SELECT id, razao_social FROM clinicas WHERE id = ? LIMIT 1",
+        "SELECT id, razao_social FROM clinicas WHERE id = ? AND status = 'ACTIVE' LIMIT 1",
         [clinicaId]
     );
 
@@ -90,7 +86,7 @@ export async function createAgendamento(data) {
         const [conflito] = await pool.execute(
             `SELECT id
              FROM agendamentos
-             WHERE profissional_id = ?
+             WHERE medico_id = ?
                AND data_agendamento = ?
                AND status IN ('confirmado', 'aguardando')`,
             [profissional.id, data_agendamento]
@@ -105,16 +101,13 @@ export async function createAgendamento(data) {
         }
 
         const [result] = await pool.execute(
-            `INSERT INTO agendamentos (clinica_id, paciente_id, profissional_id, data_agendamento, especialidade, tipo_consulta, status, observacoes)
-             VALUES (?, ?, ?, ?, ?, ?, 'aguardando', ?)`,
+            `INSERT INTO agendamentos (clinica_id, paciente_id, medico_id, data_agendamento, status)
+             VALUES (?, ?, ?, ?, 'aguardando')`,
             [
                 clinica.id,
                 paciente.id,
                 profissional.id,
-                data_agendamento,
-                especialidade || profissional.especialidade || null,
-                tipo_consulta,
-                observacoes || null
+                data_agendamento
             ]
         );
 
@@ -126,12 +119,9 @@ export async function createAgendamento(data) {
                 id: result.insertId,
                 clinica_id: clinica.id,
                 paciente_id: paciente.id,
-                profissional_id: profissional.id,
+                medico_id: profissional.id,
                 data_agendamento,
-                especialidade: especialidade || profissional.especialidade || null,
-                tipo_consulta,
-                status: "aguardando",
-                observacoes
+                status: "aguardando"
             }
         };
     } catch (error) {
@@ -148,15 +138,13 @@ export async function listAgendamentosByClinica(clinica_id, limit = 10, offset =
     try {
         const [rows] = await pool.execute(
             `SELECT a.*,
-                    up.name AS paciente_nome,
+                    p.nome_paciente AS paciente_nome,
                     p.cpf AS paciente_cpf,
-                    um.name AS profissional_nome,
+                    m.name AS profissional_nome,
                     m.crm AS profissional_crm
              FROM agendamentos a
              INNER JOIN pacientes p ON a.paciente_id = p.id
-             INNER JOIN users up ON p.usuario_id = up.id
-             INNER JOIN medicos m ON a.profissional_id = m.id
-             INNER JOIN users um ON m.usuario_id = um.id
+             INNER JOIN medicos m ON a.medico_id = m.id
              WHERE a.clinica_id = ?
              ORDER BY a.data_agendamento DESC
              LIMIT ? OFFSET ?`,
@@ -190,16 +178,15 @@ export async function listAgendamentosByProfissional(profissional_id, limit = 10
 
         const [rows] = await pool.execute(
             `SELECT a.*,
-                    up.name AS paciente_nome,
+                    p.nome_paciente AS paciente_nome,
                     p.cpf AS paciente_cpf,
                     c.razao_social AS clinica_nome,
                     m.especialidade AS profissional_especialidade
              FROM agendamentos a
              INNER JOIN pacientes p ON a.paciente_id = p.id
-             INNER JOIN users up ON p.usuario_id = up.id
              INNER JOIN clinicas c ON a.clinica_id = c.id
-             INNER JOIN medicos m ON a.profissional_id = m.id
-             WHERE a.profissional_id = ?
+             INNER JOIN medicos m ON a.medico_id = m.id
+             WHERE a.medico_id = ?
              ORDER BY a.data_agendamento DESC
              LIMIT ? OFFSET ?`,
             [profissional.id, limit, offset]
@@ -211,6 +198,46 @@ export async function listAgendamentosByProfissional(profissional_id, limit = 10
         };
     } catch (error) {
         console.error("Erro ao listar agendamentos por profissional:", error);
+        return {
+            ok: false,
+            statusCode: 500,
+            message: "Erro interno do servidor"
+        };
+    }
+}
+
+export async function listAgendamentosByPaciente(paciente_id, limit = 10, offset = 0) {
+    try {
+        const paciente = await resolvePacienteId(paciente_id);
+        if (!paciente) {
+            return {
+                ok: false,
+                statusCode: 404,
+                message: "Paciente nao encontrado"
+            };
+        }
+
+        const [rows] = await pool.execute(
+            `SELECT a.*,
+                    m.name AS profissional_nome,
+                    m.crm AS profissional_crm,
+                    m.especialidade AS profissional_especialidade,
+                    c.razao_social AS clinica_nome
+             FROM agendamentos a
+             INNER JOIN medicos m ON a.medico_id = m.id
+             INNER JOIN clinicas c ON a.clinica_id = c.id
+             WHERE a.paciente_id = ?
+             ORDER BY a.data_agendamento DESC
+             LIMIT ? OFFSET ?`,
+            [paciente.id, limit, offset]
+        );
+
+        return {
+            ok: true,
+            data: rows
+        };
+    } catch (error) {
+        console.error("Erro ao listar agendamentos por paciente:", error);
         return {
             ok: false,
             statusCode: 500,

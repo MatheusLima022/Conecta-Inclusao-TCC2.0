@@ -78,3 +78,38 @@ export async function getUserData(token) {
         }
     });
 }
+
+// Função para obter perfil do usuário
+export async function getUserProfile() {
+    const token = getToken();
+    if (!token) {
+        return { ok: false, error: 'Token não encontrado' };
+    }
+    return apiRequest('/profile', {
+        headers: {
+            'Authorization': `Bearer ${token}`,
+        }
+    });
+}
+
+// Função para obter agendamentos do paciente
+export async function getPatientAppointments(pacienteId) {
+    const token = getToken();
+    if (!token) {
+        return { ok: false, error: 'Token não encontrado' };
+    }
+    const response = await fetch(`http://localhost:3000/api/agendamentos/paciente/${pacienteId}`, {
+        headers: {
+            'Authorization': `Bearer ${token}`,
+        }
+    });
+    const data = await response.json();
+    return { ok: response.ok, status: response.status, data };
+}
+
+// Função para obter médicos disponíveis
+export async function getAvailableDoctors() {
+    const response = await fetch(`${API_BASE}/doctors/available`);
+    const data = await response.json();
+    return { ok: response.ok, status: response.status, data };
+}

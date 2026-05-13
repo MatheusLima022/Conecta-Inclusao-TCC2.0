@@ -21,7 +21,8 @@ import {
   requestPasswordReset,
   resetPasswordWithToken,
   authenticateToken,
-  getClinicDetails
+  getClinicDetails,
+  getUserProfile
 } from "../services/auth.advanced.service.js";
 
 const router = Router();
@@ -75,6 +76,20 @@ router.post("/professional/reset-temporary-password", loginLimiter, async (req, 
     }
 
     const result = await resetTemporaryProfessionalPassword(parsed.data);
+
+    if (!result.ok) {
+      return res.status(result.statusCode).json({ message: result.message });
+    }
+
+    return res.status(200).json(result.data);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/profile", authenticateToken, async (req, res, next) => {
+  try {
+    const result = await getUserProfile(req.user);
 
     if (!result.ok) {
       return res.status(result.statusCode).json({ message: result.message });
@@ -459,6 +474,22 @@ router.get("/clinic/details", authenticateToken, async (req, res, next) => {
     }
 
     return res.status(200).json(result.data);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /auth/doctors/available - Listar médicos disponíveis para agendamento (sem autenticação)
+router.get("/doctors/available", async (req, res, next) => {
+  try {
+    const [rows] = await pool.execute(
+      `SELECT id, name, crm, especialidade, unidade, bio, status
+       FROM medicos
+       WHERE status IN ('Ativo', 'Trabalhando')
+       ORDER BY name ASC`
+    );
+
+    return res.status(200).json(rows);
   } catch (err) {
     next(err);
   }

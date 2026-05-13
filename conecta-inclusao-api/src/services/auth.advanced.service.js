@@ -139,6 +139,49 @@ export async function getClinicDetails(clinicaId) {
   }
 }
 
+export async function getUserProfile(user) {
+  try {
+    let query, params;
+
+    if (user.profile === 'paciente') {
+      query = `
+        SELECT p.id, p.nome_paciente AS name, p.email, p.cpf, p.data_nascimento, p.tipo_deficiencia, p.plano_atual, p.nome_responsavel, p.status
+        FROM pacientes p
+        WHERE p.id = ?
+      `;
+      params = [user.sub];
+    } else if (user.profile === 'medico') {
+      query = `
+        SELECT m.id, m.name, m.email, m.crm, m.especialidade, m.unidade, m.bio, m.clinica_id, c.nome AS clinica_nome
+        FROM medicos m
+        LEFT JOIN clinicas c ON m.clinica_id = c.id
+        WHERE m.id = ?
+      `;
+      params = [user.sub];
+    } else if (user.profile === 'clinica') {
+      query = `
+        SELECT id, nome, email, cnpj, razao_social, endereco, cidade, estado, cep, telefone, responsavel
+        FROM clinicas
+        WHERE id = ?
+      `;
+      params = [user.sub];
+    } else {
+      return { ok: false, statusCode: 400, message: "Perfil invalido." };
+    }
+
+    const [rows] = await pool.execute(query, params);
+
+    if (rows.length === 0) {
+      return { ok: false, statusCode: 404, message: "Usuario nao encontrado." };
+    }
+
+    return { ok: true, data: rows[0] };
+  } catch (err) {
+    console.error("Erro em getUserProfile:", err);
+    return { ok: false, statusCode: 500, message: "Erro interno do servidor." };
+  }
+}
+
 async function findAuthRecord(identifierInfo) {
   if (identifierInfo.type === "cpf") {
     const [rows] = await pool.execute(

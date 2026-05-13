@@ -35,10 +35,10 @@
                 </div>
                 <div class="user-profile">
                     <div class="user-info">
-                        <strong id="patientHeaderName">Marcos Oliveira</strong>
+                        <strong id="patientHeaderName">Carregando...</strong>
                         <span id="patientHeaderSubtitle">Paciente ativo</span>
                     </div>
-                    <img id="patientAvatar" src="https://ui-avatars.com/api/?name=Marcos+Oliveira&background=0073e6&color=fff" alt="Avatar do paciente">
+                    <img id="patientAvatar" src="https://ui-avatars.com/api/?name=Paciente&background=0073e6&color=fff" alt="Avatar do paciente">
                 </div>
             </header>
 
@@ -52,21 +52,21 @@
                     <div class="status-card primary-card">
                         <div>
                             <span>Consultas agendadas</span>
-                            <h3 id="totalAppointments">2</h3>
+                            <h3 id="totalAppointments">0</h3>
                         </div>
                         <i class="ph ph-calendar-check"></i>
                     </div>
                     <div class="status-card success-card">
                         <div>
                             <span>Proxima consulta</span>
-                            <h3 id="nextAppointmentDate">20/05/2026</h3>
+                            <h3 id="nextAppointmentDate">--</h3>
                         </div>
                         <i class="ph ph-clock-countdown"></i>
                     </div>
                     <div class="status-card accent-card">
                         <div>
                             <span>Especialidades ativas</span>
-                            <h3 id="specialtyCount">2</h3>
+                            <h3 id="specialtyCount">0</h3>
                         </div>
                         <i class="ph ph-heartbeat"></i>
                     </div>
@@ -85,11 +85,11 @@
                     <div class="summary-body">
                         <div class="summary-item">
                             <span>Hospital frequente</span>
-                            <strong id="favoriteHospital">Hospital Central</strong>
+                            <strong id="favoriteHospital">Carregando...</strong>
                         </div>
                         <div class="summary-item">
                             <span>Plano atual</span>
-                            <strong>Unimed</strong>
+                            <strong id="currentPlan">Carregando...</strong>
                         </div>
                         <div class="summary-item">
                             <span>Status cadastral</span>
@@ -279,6 +279,10 @@
                                 <strong id="profilePatientCPF">000.000.000-00</strong>
                             </div>
                             <div>
+                                <span>Data de nascimento</span>
+                                <strong id="profileBirthDate">01/01/2000</strong>
+                            </div>
+                            <div>
                                 <span>Responsavel</span>
                                 <strong id="profilePatientResponsible">Ana Oliveira</strong>
                             </div>
@@ -290,15 +294,15 @@
                         <div class="profile-list">
                             <div>
                                 <span>Tipo de deficiencia</span>
-                                <strong>Deficiencia Motora</strong>
+                                <strong id="profileDisabilityType">Deficiencia Motora</strong>
                             </div>
                             <div>
                                 <span>Plano</span>
-                                <strong>Unimed</strong>
+                                <strong id="profilePlan">Unimed</strong>
                             </div>
                             <div>
                                 <span>Unidade de preferencia</span>
-                                <strong>Hospital Central</strong>
+                                <strong id="profilePreferredUnit">Hospital Central</strong>
                             </div>
                         </div>
                     </article>
@@ -419,6 +423,6 @@
     </div>
 
     <script src="../assets/js/utils.js"></script>
-    <script src="../assets/js/dash-paciente.js"></script>
+    <script type="module" src="../assets/js/dash-paciente.js"></script>
 </body>
 </html>
