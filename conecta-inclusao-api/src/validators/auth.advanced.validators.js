@@ -98,6 +98,11 @@ export const registerPatientSchema = z.object({
       (date) => !isNaN(Date.parse(date)),
       "Data inválida"
     )
+    .optional(),
+  planoAtual: z
+    .string()
+    .trim()
+    .max(100, "Plano atual muito longo")
     .optional()
 });
 

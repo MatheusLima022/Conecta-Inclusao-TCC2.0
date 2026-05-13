@@ -18,11 +18,12 @@ function validatePatientForm() {
     const name = document.getElementById('name').value.trim();
     const dataNascimento = document.getElementById('dataNascimento').value;
     const tipoDeficiencia = document.getElementById('tipoDeficiencia').value.trim();
+    const planoAtual = document.getElementById('planoAtual').value.trim();
     const nomeResponsavel = document.getElementById('nomeResponsavel').value.trim();
     const password = document.getElementById('password').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
 
-    if (!cpf || !name || !dataNascimento || !tipoDeficiencia || !nomeResponsavel || !password || !confirmPassword) {
+    if (!cpf || !name || !dataNascimento || !tipoDeficiencia || !planoAtual || !nomeResponsavel || !password || !confirmPassword) {
         showPopup('Preencha todos os campos obrigatórios.');
         return false;
     }
@@ -75,6 +76,7 @@ function handlePatientRegistration(event) {
     const email = document.getElementById('email').value.trim();
     const dataNascimento = document.getElementById('dataNascimento').value;
     const tipoDeficiencia = document.getElementById('tipoDeficiencia').value.trim();
+    const planoAtual = document.getElementById('planoAtual').value.trim();
     const nomeResponsavel = document.getElementById('nomeResponsavel').value.trim();
     const password = document.getElementById('password').value;
 
@@ -92,6 +94,7 @@ function handlePatientRegistration(event) {
             email: email || null,
             nomeResponsavel: nomeResponsavel,
             tipoDeficiencia: tipoDeficiencia,
+            planoAtual: planoAtual || null,
             dataNascimento: dataNascimento
         };
 

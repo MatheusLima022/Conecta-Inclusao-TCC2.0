@@ -106,6 +106,7 @@ router.post("/register/patient", registerLimiter, async (req, res, next) => {
         email: parsed.data.email,
         nomeResponsavel: parsed.data.nomeResponsavel,
         tipoDeficiencia: parsed.data.tipoDeficiencia,
+        planoAtual: parsed.data.planoAtual,
         dataNascimento: parsed.data.dataNascimento
       }
     });
@@ -324,7 +325,7 @@ router.get("/clinic/dashboard-summary", authenticateToken, async (req, res, next
 
     const [[appointmentStats]] = await pool.execute(
       `SELECT
-         SUM(CASE WHEN data_hora >= NOW() AND status <> 'cancelado' THEN 1 ELSE 0 END) AS upcomingAppointments,
+         SUM(CASE WHEN data_agendamento >= NOW() AND status <> 'cancelado' THEN 1 ELSE 0 END) AS upcomingAppointments,
          SUM(CASE WHEN status = 'pendente' THEN 1 ELSE 0 END) AS pendingRequests
        FROM agendamentos
        WHERE clinica_id = ?`,

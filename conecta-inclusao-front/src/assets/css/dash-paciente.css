@@ -425,6 +425,19 @@ body {
     transition: border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
+.input-group.select-row,
+.input-group.split-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.split-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
 .input-group select:focus,
 .input-group input:focus {
     outline: none;

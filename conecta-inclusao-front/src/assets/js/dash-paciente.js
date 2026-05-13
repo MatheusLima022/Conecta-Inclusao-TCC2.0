@@ -1,35 +1,5 @@
 const PROFESSIONALS_STORAGE_KEY = 'companyProfessionals';
 const PATIENT_MESSAGES_STORAGE_KEY = 'patientProfessionalMessages';
-<<<<<<< HEAD
-let activeChatContactKey = '';
-let currentUser = null;
-
-async function loadUserInfo() {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        window.location.href = 'login-paciente.html';
-        return;
-    }
-
-    try {
-        const response = await fetch('http://localhost:3000/auth/me', {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        const result = await response.json();
-
-        if (response.ok) {
-            currentUser = result;
-        } else {
-            localStorage.removeItem('token');
-            window.location.href = 'login-paciente.html';
-        }
-    } catch (error) {
-        console.error('Erro ao carregar informações do usuário:', error);
-        localStorage.removeItem('token');
-        window.location.href = 'login-paciente.html';
-=======
 const GUARDIANS_STORAGE_KEY = 'patientGuardians';
 const DEMO_PROFESSIONAL_REGISTRIES = ['CRM 123456'];
 const CHATBOT_CONTACT = {
@@ -259,7 +229,6 @@ function scrollToSpecialty(specialty) {
             updateSelectedProfessionalDetails();
             openModal();
         }
->>>>>>> Miguel
     }
 }
 
@@ -287,13 +256,25 @@ function switchTab(tabKey) {
 }
 
 function parseAppointmentDate(dateString) {
-    const [year, month, day] = dateString.split('-').map(Number);
-    return new Date(year, month - 1, day);
+    const date = new Date(dateString);
+    if (!Number.isNaN(date.getTime())) {
+        return date;
+    }
+
+    const normalized = dateString.replace(' ', 'T');
+    return new Date(normalized);
 }
 
 function formatDate(dateString) {
-    const [year, month, day] = dateString.split('-');
-    return `${day}/${month}/${year}`;
+    const date = parseAppointmentDate(dateString);
+    if (Number.isNaN(date.getTime())) {
+        return dateString;
+    }
+    return date.toLocaleDateString('pt-BR');
+}
+
+function combineDateTime(date, time) {
+    return `${date}T${time}:00`;
 }
 
 function formatProfessionalListForChat(professionals) {
@@ -338,9 +319,14 @@ function isValidAppointmentDate(dateString) {
 }
 
 function formatDateTime(date = new Date()) {
-    return date.toLocaleString('pt-BR', {
+    const parsed = typeof date === 'string' ? parseAppointmentDate(date) : date;
+    if (Number.isNaN(parsed.getTime())) {
+        return String(date);
+    }
+    return parsed.toLocaleString('pt-BR', {
         day: '2-digit',
         month: '2-digit',
+        year: 'numeric',
         hour: '2-digit',
         minute: '2-digit'
     });
@@ -905,7 +891,7 @@ function renderOverviewAppointments() {
             <td>${appointment.specialty}</td>
             <td>${appointment.doctor}</td>
             <td>${appointment.hospital}</td>
-            <td>${formatDate(appointment.date)}</td>
+            <td>${formatDateTime(appointment.date)}</td>
         `;
         tableBody.appendChild(row);
     });
@@ -923,7 +909,7 @@ function updateOverviewCards() {
     }
 
     if (nextAppointmentDate) {
-        nextAppointmentDate.innerText = appointments.length ? formatDate(appointments[0].date) : '--';
+        nextAppointmentDate.innerText = appointments.length ? formatDateTime(appointments[0].date) : '--';
     }
 
     if (specialtyCount) {
@@ -975,7 +961,7 @@ function addAppointmentToDashboard(selectedProfessional, date) {
     appointmentCard.innerHTML = `
         <div class="card-top">
             <span class="specialty-badge">${escapeHTML(specialty)}</span>
-            <span class="date-tag">${formatDate(date)}</span>
+            <span class="date-tag">${formatDateTime(date)}</span>
         </div>
         <div class="card-body">
             <strong>${escapeHTML(selectedProfessional.name)}</strong>
@@ -1084,6 +1070,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             event.preventDefault();
 
             const date = document.getElementById('modalDate')?.value;
+            const time = document.getElementById('modalTime')?.value;
             const professionalRegistry = document.getElementById('modalProfessional')?.value;
             const specialty = document.getElementById('modalSpec')?.value;
             const unit = document.getElementById('modalUnit')?.value;
@@ -1094,13 +1081,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
 
-            if (!date || !specialty) return;
+            if (!date || !time || !specialty) {
+                await showPopup('Informe a data e o horário do agendamento.');
+                return;
+            }
 
-            addAppointmentToDashboard(selectedProfessional, date);
+            const dateTime = combineDateTime(date, time);
+            addAppointmentToDashboard(selectedProfessional, dateTime);
             appointmentForm.reset();
             updateSelectedProfessionalDetails();
             closeModal();
-            await showPopup(`Sucesso! Consulta com ${selectedProfessional.name} agendada para ${formatDate(date)}.`);
+            await showPopup(`Sucesso! Consulta com ${selectedProfessional.name} agendada para ${formatDateTime(dateTime)}.`);
         });
     }
 

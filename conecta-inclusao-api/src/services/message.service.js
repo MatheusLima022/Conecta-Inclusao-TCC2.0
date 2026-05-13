@@ -67,7 +67,7 @@ async function findLinkBetweenProfiles(actor, targetProfileId) {
        FROM agendamentos a
        INNER JOIN medicos m ON m.id = a.medico_id
        WHERE a.paciente_id = ? AND m.id = ?
-       ORDER BY a.data_hora DESC
+       ORDER BY a.data_agendamento DESC
        LIMIT 1`,
       [actor.profileId, targetProfileId]
     );
@@ -84,7 +84,7 @@ async function findLinkBetweenProfiles(actor, targetProfileId) {
      FROM agendamentos a
      INNER JOIN pacientes p ON p.id = a.paciente_id
      WHERE a.medico_id = ? AND p.id = ?
-     ORDER BY a.data_hora DESC
+     ORDER BY a.data_agendamento DESC
      LIMIT 1`,
     [actor.profileId, targetProfileId]
   );
@@ -94,6 +94,8 @@ async function findLinkBetweenProfiles(actor, targetProfileId) {
 
 export async function listAllowedMessageContacts(reqUser) {
   try {
+    await ensureMessagingTable();
+
     const actorResult = await resolveActor(reqUser);
     if (!actorResult.ok) return actorResult;
 
@@ -109,7 +111,7 @@ export async function listAllowedMessageContacts(reqUser) {
             m.crm AS registry,
             m.especialidade AS specialty,
             m.unidade AS unit,
-            MAX(a.data_hora) AS lastAppointmentAt
+            MAX(a.data_agendamento) AS lastAppointmentAt
          FROM agendamentos a
          INNER JOIN medicos m ON m.id = a.medico_id
          WHERE a.paciente_id = ?
@@ -128,7 +130,7 @@ export async function listAllowedMessageContacts(reqUser) {
           'paciente' AS profile,
           p.nome_paciente AS name,
           p.cpf,
-          MAX(a.data_hora) AS lastAppointmentAt
+          MAX(a.data_agendamento) AS lastAppointmentAt
        FROM agendamentos a
        INNER JOIN pacientes p ON p.id = a.paciente_id
        WHERE a.medico_id = ?
