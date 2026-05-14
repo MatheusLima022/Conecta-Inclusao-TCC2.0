@@ -679,11 +679,13 @@ export async function registerProfessional({ crm, name, especialidade, clinicaId
       return { ok: false, statusCode: 400, message: "CRM invalido." };
     }
 
-    if (password.trim().length < 6) {
-      return { ok: false, statusCode: 400, message: "Senha deve ter no minimo 6 caracteres." };
+    const passwordTrimmed = password.trim();
+    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+    if (!strongPasswordRegex.test(passwordTrimmed)) {
+      return { ok: false, statusCode: 400, message: "Senha deve ter 8 caracteres, maiúscula, minúscula, número e caractere especial." };
     }
 
-    const defaultPassword = password.trim();
+    const defaultPassword = passwordTrimmed;
     const passwordHash = await bcrypt.hash(defaultPassword, SALT_ROUNDS);
 
     const [result] = await pool.execute(

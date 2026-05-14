@@ -223,8 +223,8 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        if (password.length < 6) {
-            showPopup('A senha deve ter no minimo 6 caracteres.');
+        if (!isStrongPassword(password)) {
+            showPopup('A senha deve ter 8 caracteres, maiúscula, minúscula, número e caractere especial.');
             return;
         }
 

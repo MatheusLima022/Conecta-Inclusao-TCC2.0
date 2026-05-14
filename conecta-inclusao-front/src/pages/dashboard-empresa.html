@@ -147,6 +147,19 @@
                             <input type="text" id="professionalCRM" placeholder="ABC1234" maxlength="7" required>
                         </div>
                         <div class="input-group">
+                            <label for="professionalEmail">E-mail</label>
+                            <input type="email" id="professionalEmail" placeholder="medico@example.com">
+                        </div>
+                        <div class="input-group">
+                            <label for="professionalUnit">Unidade <span style="color: #e74c3c;">*</span></label>
+                            <select id="professionalUnit" required>
+                                <option value="">Selecione uma unidade...</option>
+                                <option value="Unidade A">Unidade A</option>
+                                <option value="Unidade B">Unidade B</option>
+                                <option value="Unidade C">Unidade C</option>
+                            </select>
+                        </div>
+                        <div class="input-group full-width">
                             <label for="professionalEspecialidade">Especialidade <span style="color: #e74c3c;">*</span></label>
                             <select id="professionalEspecialidade" required>
                                 <option value="">Selecione uma especialidade...</option>
@@ -164,21 +177,8 @@
                             </select>
                         </div>
                         <div class="input-group">
-                            <label for="professionalEmail">E-mail</label>
-                            <input type="email" id="professionalEmail" placeholder="medico@example.com">
-                        </div>
-                        <div class="input-group">
-                            <label for="professionalUnit">Unidade <span style="color: #e74c3c;">*</span></label>
-                            <select id="professionalUnit" required>
-                                <option value="">Selecione uma unidade...</option>
-                                <option value="Unidade A">Unidade A</option>
-                                <option value="Unidade B">Unidade B</option>
-                                <option value="Unidade C">Unidade C</option>
-                            </select>
-                        </div>
-                        <div class="input-group">
                             <label for="professionalPassword">Senha <span style="color: #e74c3c;">*</span></label>
-                            <input type="password" id="professionalPassword" placeholder="Mínimo 6 caracteres" required>
+                            <input type="password" id="professionalPassword" data-password-guidance="true" placeholder="Senha forte (8+ caracteres, maiúscula, minúscula, número e especial)" required>
                         </div>
                         <div class="input-group">
                             <label for="professionalConfirmPassword">Confirmar Senha <span style="color: #e74c3c;">*</span></label>

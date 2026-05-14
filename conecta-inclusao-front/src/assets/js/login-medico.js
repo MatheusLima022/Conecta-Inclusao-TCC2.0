@@ -148,7 +148,7 @@ function showTemporaryPasswordModal(resetToken, registryFallback, loginButton) {
             <form id="temporaryPasswordForm">
                 <div class="input-group">
                     <label for="newProfessionalPassword">Nova senha</label>
-                    <input type="password" id="newProfessionalPassword" placeholder="Nova senha segura" required>
+                    <input type="password" id="newProfessionalPassword" data-password-guidance="true" placeholder="Nova senha segura" required>
                 </div>
                 <div class="input-group">
                     <label for="confirmProfessionalPassword">Confirmar nova senha</label>
@@ -169,6 +169,12 @@ function showTemporaryPasswordModal(resetToken, registryFallback, loginButton) {
     document.body.appendChild(modal);
     if (typeof setupPasswordVisibilityToggles === 'function') {
         setupPasswordVisibilityToggles();
+    }
+    if (typeof setupProtectedPasswordInputs === 'function') {
+        setupProtectedPasswordInputs();
+    }
+    if (typeof setupPasswordRuleFeedback === 'function') {
+        setupPasswordRuleFeedback();
     }
 
     const form = document.getElementById('temporaryPasswordForm');

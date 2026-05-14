@@ -148,6 +148,79 @@ function setupPasswordVisibilityToggles() {
                 font-size: 1.15rem;
                 line-height: 1;
             }
+
+            .password-rule-feedback {
+                margin-top: 0.4rem;
+                padding: 0.5rem 0.7rem;
+                border: 1px solid #d1d5db;
+                border-radius: 0.5rem;
+                background: #f8fafc;
+                color: #334155;
+                font-size: 0.8rem;
+                line-height: 1.3;
+                width: 100% !important;
+                box-sizing: border-box !important;
+                display: none;
+                opacity: 0;
+                transition: opacity 0.2s ease-in-out;
+                flex-shrink: 0;
+            }
+
+            .password-rule-feedback.show {
+                display: block !important;
+                opacity: 1;
+            }
+
+            .password-rule-feedback p {
+                margin: 0 0 0.25rem;
+                font-weight: 600;
+                color: #0f172a;
+                font-size: 0.75rem;
+            }
+
+            .password-rule-feedback ul {
+                list-style: none;
+                margin: 0;
+                padding: 0;
+                columns: 2;
+                column-gap: 0.6rem;
+            }
+
+            .password-rule-feedback li {
+                margin: 0.1rem 0;
+                display: flex;
+                align-items: center;
+                gap: 0.3rem;
+                font-size: 0.75rem;
+                break-inside: avoid;
+            }
+
+            .password-rule-feedback li::before {
+                content: '';
+                width: 0.4rem;
+                height: 0.4rem;
+                border-radius: 50%;
+                border: 1px solid #cbd5e1;
+                display: inline-block;
+                flex-shrink: 0;
+            }
+
+            .password-rule-feedback li.valid::before {
+                background: #22c55e;
+                border-color: #22c55e;
+            }
+
+            @media (max-width: 640px) {
+                .password-rule-feedback ul {
+                    columns: 1;
+                }
+
+                .password-rule-feedback {
+                    margin-top: 0.3rem;
+                    padding: 0.4rem 0.6rem;
+                    font-size: 0.75rem;
+                }
+            }
         `;
         document.head.appendChild(style);
     }
@@ -182,10 +255,82 @@ function setupPasswordVisibilityToggles() {
     });
 }
 
+function getPasswordRules() {
+    return [
+        { test: (password) => password.length >= 8, label: 'Mínimo de 8 caracteres' },
+        { test: (password) => /[a-z]/.test(password), label: 'Uma letra minúscula' },
+        { test: (password) => /[A-Z]/.test(password), label: 'Uma letra maiúscula' },
+        { test: (password) => /\d/.test(password), label: 'Um número' },
+        { test: (password) => /[^A-Za-z0-9]/.test(password), label: 'Um caractere especial' }
+    ];
+}
+
+function isStrongPassword(password) {
+    return getPasswordRules().every(rule => rule.test(password || ''));
+}
+
+function updatePasswordFeedback(input) {
+    const value = input.value || '';
+    const feedback = input.parentNode.querySelector('.password-rule-feedback');
+    if (!feedback) return;
+
+    const listItems = feedback.querySelectorAll('li');
+    getPasswordRules().forEach((rule, index) => {
+        const item = listItems[index];
+        if (!item) return;
+        item.classList.toggle('valid', rule.test(value));
+    });
+}
+
+function setupPasswordRuleFeedback() {
+    const passwordInputs = document.querySelectorAll('input[type="password"][data-password-guidance="true"]');
+
+    passwordInputs.forEach((input) => {
+        if (input.dataset.passwordGuidanceReady === 'true') return;
+
+        const feedback = document.createElement('div');
+        feedback.className = 'password-rule-feedback';
+        feedback.innerHTML = `
+            <p>Requisitos de senha segura:</p>
+            <ul>${getPasswordRules().map(rule => `<li>${rule.label}</li>`).join('')}</ul>
+        `;
+
+        input.parentNode.appendChild(feedback);
+        input.addEventListener('input', () => updatePasswordFeedback(input));
+        input.addEventListener('focus', () => feedback.classList.add('show'));
+        input.addEventListener('blur', () => feedback.classList.remove('show'));
+        input.dataset.passwordGuidanceReady = 'true';
+    });
+}
+
+function preventPasswordCopyPaste(input) {
+    ['paste', 'copy', 'cut', 'drop', 'contextmenu'].forEach((eventName) => {
+        input.addEventListener(eventName, (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            return false;
+        });
+    });
+}
+
+function setupProtectedPasswordInputs() {
+    document.querySelectorAll('input[type="password"]').forEach((input) => {
+        if (input.dataset.passwordProtectionReady === 'true') return;
+        preventPasswordCopyPaste(input);
+        input.dataset.passwordProtectionReady = 'true';
+    });
+}
+
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setupPasswordVisibilityToggles);
+    document.addEventListener('DOMContentLoaded', () => {
+        setupPasswordVisibilityToggles();
+        setupProtectedPasswordInputs();
+        setupPasswordRuleFeedback();
+    });
 } else {
     setupPasswordVisibilityToggles();
+    setupProtectedPasswordInputs();
+    setupPasswordRuleFeedback();
 }
 
 // Função para validar CPF

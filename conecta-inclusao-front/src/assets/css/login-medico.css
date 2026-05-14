@@ -45,6 +45,9 @@ p {
 .input-group {
     text-align: left;
     margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .input-group label {

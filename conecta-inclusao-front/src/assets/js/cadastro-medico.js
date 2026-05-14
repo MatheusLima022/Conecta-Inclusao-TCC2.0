@@ -27,8 +27,8 @@ function validateDoctorForm() {
         return false;
     }
 
-    if (password.length < 6) {
-        showPopup('A senha deve ter no mínimo 6 caracteres.');
+    if (!isStrongPassword(password)) {
+        showPopup('A senha deve ter 8 caracteres, maiúscula, minúscula, número e caractere especial.');
         return false;
     }
 

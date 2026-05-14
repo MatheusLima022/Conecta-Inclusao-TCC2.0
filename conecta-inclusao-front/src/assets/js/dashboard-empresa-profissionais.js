@@ -45,6 +45,11 @@ async function handleRegisterProfessional(event) {
         return;
     }
     
+    if (!isStrongPassword(password)) {
+        showPopup('A senha deve ter 8 caracteres, maiúscula, minúscula, número e caractere especial.');
+        return;
+    }
+
     if (password !== confirmPassword) {
         showPopup('As senhas não coincidem.');
         return;

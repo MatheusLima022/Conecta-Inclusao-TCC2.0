@@ -69,10 +69,7 @@ export const registerPatientSchema = z.object({
       (value) => /^\d{3}\.\d{3}\.\d{3}-\d{2}$|^\d{11}$/.test(value),
       "CPF inválido"
     ),
-  password: z
-    .string()
-    .min(6, "Senha deve ter no mínimo 6 caracteres")
-    .max(100),
+  password: strongPasswordSchema,
   name: z
     .string()
     .trim()
@@ -116,10 +113,7 @@ export const registerDoctorSchema = z.object({
       (value) => /^[A-Z0-9]{4,7}$/.test(value),
       "CRM inválido"
     ),
-  password: z
-    .string()
-    .min(6, "Senha deve ter no mínimo 6 caracteres")
-    .max(100),
+  password: strongPasswordSchema,
   name: z
     .string()
     .trim()
@@ -161,10 +155,7 @@ export const registerClinicSchema = z.object({
       (value) => /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$|^\d{14}$/.test(value),
       "CNPJ inválido"
     ),
-  password: z
-    .string()
-    .min(6, "Senha deve ter no mínimo 6 caracteres")
-    .max(100),
+  password: strongPasswordSchema,
   name: z
     .string()
     .trim()

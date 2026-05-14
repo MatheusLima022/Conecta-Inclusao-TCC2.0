@@ -225,6 +225,18 @@ p {
     .icon-large { font-size: 3.5rem; }
 }
 
+/* Password feedback styling */
+.input-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.password-rule-feedback {
+    width: 100% !important;
+    clear: both;
+    margin-top: 0.4rem !important;
+}
+
 @media (max-width: 768px) {
     body {
         overflow-y: scroll;

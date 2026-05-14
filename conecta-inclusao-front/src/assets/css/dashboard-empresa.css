@@ -434,6 +434,22 @@ body {
     grid-column: span 2;
 }
 
+.professional-form .input-group {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.professional-form .input-group input[type="password"] {
+    width: 100%;
+}
+
+.professional-form .password-rule-feedback {
+    width: 100% !important;
+    box-sizing: border-box;
+    order: 3;
+}
+
 .team-full-table th,
 .team-full-table td {
     font-size: 14px;
@@ -503,6 +519,11 @@ textarea {
     .status-grid {
         grid-template-columns: 1fr;
     }
+
+    .professional-form .form-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+    }
 }
 
 @media (max-width: 860px) {
@@ -530,6 +551,11 @@ textarea {
     .main-content {
         padding: 24px;
     }
+
+    .professional-form .form-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
 }
 
 @media (max-width: 600px) {
@@ -543,12 +569,14 @@ textarea {
         justify-content: space-between;
     }
 
-    .professional-form .form-grid,
-    .tab-content.active {
-        display: block;
+    .professional-form .form-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 14px;
     }
 
     .input-group.full-width {
         grid-column: span 1;
     }
+}
 }
