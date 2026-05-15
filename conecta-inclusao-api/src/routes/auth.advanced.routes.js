@@ -344,6 +344,87 @@ router.get("/clinic/dashboard-summary", authenticateToken, async (req, res, next
   }
 });
 
+router.get("/patient/appointments", authenticateToken, async (req, res, next) => {
+  try {
+    if (req.user.profile !== 'paciente') {
+      return res.status(403).json({ message: 'Acesso negado. Apenas pacientes podem ver seus agendamentos.' });
+    }
+
+    const patientId = Number(req.user.sub);
+    const [rows] = await pool.execute(
+      `SELECT
+         a.id,
+         a.data_agendamento AS appointmentDate,
+         a.status,
+         m.name AS doctorName,
+         m.especialidade AS specialty,
+         m.unidade AS unit,
+         c.nome AS clinicName
+       FROM agendamentos a
+       INNER JOIN medicos m ON a.medico_id = m.id
+       INNER JOIN clinicas c ON a.clinica_id = c.id
+       WHERE a.paciente_id = ?
+         AND a.status <> 'cancelado'
+       ORDER BY a.data_agendamento ASC`,
+      [patientId]
+    );
+
+    return res.status(200).json(rows);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/patient/appointments", authenticateToken, async (req, res, next) => {
+  try {
+    if (req.user.profile !== 'paciente') {
+      return res.status(403).json({ message: 'Acesso negado. Apenas pacientes podem criar agendamentos.' });
+    }
+
+    const { med_crm, date } = req.body;
+    if (!med_crm || !date) {
+      return res.status(400).json({ message: 'med_crm e date sao obrigatorios.' });
+    }
+
+    // Normalizar CRM
+    const normalizedCRM = String(med_crm).replace(/[^A-Z0-9]/gi, '').toUpperCase();
+
+    const [[medRows]] = await pool.execute(
+      `SELECT id, clinica_id FROM medicos WHERE REPLACE(UPPER(crm), 'CRM', '') LIKE ? LIMIT 1`,
+      [`%${normalizedCRM.replace(/^CRM/, '')}%`]
+    );
+
+    const medico = medRows || null;
+    if (!medico || !medico.id) {
+      return res.status(404).json({ message: 'Profissional nao encontrado.' });
+    }
+
+    const pacienteId = Number(req.user.sub);
+    const clinicaId = medico.clinica_id || null;
+
+    const [insertResult] = await pool.execute(
+      `INSERT INTO agendamentos (clinica_id, paciente_id, medico_id, data_agendamento, status)
+       VALUES (?, ?, ?, ?, 'pendente')`,
+      [clinicaId, pacienteId, medico.id, date]
+    );
+
+    const createdId = insertResult.insertId;
+
+    const [rows] = await pool.execute(
+      `SELECT a.id, a.data_agendamento AS appointmentDate, a.status, m.name AS doctorName, m.especialidade AS specialty, m.unidade AS unit, c.nome AS clinicName
+       FROM agendamentos a
+       INNER JOIN medicos m ON a.medico_id = m.id
+       INNER JOIN clinicas c ON a.clinica_id = c.id
+       WHERE a.id = ? LIMIT 1`,
+      [createdId]
+    );
+
+    return res.status(201).json(rows[0] || null);
+  } catch (err) {
+    next(err);
+  }
+});
+
 /**
  * POST /auth/records/authenticate
  * Autentica um profissional para acesso aos prontuários
