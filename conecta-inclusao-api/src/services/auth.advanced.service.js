@@ -265,7 +265,7 @@ async function validatePassword(record, password, expectedProfile = null) {
     return { ok: false, statusCode: 401, message: "Credenciais invalidas." };
   }
 
-  if (record.status !== "ACTIVE" && record.status !== "ativo") {
+  if (!["active", "ativo", "trabalhando"].includes(String(record.status || "").toLowerCase())) {
     return { ok: false, statusCode: 403, message: "Conta inativa." };
   }
 

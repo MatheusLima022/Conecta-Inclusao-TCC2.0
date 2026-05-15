@@ -5,7 +5,7 @@ async function resolvePacienteId(pacienteId) {
         `SELECT p.id
          FROM pacientes p
          WHERE p.id = ?
-           AND p.status = 'ACTIVE'
+           AND LOWER(p.status) IN ('active', 'ativo')
          LIMIT 1`,
         [pacienteId]
     );
@@ -18,7 +18,7 @@ async function resolveProfissionalId(profissionalId) {
         `SELECT m.id, m.clinica_id, m.especialidade, m.unidade
          FROM medicos m
          WHERE m.id = ?
-           AND m.status = 'ACTIVE'
+           AND LOWER(m.status) IN ('active', 'ativo', 'trabalhando')
          LIMIT 1`,
         [profissionalId]
     );
@@ -28,7 +28,7 @@ async function resolveProfissionalId(profissionalId) {
 
 async function resolveClinicaId(clinicaId) {
     const [clinicaRows] = await pool.execute(
-        "SELECT id, razao_social FROM clinicas WHERE id = ? AND status = 'ACTIVE' LIMIT 1",
+        "SELECT id, razao_social FROM clinicas WHERE id = ? AND LOWER(status) IN ('active', 'ativo') LIMIT 1",
         [clinicaId]
     );
 

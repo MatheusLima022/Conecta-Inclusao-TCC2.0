@@ -1,8 +1,6 @@
 // Rotas avanÃ§adas de autenticaÃ§Ã£o com suporte a CRM, CNPJ e CPF
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import { pool } from "../db.js";
 import {
   universalLoginSchema,
@@ -301,8 +299,23 @@ router.post("/password/reset", loginLimiter, async (req, res, next) => {
 
 router.get("/clinic/professionals", authenticateToken, async (req, res, next) => {
   try {
-    if (req.user.profile !== 'clinica') {
-      return res.status(403).json({ message: 'Acesso negado. Apenas clinicas podem listar profissionais.' });
+    let clinicId = req.user.sub;
+
+    if (req.user.profile === 'medico') {
+      const [[doctor]] = await pool.execute(
+        `SELECT clinica_id
+         FROM medicos
+         WHERE id = ? LIMIT 1`,
+        [req.user.sub]
+      );
+
+      clinicId = doctor?.clinica_id;
+    } else if (req.user.profile !== 'clinica') {
+      return res.status(403).json({ message: 'Acesso negado.' });
+    }
+
+    if (!clinicId) {
+      return res.status(404).json({ message: 'Clinica do profissional nao encontrada.' });
     }
 
     const [rows] = await pool.execute(
@@ -310,7 +323,7 @@ router.get("/clinic/professionals", authenticateToken, async (req, res, next) =>
        FROM medicos
        WHERE clinica_id = ?
        ORDER BY name ASC`,
-      [req.user.sub]
+      [clinicId]
     );
 
     return res.status(200).json(rows);
@@ -360,107 +373,7 @@ router.get("/clinic/dashboard-summary", authenticateToken, async (req, res, next
   }
 });
 
-/**
- * POST /auth/records/authenticate
- * Autentica um profissional para acesso aos prontuários
- * Requer CNPJ da clínica, CRM do profissional e senha
- * 
- * Body:
- * {
- *   "cnpj": "12345678000190",
- *   "crm": "ABC1234",
- *   "password": "senha123"
- * }
- */
-router.post("/records/authenticate", loginLimiter, async (req, res, next) => {
-  try {
-    const { cnpj, crm, password } = req.body;
-
-    if (!cnpj || !crm || !password) {
-      return res.status(400).json({
-        message: "CNPJ, CRM e senha são obrigatórios"
-      });
-    }
-
-    // Validar e normalizar CNPJ
-    const cleanCNPJ = cnpj.replace(/\D/g, '');
-    if (cleanCNPJ.length !== 14) {
-      return res.status(400).json({
-        message: "CNPJ inválido"
-      });
-    }
-
-    // Validar e normalizar CRM
-    const normalizedCRM = crm.trim().toUpperCase();
-    if (normalizedCRM.length < 4) {
-      return res.status(400).json({
-        message: "CRM inválido"
-      });
-    }
-
-    // Verificar se existe um medico com esse CRM, CNPJ e senha
-    const [doctorRows] = await pool.execute(
-      `SELECT m.id, m.name, m.email, m.senha AS password_hash, 'medico' AS profile,
-              m.status, m.crm, c.cnpj
-       FROM medicos m
-       INNER JOIN clinicas c ON m.clinica_id = c.id
-       WHERE m.crm = ? AND c.cnpj = ? LIMIT 1`,
-      [normalizedCRM, cleanCNPJ]
-    );
-
-    if (doctorRows.length === 0) {
-      return res.status(401).json({
-        message: "Credenciais inválidas. Verifique CNPJ, CRM e tente novamente."
-      });
-    }
-
-    const doctor = doctorRows[0];
-
-    // Verificar status do usuário
-    if (!['ACTIVE', 'ativo'].includes(doctor.status)) {
-      return res.status(403).json({
-        message: "Sua conta está desativada. Entre em contato com o administrador."
-      });
-    }
-
-    // Validar senha
-    const passwordMatch = await bcrypt.compare(password, doctor.password_hash);
-    if (!passwordMatch) {
-      return res.status(401).json({
-        message: "Credenciais inválidas. Verifique CNPJ, CRM e tente novamente."
-      });
-    }
-
-    // Gerar token JWT para a sessão
-    const token = jwt.sign(
-      {
-        profileId: doctor.id,
-        profile: 'medico',
-        crm: doctor.crm,
-        cnpj: doctor.cnpj,
-        type: 'records_access'
-      },
-      process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '4h' }
-    );
-
-    return res.status(200).json({
-      message: "Autenticado com sucesso",
-      token: token,
-      user: {
-        name: doctor.name,
-        crm: doctor.crm,
-        profile: doctor.profile
-      }
-    });
-
-  } catch (error) {
-    console.error("Erro em /auth/records/authenticate:", error);
-    return res.status(500).json({
-      message: "Erro interno do servidor"
-    });
-  }
-});
+// Endpoint de acesso a registros removido.
 router.get("/clinic/details", authenticateToken, async (req, res, next) => {
   try {
     if (req.user.profile !== 'clinica') {
@@ -485,7 +398,7 @@ router.get("/doctors/available", async (req, res, next) => {
     const [rows] = await pool.execute(
       `SELECT id, name, crm, especialidade, unidade, bio, status
        FROM medicos
-       WHERE status IN ('Ativo', 'Trabalhando')
+       WHERE LOWER(status) IN ('active', 'ativo', 'trabalhando')
        ORDER BY name ASC`
     );
 

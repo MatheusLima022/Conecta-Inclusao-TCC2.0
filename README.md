@@ -177,7 +177,7 @@ O desenvolvimento do projeto seguiu:
 * Sistema de recomendação de médicos
 * Aplicativo mobile
 * Recursos avançados de acessibilidade
-* Integração com prontuários eletrônicos
+* 
 
 ---
 

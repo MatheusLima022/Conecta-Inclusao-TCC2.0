@@ -28,42 +28,42 @@
             <header class="top-bar">
                 <div class="search-bar">
                     <i class="ph ph-magnifying-glass"></i>
-                    <input type="text" placeholder="Buscar paciente ou prontuário...">
+                    <input type="text" placeholder="Buscar paciente...">
                 </div>
                 <div class="user-profile">
                     <div class="user-info">
-                        <strong id="professionalName">Nome cadastrado</strong>
+                        <strong id="professionalName">Carregando...</strong>
                         <span id="professionalRegistry">Registro</span>
                         <span id="professionalUnit">Unidade</span>
                     </div>
-                    <img id="professionalAvatar" src="https://ui-avatars.com/api/?name=Nome&background=0073e6&color=fff" alt="Avatar">
+                    <img id="professionalAvatar" src="https://ui-avatars.com/api/?name=CI&background=0073e6&color=fff" alt="Avatar">
                 </div>
             </header>
 
             <section class="welcome-section">
-                <h2 id="welcomeMessage">Bom dia, Nome cadastrado</h2>
-                <p>Você tem 8 consultas agendadas para hoje.</p>
+                <h2 id="welcomeMessage">Bom dia</h2>
+                <p id="scheduleSummary">Carregando agenda...</p>
             </section>
 
             <div class="stats-grid">
                 <div class="card">
                     <i class="ph ph-users-three blue"></i>
                     <div>
-                        <h3>42</h3>
+                        <h3 id="totalPatientsCard">0</h3>
                         <p>Total Pacientes</p>
                     </div>
                 </div>
                 <div class="card">
                     <i class="ph ph-calendar-check green"></i>
                     <div>
-                        <h3>08</h3>
+                        <h3 id="todayAppointmentsCard">0</h3>
                         <p>Consultas Hoje</p>
                     </div>
                 </div>
                 <div class="card">
                     <i class="ph ph-clock orange"></i>
                     <div>
-                        <h3>03</h3>
+                        <h3 id="waitingAppointmentsCard">0</h3>
                         <p>Aguardando</p>
                     </div>
                 </div>
@@ -87,27 +87,12 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td class="patient-td"><strong>Ana Maria Oliveira</strong></td>
-                            <td>09:00</td>
-                            <td>Retorno</td>
-                            <td><span class="status confirm">Confirmado</span></td>
-                            <td><button class="btn-action">Atender</button></td>
-                        </tr>
-                        <tr>
-                            <td class="patient-td"><strong>Carlos Eduardo Souza</strong></td>
-                            <td>09:45</td>
-                            <td>Primeira Consulta</td>
-                            <td><span class="status waiting">Aguardando</span></td>
-                            <td><button class="btn-action">Atender</button></td>
-                        </tr>
-                        <tr>
-                            <td class="patient-td"><strong>Juliana Mendes</strong></td>
-                            <td>10:30</td>
-                            <td>Exame</td>
-                            <td><span class="status pending">Pendente</span></td>
-                            <td><button class="btn-action">Atender</button></td>
+                            <td colspan="5" style="text-align: center; padding: 20px; color: #64748b;">
+                                Carregando agendamentos...
+                            </td>
                         </tr>
                     </tbody>
+
                 </table>
             </section>
 
@@ -120,15 +105,15 @@
                     <div class="patients-stats">
                         <div class="stat-item">
                             <span class="stat-label">Total de Pacientes:</span>
-                            <span class="stat-value" id="totalPatients">42</span>
+                            <span class="stat-value" id="totalPatients">0</span>
                         </div>
                         <div class="stat-item">
                             <span class="stat-label">Ativos:</span>
-                            <span class="stat-value green" id="activePatients">38</span>
+                            <span class="stat-value green" id="activePatients">0</span>
                         </div>
                         <div class="stat-item">
                             <span class="stat-label">Inativos:</span>
-                            <span class="stat-value orange" id="inactivePatients">4</span>
+                            <span class="stat-value orange" id="inactivePatients">0</span>
                         </div>
                     </div>
                     <table class="patients-table">
@@ -144,28 +129,9 @@
                         </thead>
                         <tbody id="patientsTableBody">
                             <tr>
-                                <td><strong>Ana Maria Oliveira</strong></td>
-                                <td>123.456.789-00</td>
-                                <td>(11) 98765-4321</td>
-                                <td><span class="status confirm">Ativo</span></td>
-                                <td>12/04/2026</td>
-                                <td><button class="btn-action-small">Ver Prontuário</button></td>
-                            </tr>
-                            <tr>
-                                <td><strong>Carlos Eduardo Souza</strong></td>
-                                <td>987.654.321-00</td>
-                                <td>(11) 99876-5432</td>
-                                <td><span class="status confirm">Ativo</span></td>
-                                <td>15/04/2026</td>
-                                <td><button class="btn-action-small">Ver Prontuário</button></td>
-                            </tr>
-                            <tr>
-                                <td><strong>Juliana Mendes</strong></td>
-                                <td>456.789.123-00</td>
-                                <td>(11) 97654-3210</td>
-                                <td><span class="status confirm">Ativo</span></td>
-                                <td>10/04/2026</td>
-                                <td><button class="btn-action-small">Ver Prontuário</button></td>
+                                <td colspan="6" style="text-align: center; padding: 20px; color: #64748b;">
+                                    Carregando pacientes...
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -175,7 +141,7 @@
             <section class="team-section">
                 <div class="section-header">
                     <h3>Equipe da Unidade</h3>
-                    <span class="unit-badge" id="unitBadge">Unidade A</span>
+                    <span class="unit-badge" id="unitBadge">Unidade</span>
                 </div>
                 <div class="team-grid" id="teamGrid">
                     <div class="loading-message">
@@ -187,6 +153,6 @@
         </main>
     </div>
     <script src="../assets/js/utils.js"></script>
-    <script src="../assets/js/dashboard-medico.js"></script>
+    <script type="module" src="../assets/js/dashboard-medico.js"></script>
 </body>
 </html>

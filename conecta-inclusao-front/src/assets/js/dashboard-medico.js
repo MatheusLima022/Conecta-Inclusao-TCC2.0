@@ -1,4 +1,56 @@
-function loadProfessionalInfo() {
+import { getUserProfile, getProfessionalAppointments, getClinicProfessionals } from './api.js';
+
+let professionalData = null;
+let appointmentsData = [];
+
+async function loadProfessionalInfo() {
+    try {
+        console.log('Iniciando carregamento de informações do profissional...');
+        const profileResponse = await getUserProfile();
+        console.log('Resposta do perfil:', profileResponse);
+
+        if (profileResponse.ok && profileResponse.data) {
+            professionalData = profileResponse.data;
+            console.log('Dados do profissional carregados:', professionalData);
+
+            const displayName = professionalData.name || 'Nome nao informado';
+            const registry = professionalData.crm || 'Registro';
+            const unit = professionalData.unidade || 'Unidade não definida';
+
+            const nameEl = document.getElementById('professionalName');
+            const registryEl = document.getElementById('professionalRegistry');
+            const unitEl = document.getElementById('professionalUnit');
+            const welcomeEl = document.getElementById('welcomeMessage');
+            const avatarEl = document.getElementById('professionalAvatar');
+            const unitBadge = document.getElementById('unitBadge');
+
+            console.log('Elementos encontrados:', { nameEl, registryEl, unitEl, welcomeEl, avatarEl, unitBadge });
+
+            if (nameEl) nameEl.innerText = displayName;
+            if (registryEl) registryEl.innerText = registry;
+            if (unitEl) unitEl.innerText = unit;
+            if (unitBadge) unitBadge.innerText = unit;
+            if (welcomeEl) welcomeEl.innerText = `Bom dia, ${displayName}`;
+            if (avatarEl) avatarEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=0073e6&color=fff`;
+
+            // Armazenar no localStorage e sessionStorage para compatibilidade
+            localStorage.setItem('user', JSON.stringify(professionalData));
+            sessionStorage.setItem('professionalName', displayName);
+            sessionStorage.setItem('professionalRegistry', registry);
+            sessionStorage.setItem('professionalUnit', unit);
+
+            console.log('Informações do profissional atualizadas na UI');
+        } else {
+            console.warn('Erro ao carregar perfil:', profileResponse);
+            loadProfessionalInfoFromStorage();
+        }
+    } catch (error) {
+        console.error('Erro ao carregar informações do profissional:', error);
+        loadProfessionalInfoFromStorage();
+    }
+}
+
+function loadProfessionalInfoFromStorage() {
     let storedUser = {};
     try {
         storedUser = JSON.parse(localStorage.getItem('user') || '{}');
@@ -6,11 +58,10 @@ function loadProfessionalInfo() {
         storedUser = {};
     }
 
-    const rawName = sessionStorage.getItem('professionalName') || storedUser.name || 'Nome cadastrado';
+    const rawName = sessionStorage.getItem('professionalName') || storedUser.name || 'Nome nao informado';
     const registry = sessionStorage.getItem('professionalRegistry') || storedUser.registry || storedUser.crm || 'Registro';
+    professionalData = professionalData || storedUser;
     const unit = sessionStorage.getItem('professionalUnit') || storedUser.unidade || storedUser.unit || 'Unidade não definida';
-
-    const displayName = rawName;
 
     const nameEl = document.getElementById('professionalName');
     const registryEl = document.getElementById('professionalRegistry');
@@ -19,32 +70,13 @@ function loadProfessionalInfo() {
     const avatarEl = document.getElementById('professionalAvatar');
     const unitBadge = document.getElementById('unitBadge');
 
-    if (nameEl) nameEl.innerText = displayName;
+    if (nameEl) nameEl.innerText = rawName;
     if (registryEl) registryEl.innerText = registry;
     if (unitEl) unitEl.innerText = unit;
     if (unitBadge) unitBadge.innerText = unit;
-    if (welcomeEl) welcomeEl.innerText = `Bom dia, ${displayName}`;
+    if (welcomeEl) welcomeEl.innerText = `Bom dia, ${rawName}`;
     if (avatarEl) avatarEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(rawName)}&background=0073e6&color=fff`;
 }
-
-// Dados simulados de equipes por unidade
-const equipePorUnidade = {
-    'A': [
-        { name: 'Dr. Ricardo Silva', crm: 'MED001', specialty: 'Cardiologia' },
-        { name: 'Dra. Ana Costa', crm: 'MED002', specialty: 'Pediatria' },
-        { name: 'Dr. Pedro Santos', crm: 'MED003', specialty: 'Ortopedia' }
-    ],
-    'B': [
-        { name: 'Dr. João Oliveira', crm: 'MED004', specialty: 'Neurologia' },
-        { name: 'Dra. Maria Gomes', crm: 'MED005', specialty: 'Psiquiatria' },
-        { name: 'Dr. Carlos Ferreira', crm: 'MED006', specialty: 'Dermatologia' }
-    ],
-    'C': [
-        { name: 'Dr. Luis Mendes', crm: 'MED007', specialty: 'Pneumologia' },
-        { name: 'Dra. Patricia Rocha', crm: 'MED008', specialty: 'Ginecologia' },
-        { name: 'Dr. Fernando Costa', crm: 'MED009', specialty: 'Gastroenterologia' }
-    ]
-};
 
 function normalizeUnitKey(unit) {
     return String(unit || '')
@@ -53,144 +85,154 @@ function normalizeUnitKey(unit) {
         .toUpperCase();
 }
 
-function loadStoredProfessionals() {
-    try {
-        const raw = localStorage.getItem('companyProfessionals');
-        const professionals = JSON.parse(raw || '[]');
-        return Array.isArray(professionals) ? professionals : [];
-    } catch (error) {
-        console.error('Erro ao carregar profissionais da unidade:', error);
-        return [];
-    }
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }
 
 function getProfessionalUnit() {
     try {
         const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
-        return sessionStorage.getItem('professionalUnit') || storedUser.unidade || storedUser.unit || 'A';
+        return sessionStorage.getItem('professionalUnit') || storedUser.unidade || storedUser.unit || '';
     } catch (error) {
-        return sessionStorage.getItem('professionalUnit') || 'A';
+        return sessionStorage.getItem('professionalUnit') || '';
     }
 }
 
-function loadTeam() {
+async function loadTeam() {
     const unit = getProfessionalUnit();
     const teamGrid = document.getElementById('teamGrid');
 
-    if (!teamGrid) return;
-
-    const unitKey = normalizeUnitKey(unit);
-    const storedTeam = loadStoredProfessionals()
-        .filter(member => normalizeUnitKey(member.unit || member.unidade) === unitKey)
-        .map(member => ({
-            name: member.name || 'Profissional cadastrado',
-            crm: member.registry || member.crm || 'Registro nao informado',
-            specialty: member.role || member.specialty || member.especialidade || 'Especialidade nao informada'
-        }));
-    const equipe = storedTeam.length ? storedTeam : (equipePorUnidade[unitKey] || []);
-
-    if (equipe.length === 0) {
-        teamGrid.innerHTML = `
-            <div class="empty-team-message">
-                <i class="ph ph-users-three"></i>
-                <p>Nenhum profissional cadastrado nesta unidade</p>
-            </div>
-        `;
+    if (!teamGrid) {
+        console.error('teamGrid element não encontrado');
         return;
     }
 
-    teamGrid.innerHTML = equipe.map(member => `
-        <div class="team-member-card">
-            <div class="team-member-avatar">${member.name.charAt(0)}</div>
-            <div class="team-member-name">${member.name}</div>
-            <div class="team-member-crm">CRM: ${member.crm}</div>
-            <div class="team-member-specialty">${member.specialty}</div>
-        </div>
-    `).join('');
+    console.log('Iniciando carregamento de equipe. Unidade:', unit);
+
+    try {
+        // Mostrar loading
+        teamGrid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 20px; color: #64748b;">Carregando equipe...</div>`;
+
+        // Tentar carregar profissionais do backend
+        console.log('Buscando profissionais da clínica...');
+        const professionalsResponse = await getClinicProfessionals();
+        console.log('Resposta de profissionais:', professionalsResponse);
+
+        let equipe = [];
+
+        if (professionalsResponse.ok && professionalsResponse.data) {
+            const unitKey = normalizeUnitKey(unit);
+            equipe = Array.isArray(professionalsResponse.data)
+                ? professionalsResponse.data
+                : [professionalsResponse.data];
+
+            console.log('Profissionais carregados do backend:', equipe);
+
+            // Filtrar por unidade se necessário
+            equipe = equipe
+                .filter(member => normalizeUnitKey(member.unidade || member.unit) === unitKey)
+                .map(member => ({
+                name: member.name || 'Profissional cadastrado',
+                crm: member.crm || member.registry || 'Registro não informado',
+                specialty: member.especialidade || member.specialty || 'Especialidade não informada'
+            }));
+        } else {
+            console.warn('Erro ao carregar do backend:', professionalsResponse);
+            teamGrid.innerHTML = `
+                <div style="grid-column: 1/-1;">
+                    <div class="empty-team-message">
+                        <i class="ph ph-users-three"></i>
+                        <p>${escapeHtml(professionalsResponse.data?.message || 'Nao foi possivel carregar a equipe da unidade.')}</p>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        if (equipe.length === 0) {
+            teamGrid.innerHTML = `
+                <div style="grid-column: 1/-1;">
+                    <div class="empty-team-message">
+                        <i class="ph ph-users-three"></i>
+                        <p>Nenhum profissional cadastrado nesta unidade</p>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        teamGrid.innerHTML = equipe.map(member => `
+            <div class="team-member-card">
+                <div class="team-member-avatar">${member.name.charAt(0)}</div>
+                <div class="team-member-name">${member.name}</div>
+                <div class="team-member-crm">CRM: ${member.crm}</div>
+                <div class="team-member-specialty">${member.specialty}</div>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Erro ao carregar equipe:', error);
+        teamGrid.innerHTML = `
+            <div style="grid-column: 1/-1;">
+                <div class="empty-team-message">
+                    <i class="ph ph-users-three"></i>
+                    <p>Erro ao carregar equipe: ${escapeHtml(error.message)}</p>
+                </div>
+            </div>
+        `;
+    }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    loadProfessionalInfo();
-    loadTeam();
-    const searchInput = document.querySelector('.search-bar input');
-    const tableRows = document.querySelectorAll('.appointments-table tbody tr');
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        // Carregar informações do profissional
+        await loadProfessionalInfo();
 
-    searchInput.addEventListener('input', (e) => {
-        const searchTerm = e.target.value.toLowerCase();
+        // Carregar equipe
+        await loadTeam();
 
-        tableRows.forEach(row => {
-            const patientName = row.querySelector('.patient-td').innerText.toLowerCase();
-            if (patientName.includes(searchTerm)) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
-        });
-    });
+        // Carregar dados reais para os cards do resumo
+        await loadAgendaData();
 
-    // 2. Interatividade nos Botões de Ação (Atender)
-    const actionButtons = document.querySelectorAll('.btn-action');
+        // Configurar busca
+        const searchInput = document.querySelector('.search-bar input');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                const tableRows = document.querySelectorAll('.appointments-table tbody tr');
 
-    actionButtons.forEach(btn => {
-        btn.addEventListener('click', async function () {
-            const row = this.closest('tr');
-            const patientName = row.querySelector('.patient-td strong').innerText;
-            const statusSpan = row.querySelector('.status');
+                tableRows.forEach(row => {
+                    const patientName = row.querySelector('.patient-td')?.innerText.toLowerCase() || '';
+                    if (patientName.includes(searchTerm)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        }
 
-            // Simula o início do atendimento
-            if (this.innerText === 'Atender') {
-                const confirmar = await showPopup(`Deseja iniciar o atendimento de ${patientName}?`, 'confirm');
-
-                if (confirmar) {
-                    this.innerText = 'Finalizar';
-                    this.style.backgroundColor = '#ef4444';
-                    this.style.color = 'white';
-                    this.style.borderColor = '#ef4444';
-
-                    statusSpan.innerText = 'Em Atendimento';
-                    statusSpan.className = 'status waiting'; // Amarelo
-                }
-            } else {
-                // Simula a finalização
-                await showPopup(`Atendimento de ${patientName} finalizado com sucesso!`);
-                row.style.opacity = '0.5';
-                this.disabled = true;
-                this.innerText = 'Concluído';
-                statusSpan.innerText = 'Finalizado';
-                statusSpan.className = 'status pending'; // Cinza
-            }
-        });
-    });
-
-    // 3. Navegação da Sidebar (Troca de classe Active)
-    const navLinks = document.querySelectorAll('.sidebar nav a');
-
-    navLinks.forEach(link => {
-        link.addEventListener('click', function (e) {
-            // Se for o link de prontuários, redirecionar para autenticação
-            if (this.id === 'recordsNavLink') {
+        // Configurar navegação da sidebar
+        const navLinks = document.querySelectorAll('.sidebar nav a');
+        navLinks.forEach(link => {
+            link.addEventListener('click', function (e) {
                 e.preventDefault();
-                window.location.href = 'auth-records-access.html';
-                return;
-            }
 
-            // Remove active de todos
-            navLinks.forEach(l => l.classList.remove('active'));
-            // Adiciona no clicado
-            this.classList.add('active');
+                // Remove active de todos
+                navLinks.forEach(l => l.classList.remove('active'));
+                // Adiciona no clicado
+                this.classList.add('active');
+            });
         });
-    });
 
-    // 4. Card de Prontuários - Redirecionar para autenticação
-    const recordsCard = document.getElementById('recordsCard');
-    if (recordsCard) {
-        recordsCard.addEventListener('click', function () {
-            window.location.href = 'auth-records-access.html';
-        });
+        console.log("Dashboard Médico carregado.");
+    } catch (error) {
+        console.error('Erro ao carregar dashboard:', error);
     }
-
-    // 5. Notificação Simples ao Carregar
-    console.log("Dashboard Médico carregado.");
 });
 
 // ===== FUNÇÕES PARA AGENDA E PACIENTES =====
@@ -217,13 +259,16 @@ function openAgendaMedica(event) {
 }
 
 // Função para toggle da lista de pacientes
-function togglePatientsList(event) {
+async function togglePatientsList(event) {
     if (event) {
         event.preventDefault();
         updateSidebarActive(event.target.closest('a'));
     }
 
     showSection('pacientes');
+    if (!appointmentsData || appointmentsData.length === 0) {
+        await loadAgendaData();
+    }
     loadPatientsData();
 }
 
@@ -247,48 +292,280 @@ function updateSidebarActive(element) {
     if (element) element.classList.add('active');
 }
 
-// Função para carregar dados da agenda
-function loadAgendaData() {
-    const agendaContent = document.querySelector('.appointments-table tbody');
-    if (!agendaContent) return;
-
-    // Os dados já estão na tabela, então não precisa fazer nada
-    console.log("Agenda carregada");
+function isSameDay(dateString, referenceDate = new Date()) {
+    if (!dateString) return false;
+    const date = new Date(dateString);
+    return !Number.isNaN(date.getTime()) &&
+        date.getFullYear() === referenceDate.getFullYear() &&
+        date.getMonth() === referenceDate.getMonth() &&
+        date.getDate() === referenceDate.getDate();
 }
 
-// Dados de pacientes
-const patientsData = [
-    { name: 'Ana Maria Oliveira', cpf: '123.456.789-00', phone: '(11) 98765-4321', status: 'Ativo', lastConsultation: '12/04/2026' },
-    { name: 'Carlos Eduardo Souza', cpf: '987.654.321-00', phone: '(11) 99876-5432', status: 'Ativo', lastConsultation: '15/04/2026' },
-    { name: 'Juliana Mendes', cpf: '456.789.123-00', phone: '(11) 97654-3210', status: 'Ativo', lastConsultation: '10/04/2026' },
-    { name: 'Pedro Gomes Silva', cpf: '789.123.456-00', phone: '(11) 96543-2109', status: 'Ativo', lastConsultation: '08/04/2026' },
-    { name: 'Mariana Costa', cpf: '321.654.987-00', phone: '(11) 95432-1098', status: 'Inativo', lastConsultation: '01/03/2026' },
-    { name: 'Fernando Alves', cpf: '654.987.321-00', phone: '(11) 94321-0987', status: 'Ativo', lastConsultation: '20/04/2026' },
-    { name: 'Beatriz Ferreira', cpf: '159.357.486-00', phone: '(11) 93210-9876', status: 'Inativo', lastConsultation: '15/02/2026' },
-    { name: 'Ricardo Mendes', cpf: '753.159.486-00', phone: '(11) 92109-8765', status: 'Ativo', lastConsultation: '25/04/2026' },
-];
+function updateDashboardStats(appointments = []) {
+    const patientIds = new Set();
+    appointments.forEach(appointment => {
+        patientIds.add(appointment.paciente_id || appointment.paciente_nome || appointment.nome_paciente || appointment.id);
+    });
+
+    const todayAppointments = appointments.filter(appointment => isSameDay(appointment.data_agendamento)).length;
+    const waitingAppointments = appointments.filter(appointment => {
+        const status = String(appointment.status || '').toLowerCase();
+        return status === 'aguardando' || status === 'pendente';
+    }).length;
+
+    const totalPatientsCard = document.getElementById('totalPatientsCard');
+    const todayAppointmentsCard = document.getElementById('todayAppointmentsCard');
+    const waitingAppointmentsCard = document.getElementById('waitingAppointmentsCard');
+    const scheduleSummary = document.getElementById('scheduleSummary');
+
+    if (totalPatientsCard) totalPatientsCard.innerText = patientIds.size;
+    if (todayAppointmentsCard) todayAppointmentsCard.innerText = todayAppointments;
+    if (waitingAppointmentsCard) waitingAppointmentsCard.innerText = waitingAppointments;
+    if (scheduleSummary) {
+        scheduleSummary.innerText = todayAppointments === 1
+            ? 'Voce tem 1 consulta agendada para hoje.'
+            : `Voce tem ${todayAppointments} consultas agendadas para hoje.`;
+    }
+}
+
+function markDashboardStatsUnavailable(message = 'Nao foi possivel carregar a agenda.') {
+    const totalPatientsCard = document.getElementById('totalPatientsCard');
+    const todayAppointmentsCard = document.getElementById('todayAppointmentsCard');
+    const waitingAppointmentsCard = document.getElementById('waitingAppointmentsCard');
+    const scheduleSummary = document.getElementById('scheduleSummary');
+
+    if (totalPatientsCard) totalPatientsCard.innerText = '--';
+    if (todayAppointmentsCard) todayAppointmentsCard.innerText = '--';
+    if (waitingAppointmentsCard) waitingAppointmentsCard.innerText = '--';
+    if (scheduleSummary) scheduleSummary.innerText = message;
+}
+
+// Função para carregar dados da agenda
+async function loadAgendaData() {
+    const agendaContent = document.querySelector('.appointments-table tbody');
+    if (!agendaContent) {
+        console.error('Tabela de agendamentos não encontrada');
+        return;
+    }
+
+    try {
+        console.log('Iniciando carregamento de agenda. professionalData:', professionalData);
+
+        if (!professionalData || !professionalData.id) {
+            console.warn('Dados do profissional não carregados ou sem ID.');
+            markDashboardStatsUnavailable('Dados do profissional nao carregados.');
+            agendaContent.innerHTML = `
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 20px; color: #64748b;">
+                        Dados do profissional não carregados
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        console.log(`Buscando agendamentos para o profissional ID: ${professionalData.id}`);
+        const appointmentsResponse = await getProfessionalAppointments(professionalData.id);
+        console.log('Resposta de agendamentos:', appointmentsResponse);
+
+        if (appointmentsResponse.ok && appointmentsResponse.data) {
+            // Extrair dados do response
+            const appointments = appointmentsResponse.data.data || appointmentsResponse.data || [];
+            appointmentsData = appointments;
+            updateDashboardStats(appointments);
+
+            console.log('Agendamentos carregados:', appointments);
+
+            // Limpar tabela
+            agendaContent.innerHTML = '';
+
+            if (appointments.length === 0) {
+                agendaContent.innerHTML = `
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 20px; color: #64748b;">
+                            Nenhum agendamento encontrado
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            // Popular tabela com dados reais
+            agendaContent.innerHTML = appointments.map(appointment => {
+                const patientName = appointment.nome_paciente || appointment.paciente_nome || 'Paciente nao informado';
+                const appointmentTime = appointment.hora_agendamento || formatDateTime(appointment.data_agendamento) || '--';
+                const appointmentType = appointment.tipo_consulta || appointment.profissional_especialidade || 'Nao informado';
+                const appointmentStatus = appointment.status || 'Nao informado';
+
+                return `
+                <tr>
+                    <td class="patient-td"><strong>${escapeHtml(patientName)}</strong></td>
+                    <td>${escapeHtml(appointmentTime)}</td>
+                    <td>${escapeHtml(appointmentType)}</td>
+                    <td>
+                        <span class="status ${getStatusClass(appointmentStatus)}">
+                            ${escapeHtml(appointmentStatus)}
+                        </span>
+                    </td>
+                    <td><button class="btn-action" type="button" data-patient-name="${escapeHtml(patientName)}">Atender</button></td>
+                </tr>
+            `;
+            }).join('');
+
+            agendaContent.querySelectorAll('.btn-action').forEach(button => {
+                button.addEventListener('click', () => {
+                    handleAppointmentAction(button, button.dataset.patientName || 'Paciente nao informado');
+                });
+            });
+        } else {
+            console.error('Erro ao carregar agendamentos:', appointmentsResponse);
+            markDashboardStatsUnavailable();
+            agendaContent.innerHTML = `
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 20px; color: #ef4444;">
+                        Erro ao carregar agendamentos: ${appointmentsResponse.data?.message || 'Erro desconhecido'}
+                    </td>
+                </tr>
+            `;
+        }
+    } catch (error) {
+        console.error('Erro ao carregar agenda:', error);
+        markDashboardStatsUnavailable();
+        agendaContent.innerHTML = `
+            <tr>
+                <td colspan="5" style="text-align: center; padding: 20px; color: #ef4444;">
+                    Erro ao carregar agendamentos: ${error.message}
+                </td>
+            </tr>
+        `;
+    }
+}
+
+// Função auxiliar para obter classe CSS de status
+function getStatusClass(status) {
+    const statusLower = String(status || '').toLowerCase();
+    if (statusLower === 'confirmado' || statusLower === 'em atendimento') return 'confirm';
+    if (statusLower === 'pendente') return 'pending';
+    if (statusLower === 'cancelado' || statusLower === 'finalizado') return 'pending';
+    return 'waiting';
+}
+
+function getPatientStatusClass(status) {
+    const statusLower = String(status || '').toLowerCase();
+    if (statusLower === 'ativo') return 'confirm';
+    if (statusLower === 'inativo') return 'pending';
+    return 'waiting';
+}
+
+// Função para gerenciar ações em agendamentos
+async function handleAppointmentAction(button, patientName) {
+    const row = button.closest('tr');
+    const statusSpan = row.querySelector('.status');
+
+    if (button.innerText === 'Atender') {
+        const confirmar = await showPopup(`Deseja iniciar o atendimento de ${patientName}?`, 'confirm');
+
+        if (confirmar) {
+            button.innerText = 'Finalizar';
+            button.style.backgroundColor = '#ef4444';
+            button.style.color = 'white';
+            button.style.borderColor = '#ef4444';
+
+            statusSpan.innerText = 'Em Atendimento';
+            statusSpan.className = 'status waiting';
+        }
+    } else {
+        await showPopup(`Atendimento de ${patientName} finalizado com sucesso!`);
+        row.style.opacity = '0.5';
+        button.disabled = true;
+        button.innerText = 'Concluído';
+        statusSpan.innerText = 'Finalizado';
+        statusSpan.className = 'status pending';
+    }
+}
 
 // Função para carregar dados dos pacientes
 function loadPatientsData() {
-    const totalPatients = patientsData.length;
-    const activePatients = patientsData.filter(p => p.status === 'Ativo').length;
-    const inactivePatients = patientsData.filter(p => p.status === 'Inativo').length;
-
-    document.getElementById('totalPatients').innerText = totalPatients;
-    document.getElementById('activePatients').innerText = activePatients;
-    document.getElementById('inactivePatients').innerText = inactivePatients;
-
     const tableBody = document.getElementById('patientsTableBody');
-    tableBody.innerHTML = patientsData.map(patient => `
-        <tr>
-            <td><strong>${patient.name}</strong></td>
-            <td>${patient.cpf}</td>
-            <td>${patient.phone}</td>
-            <td><span class="status ${patient.status === 'Ativo' ? 'confirm' : 'pending'}">${patient.status}</span></td>
-            <td>${patient.lastConsultation}</td>
-            <td><button class="btn-action-small" onclick="alert('Ver prontuário de ${patient.name}')">Ver Prontuário</button></td>
-        </tr>
-    `).join('');
+    if (!tableBody) return;
+
+    try {
+        // Usar dados dos agendamentos se estiverem disponíveis
+        if (!appointmentsData || appointmentsData.length === 0) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 20px; color: #64748b;">
+                        Nenhum paciente com agendamentos
+                    </td>
+                </tr>
+            `;
+            updatePatientStats(0, 0, 0);
+            return;
+        }
+
+        // Extrair pacientes únicos dos agendamentos
+        const patientMap = new Map();
+        appointmentsData.forEach(appointment => {
+            const pacienteId = appointment.paciente_id || appointment.id;
+            if (!patientMap.has(pacienteId)) {
+                patientMap.set(pacienteId, {
+                    name: appointment.nome_paciente || appointment.paciente_nome || 'Paciente nao informado',
+                    cpf: appointment.cpf_paciente || appointment.paciente_cpf || 'N/A',
+                    phone: appointment.telefone_paciente || appointment.paciente_telefone || 'N/A',
+                    status: appointment.paciente_status || appointment.status_paciente || 'Nao informado',
+                    lastConsultation: formatDateTime(appointment.data_agendamento)
+                });
+            }
+        });
+
+        const patients = Array.from(patientMap.values());
+        const activePatients = patients.filter(p => String(p.status).toLowerCase() === 'ativo').length;
+        const inactivePatients = patients.filter(p => String(p.status).toLowerCase() === 'inativo').length;
+
+        updatePatientStats(patients.length, activePatients, inactivePatients);
+
+        tableBody.innerHTML = patients.map(patient => `
+            <tr>
+                <td><strong>${escapeHtml(patient.name)}</strong></td>
+                <td>${escapeHtml(patient.cpf)}</td>
+                <td>${escapeHtml(patient.phone)}</td>
+                <td><span class="status ${getPatientStatusClass(patient.status)}">${escapeHtml(patient.status)}</span></td>
+                <td>${escapeHtml(patient.lastConsultation)}</td>
+                <td><!-- ação removida --></td>
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error('Erro ao carregar pacientes:', error);
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">
+                    Erro ao carregar pacientes
+                </td>
+            </tr>
+        `;
+    }
+}
+
+// Função auxiliar para atualizar estatísticas de pacientes
+function updatePatientStats(total, active, inactive) {
+    const totalEl = document.getElementById('totalPatients');
+    const activeEl = document.getElementById('activePatients');
+    const inactiveEl = document.getElementById('inactivePatients');
+
+    if (totalEl) totalEl.innerText = total;
+    if (activeEl) activeEl.innerText = active;
+    if (inactiveEl) inactiveEl.innerText = inactive;
+}
+
+// Função auxiliar para formatar data e hora
+function formatDateTime(dateString) {
+    if (!dateString) return '--';
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('pt-BR');
+    } catch (error) {
+        return '--';
+    }
 }
 
 async function handleLogout() {
@@ -304,3 +581,7 @@ async function handleLogout() {
 }
 
 window.handleLogout = handleLogout;
+window.showHome = showHome;
+window.openAgendaMedica = openAgendaMedica;
+window.togglePatientsList = togglePatientsList;
+window.handleAppointmentAction = handleAppointmentAction;

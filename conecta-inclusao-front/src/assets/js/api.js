@@ -10,13 +10,15 @@ export function getToken() {
 async function apiRequest(endpoint, options = {}) {
     const url = `${API_BASE}${endpoint}`;
     const defaultOptions = {
+        method: options.method || 'GET',
         headers: {
             'Content-Type': 'application/json',
-        },
+            ...(options.headers || {})
+        }
     };
 
     try {
-        const response = await fetch(url, { ...defaultOptions, ...options });
+        const response = await fetch(url, { ...defaultOptions, ...options, headers: defaultOptions.headers });
         const data = await response.json();
         return { ok: response.ok, status: response.status, data };
     } catch (error) {
@@ -112,4 +114,52 @@ export async function getAvailableDoctors() {
     const response = await fetch(`${API_BASE}/doctors/available`);
     const data = await response.json();
     return { ok: response.ok, status: response.status, data };
+}
+
+// Função para obter agendamentos do profissional (médico)
+export async function getProfessionalAppointments(profissionalId) {
+    const token = getToken();
+    if (!token) {
+        return { ok: false, error: 'Token não encontrado' };
+    }
+    const response = await fetch(`http://localhost:3000/api/agendamentos/profissional/${profissionalId}`, {
+        headers: {
+            'Authorization': `Bearer ${token}`,
+        }
+    });
+    const data = await response.json();
+    return { ok: response.ok, status: response.status, data };
+}
+
+// Função para obter lista de clínicas
+export async function getClinicas() {
+    const response = await fetch('http://localhost:3000/api/clinica');
+    const data = await response.json();
+    return { ok: response.ok, status: response.status, data };
+}
+
+// Função para obter profissionais da clínica
+export async function getClinicProfessionals() {
+    const token = getToken();
+    if (!token) {
+        return { ok: false, error: 'Token não encontrado' };
+    }
+    return apiRequest('/clinic/professionals', {
+        headers: {
+            'Authorization': `Bearer ${token}`,
+        }
+    });
+}
+
+// Função para obter resumo do dashboard da clínica
+export async function getClinicDashboardSummary() {
+    const token = getToken();
+    if (!token) {
+        return { ok: false, error: 'Token não encontrado' };
+    }
+    return apiRequest('/clinic/dashboard-summary', {
+        headers: {
+            'Authorization': `Bearer ${token}`,
+        }
+    });
 }

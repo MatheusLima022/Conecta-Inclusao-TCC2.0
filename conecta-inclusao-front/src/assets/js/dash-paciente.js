@@ -254,7 +254,6 @@ function renderGuardians() {
                 const permissionMap = {
                     'view_appointments': 'Ver agendamentos',
                     'manage_appointments': 'Gerenciar agendamentos',
-                    'view_records': 'Ver registros',
                     'send_messages': 'Enviar mensagens'
                 };
                 return permissionMap[p] || p;
