@@ -173,9 +173,9 @@ function displayProfessionalsList(professionals) {
     if (!teamBody) return;
     
     if (!professionals || professionals.length === 0) {
-        teamBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #999; padding: 1rem;">Nenhum profissional cadastrado ainda.</td></tr>';
+        teamBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #999; padding: 1rem;">Por enquanto não há nenhum profissional cadastrado.</td></tr>';
         if (overviewBody) {
-            overviewBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #999; padding: 1rem;">Nenhum profissional cadastrado ainda.</td></tr>';
+            overviewBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #999; padding: 1rem;">Por enquanto não há nenhum profissional cadastrado.</td></tr>';
         }
         updateTeamSummary([]);
         updateUnitFilterOptions([]);
@@ -193,9 +193,15 @@ function displayProfessionalsList(professionals) {
                 <button onclick="editProfessional(${prof.id})" style="background: none; border: none; color: #667eea; cursor: pointer; margin: 0 4px;">
                     <i class="ph ph-pencil"></i> Editar
                 </button>
-                <button onclick="deleteProfessional(${prof.id})" style="background: none; border: none; color: #f44336; cursor: pointer; margin: 0 4px;">
-                    <i class="ph ph-trash"></i> Remover
-                </button>
+                ${isActiveStatus(prof.status) ? `
+                    <button onclick="inactivateProfessional(${prof.id})" style="background: none; border: none; color: #f44336; cursor: pointer; margin: 0 4px;">
+                        <i class="ph ph-user-minus"></i> Inativar
+                    </button>
+                ` : `
+                    <button disabled style="background: none; border: none; color: #94a3b8; cursor: not-allowed; margin: 0 4px;">
+                        <i class="ph ph-user-minus"></i> Inativado
+                    </button>
+                `}
             </td>
         </tr>
     `).join('');
@@ -261,6 +267,7 @@ function formatProfessionalStatus(status) {
 
 function getStatusClass(status) {
     const normalized = normalizeStatus(status);
+    if (normalized === 'inativo') return 'inactive';
     if (normalized === 'trabalhando') return 'working';
     if (['ferias', 'férias', 'folga', 'licenca', 'licença'].includes(normalized)) return 'break';
     return 'active';
@@ -341,9 +348,9 @@ function editProfessional(id) {
     showPopup(`Editar profissional ${id} - Funcionalidade em desenvolvimento`);
 }
 
-// Deletar profissional
-async function deleteProfessional(id) {
-    if (!confirm('Tem certeza que deseja remover este profissional?')) return;
+// Inativar profissional (soft delete)
+async function inactivateProfessional(id) {
+    if (!confirm('Tem certeza que deseja inativar este profissional? Ele nao podera mais fazer login como medico.')) return;
     
     try {
         const apiModule = await loadAPI();
@@ -354,7 +361,7 @@ async function deleteProfessional(id) {
             return;
         }
         
-        const response = await fetch(`http://localhost:3000/professionals/${id}`, {
+        const response = await fetch(`${AUTH_API_BASE}/clinic/professionals/${id}`, {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -363,14 +370,15 @@ async function deleteProfessional(id) {
         });
         
         if (response.ok) {
-            showPopup('Profissional removido com sucesso');
+            showPopup('Profissional inativado com sucesso');
             loadProfessionalsList();
         } else {
-            showPopup('Erro ao remover profissional');
+            const data = await response.json().catch(() => ({}));
+            showPopup(data.message || 'Erro ao inativar profissional');
         }
     } catch (error) {
         console.error('Erro:', error);
-        showPopup('Erro ao remover profissional');
+        showPopup('Erro ao inativar profissional');
     }
 }
 

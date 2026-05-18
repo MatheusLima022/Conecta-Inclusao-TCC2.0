@@ -391,6 +391,7 @@ body {
 .status-dot.active { background: #dff6e9; color: #047857; }
 .status-dot.working { background: #fef3c7; color: #92400e; }
 .status-dot.break { background: #fee2e2; color: #b91c1c; }
+.status-dot.inactive { background: #e2e8f0; color: #475569; }
 
 .professional-form .form-grid {
     display: grid;

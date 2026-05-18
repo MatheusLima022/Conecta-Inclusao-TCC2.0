@@ -117,21 +117,54 @@ export async function getAvailableDoctors() {
 }
 
 // Função para obter agendamentos do profissional (médico)
-export async function getProfessionalAppointments(profissionalId) {
+export async function getProfessionalAppointments(profissionalId, { limit = 100, offset = 0 } = {}) {
     const token = getToken();
     if (!token) {
         return { ok: false, error: 'Token não encontrado' };
     }
-    const response = await fetch(`http://localhost:3000/api/agendamentos/profissional/${profissionalId}`, {
-        headers: {
-            'Authorization': `Bearer ${token}`,
-        }
-    });
-    const data = await response.json();
-    return { ok: response.ok, status: response.status, data };
+    try {
+        const params = new URLSearchParams({
+            limit: String(limit),
+            offset: String(offset)
+        });
+        const response = await fetch(`http://localhost:3000/api/agendamentos/profissional/${profissionalId}?${params.toString()}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            }
+        });
+        const data = await response.json();
+        return { ok: response.ok, status: response.status, data };
+    } catch (error) {
+        console.error('Erro ao buscar agendamentos do profissional:', error);
+        return { ok: false, status: 0, data: { message: 'Erro de conexão' } };
+    }
 }
 
 // Função para obter lista de clínicas
+// Funcao para atualizar status do agendamento
+export async function updateAppointmentStatus(appointmentId, status) {
+    const token = getToken();
+    if (!token) {
+        return { ok: false, error: 'Token nao encontrado' };
+    }
+
+    try {
+        const response = await fetch(`http://localhost:3000/api/agendamentos/${appointmentId}/status`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status })
+        });
+        const data = await response.json();
+        return { ok: response.ok, status: response.status, data };
+    } catch (error) {
+        console.error('Erro ao atualizar status do agendamento:', error);
+        return { ok: false, status: 0, data: { message: 'Erro de conexao' } };
+    }
+}
+
 export async function getClinicas() {
     const response = await fetch('http://localhost:3000/api/clinica');
     const data = await response.json();

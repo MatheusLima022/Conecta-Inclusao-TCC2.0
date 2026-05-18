@@ -21,6 +21,77 @@ function cepMask(value) {
     return v;
 }
 
+let lastSearchedZip = '';
+let zipLookupController = null;
+
+async function fetchAddressByZip(zip) {
+    const response = await fetch(`https://viacep.com.br/ws/${zip}/json/`, {
+        signal: zipLookupController?.signal
+    });
+
+    if (!response.ok) {
+        throw new Error('Nao foi possivel consultar o CEP.');
+    }
+
+    return response.json();
+}
+
+function fillAddressFields(addressData) {
+    const addressInput = document.getElementById('address');
+    const cityInput = document.getElementById('city');
+    const stateInput = document.getElementById('state');
+
+    if (addressInput && addressData.logradouro) {
+        addressInput.value = addressData.logradouro;
+    }
+
+    if (cityInput && addressData.localidade) {
+        cityInput.value = addressData.localidade;
+    }
+
+    if (stateInput && addressData.uf) {
+        stateInput.value = addressData.uf.toUpperCase();
+    }
+}
+
+async function handleZipLookup(event) {
+    const zipInput = event.target;
+    const zipDigits = zipInput.value.replace(/\D/g, '');
+
+    if (zipDigits.length < 8) {
+        lastSearchedZip = '';
+        return;
+    }
+
+    if (zipDigits === lastSearchedZip) return;
+
+    lastSearchedZip = zipDigits;
+
+    if (zipLookupController) {
+        zipLookupController.abort();
+    }
+
+    zipLookupController = new AbortController();
+    zipInput.dataset.loadingZip = 'true';
+
+    try {
+        const addressData = await fetchAddressByZip(zipDigits);
+
+        if (addressData.erro) {
+            showPopup('CEP nao encontrado.');
+            return;
+        }
+
+        fillAddressFields(addressData);
+    } catch (error) {
+        if (error.name === 'AbortError') return;
+        console.error('Erro ao consultar CEP:', error);
+        showPopup('Nao foi possivel buscar o endereco pelo CEP.');
+    } finally {
+        zipInput.dataset.loadingZip = 'false';
+    }
+}
+
 function phoneMask(value) {
     let v = value.replace(/\D/g, '');
     if (v.length > 11) v = v.slice(0, 11);
@@ -192,7 +263,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('registerCompanyForm');
 
     if (cnpjInput) applyMask(cnpjInput, cnpjMask);
-    if (zipInput) applyMask(zipInput, cepMask);
+    if (zipInput) {
+        applyMask(zipInput, cepMask);
+        zipInput.addEventListener('input', handleZipLookup);
+        zipInput.addEventListener('blur', handleZipLookup);
+    }
     if (phoneInput) applyMask(phoneInput, phoneMask);
     if (form) form.addEventListener('submit', handleCompanyRegistration);
 

@@ -88,7 +88,7 @@ export async function createAgendamento(data) {
              FROM agendamentos
              WHERE medico_id = ?
                AND data_agendamento = ?
-               AND status IN ('confirmado', 'aguardando')`,
+               AND status IN ('confirmado', 'pendente')`,
             [profissional.id, data_agendamento]
         );
 
@@ -102,7 +102,7 @@ export async function createAgendamento(data) {
 
         const [result] = await pool.execute(
             `INSERT INTO agendamentos (clinica_id, paciente_id, medico_id, data_agendamento, status)
-             VALUES (?, ?, ?, ?, 'aguardando')`,
+             VALUES (?, ?, ?, ?, 'pendente')`,
             [
                 clinica.id,
                 paciente.id,
@@ -121,7 +121,7 @@ export async function createAgendamento(data) {
                 paciente_id: paciente.id,
                 medico_id: profissional.id,
                 data_agendamento,
-                status: "aguardando"
+                status: "pendente"
             }
         };
     } catch (error) {
@@ -140,6 +140,11 @@ export async function listAgendamentosByClinica(clinica_id, limit = 10, offset =
             `SELECT a.*,
                     p.nome_paciente AS paciente_nome,
                     p.cpf AS paciente_cpf,
+                    p.email AS paciente_email,
+                    p.status AS paciente_status,
+                    p.data_nascimento AS paciente_data_nascimento,
+                    p.tipo_deficiencia AS paciente_tipo_deficiencia,
+                    p.plano_atual AS paciente_plano_atual,
                     m.name AS profissional_nome,
                     m.crm AS profissional_crm
              FROM agendamentos a
@@ -180,6 +185,11 @@ export async function listAgendamentosByProfissional(profissional_id, limit = 10
             `SELECT a.*,
                     p.nome_paciente AS paciente_nome,
                     p.cpf AS paciente_cpf,
+                    p.email AS paciente_email,
+                    p.status AS paciente_status,
+                    p.data_nascimento AS paciente_data_nascimento,
+                    p.tipo_deficiencia AS paciente_tipo_deficiencia,
+                    p.plano_atual AS paciente_plano_atual,
                     c.razao_social AS clinica_nome,
                     m.especialidade AS profissional_especialidade
              FROM agendamentos a
@@ -248,7 +258,7 @@ export async function listAgendamentosByPaciente(paciente_id, limit = 10, offset
 
 export async function updateAgendamentoStatus(id, status) {
     try {
-        const validStatuses = ["confirmado", "aguardando", "cancelado", "realizado", "faltou"];
+        const validStatuses = ["pendente", "confirmado", "cancelado", "realizado"];
 
         if (!validStatuses.includes(status)) {
             return {

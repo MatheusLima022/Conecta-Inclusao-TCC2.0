@@ -1,4 +1,4 @@
-import { getUserProfile, getProfessionalAppointments, getClinicProfessionals } from './api.js';
+import { getUserProfile, getProfessionalAppointments, getClinicProfessionals, getAvailableDoctors, updateAppointmentStatus } from './api.js';
 
 let professionalData = null;
 let appointmentsData = [];
@@ -103,6 +103,45 @@ function getProfessionalUnit() {
     }
 }
 
+function getResponseList(responseData) {
+    if (Array.isArray(responseData)) return responseData;
+    if (Array.isArray(responseData?.data)) return responseData.data;
+    return [];
+}
+
+function getPatientKey(appointment) {
+    return appointment.paciente_id || appointment.paciente_cpf || appointment.paciente_nome || appointment.id;
+}
+
+function normalizePatientStatus(status) {
+    const statusLower = String(status || '').toLowerCase();
+    if (statusLower === 'active') return 'Ativo';
+    if (statusLower === 'inactive') return 'Inativo';
+    if (statusLower === 'ativo') return 'Ativo';
+    if (statusLower === 'inativo') return 'Inativo';
+    return status || 'Nao informado';
+}
+
+async function getTeamProfessionals() {
+    const authenticatedResponse = await getClinicProfessionals();
+
+    if (authenticatedResponse.ok) {
+        return authenticatedResponse;
+    }
+
+    const message = authenticatedResponse.data?.message || authenticatedResponse.error || '';
+    const canFallbackToPublicList = authenticatedResponse.status === 401 ||
+        authenticatedResponse.status === 403 ||
+        message.toLowerCase().includes('token');
+
+    if (!canFallbackToPublicList) {
+        return authenticatedResponse;
+    }
+
+    console.warn('Token indisponivel para equipe; usando lista publica de medicos.', authenticatedResponse);
+    return getAvailableDoctors();
+}
+
 async function loadTeam() {
     const unit = getProfessionalUnit();
     const teamGrid = document.getElementById('teamGrid');
@@ -120,7 +159,7 @@ async function loadTeam() {
 
         // Tentar carregar profissionais do backend
         console.log('Buscando profissionais da clínica...');
-        const professionalsResponse = await getClinicProfessionals();
+        const professionalsResponse = await getTeamProfessionals();
         console.log('Resposta de profissionais:', professionalsResponse);
 
         let equipe = [];
@@ -159,7 +198,7 @@ async function loadTeam() {
                 <div style="grid-column: 1/-1;">
                     <div class="empty-team-message">
                         <i class="ph ph-users-three"></i>
-                        <p>Nenhum profissional cadastrado nesta unidade</p>
+                        <p>Por enquanto não há nenhum profissional cadastrado nesta unidade.</p>
                     </div>
                 </div>
             `;
@@ -304,13 +343,14 @@ function isSameDay(dateString, referenceDate = new Date()) {
 function updateDashboardStats(appointments = []) {
     const patientIds = new Set();
     appointments.forEach(appointment => {
-        patientIds.add(appointment.paciente_id || appointment.paciente_nome || appointment.nome_paciente || appointment.id);
+        const patientKey = getPatientKey(appointment);
+        if (patientKey) patientIds.add(patientKey);
     });
 
     const todayAppointments = appointments.filter(appointment => isSameDay(appointment.data_agendamento)).length;
     const waitingAppointments = appointments.filter(appointment => {
         const status = String(appointment.status || '').toLowerCase();
-        return status === 'aguardando' || status === 'pendente';
+        return status === 'pendente';
     }).length;
 
     const totalPatientsCard = document.getElementById('totalPatientsCard');
@@ -341,6 +381,32 @@ function markDashboardStatsUnavailable(message = 'Nao foi possivel carregar a ag
 }
 
 // Função para carregar dados da agenda
+function getAppointmentAction(status) {
+    const statusLower = String(status || '').toLowerCase();
+
+    if (statusLower === 'confirmado') {
+        return { label: 'Finalizar', nextStatus: 'realizado', disabled: false };
+    }
+
+    if (statusLower === 'realizado') {
+        return { label: 'Concluido', nextStatus: null, disabled: true };
+    }
+
+    if (statusLower === 'cancelado') {
+        return { label: 'Cancelado', nextStatus: null, disabled: true };
+    }
+
+    return { label: 'Atender', nextStatus: 'confirmado', disabled: false };
+}
+
+function updateAppointmentInMemory(appointmentId, status) {
+    appointmentsData = appointmentsData.map(appointment => {
+        if (String(appointment.id) !== String(appointmentId)) return appointment;
+        return { ...appointment, status };
+    });
+    updateDashboardStats(appointmentsData);
+}
+
 async function loadAgendaData() {
     const agendaContent = document.querySelector('.appointments-table tbody');
     if (!agendaContent) {
@@ -365,12 +431,11 @@ async function loadAgendaData() {
         }
 
         console.log(`Buscando agendamentos para o profissional ID: ${professionalData.id}`);
-        const appointmentsResponse = await getProfessionalAppointments(professionalData.id);
+        const appointmentsResponse = await getProfessionalAppointments(professionalData.id, { limit: 100 });
         console.log('Resposta de agendamentos:', appointmentsResponse);
 
         if (appointmentsResponse.ok && appointmentsResponse.data) {
-            // Extrair dados do response
-            const appointments = appointmentsResponse.data.data || appointmentsResponse.data || [];
+            const appointments = getResponseList(appointmentsResponse.data);
             appointmentsData = appointments;
             updateDashboardStats(appointments);
 
@@ -383,7 +448,7 @@ async function loadAgendaData() {
                 agendaContent.innerHTML = `
                     <tr>
                         <td colspan="5" style="text-align: center; padding: 20px; color: #64748b;">
-                            Nenhum agendamento encontrado
+                            Por enquanto não há nenhum agendamento cadastrado.
                         </td>
                     </tr>
                 `;
@@ -396,6 +461,7 @@ async function loadAgendaData() {
                 const appointmentTime = appointment.hora_agendamento || formatDateTime(appointment.data_agendamento) || '--';
                 const appointmentType = appointment.tipo_consulta || appointment.profissional_especialidade || 'Nao informado';
                 const appointmentStatus = appointment.status || 'Nao informado';
+                const action = getAppointmentAction(appointmentStatus);
 
                 return `
                 <tr>
@@ -407,14 +473,18 @@ async function loadAgendaData() {
                             ${escapeHtml(appointmentStatus)}
                         </span>
                     </td>
-                    <td><button class="btn-action" type="button" data-patient-name="${escapeHtml(patientName)}">Atender</button></td>
+                    <td>
+                        <button class="btn-action" type="button" data-appointment-id="${escapeHtml(appointment.id)}" data-patient-name="${escapeHtml(patientName)}" data-next-status="${escapeHtml(action.nextStatus || '')}" ${action.disabled ? 'disabled' : ''}>
+                            ${escapeHtml(action.label)}
+                        </button>
+                    </td>
                 </tr>
             `;
             }).join('');
 
             agendaContent.querySelectorAll('.btn-action').forEach(button => {
                 button.addEventListener('click', () => {
-                    handleAppointmentAction(button, button.dataset.patientName || 'Paciente nao informado');
+                    handleAppointmentAction(button, button.dataset.patientName || 'Paciente nao informado', button.dataset.appointmentId);
                 });
             });
         } else {
@@ -444,23 +514,62 @@ async function loadAgendaData() {
 // Função auxiliar para obter classe CSS de status
 function getStatusClass(status) {
     const statusLower = String(status || '').toLowerCase();
-    if (statusLower === 'confirmado' || statusLower === 'em atendimento') return 'confirm';
+    if (statusLower === 'confirmado') return 'confirm';
     if (statusLower === 'pendente') return 'pending';
-    if (statusLower === 'cancelado' || statusLower === 'finalizado') return 'pending';
+    if (statusLower === 'cancelado' || statusLower === 'realizado') return 'pending';
     return 'waiting';
 }
 
 function getPatientStatusClass(status) {
     const statusLower = String(status || '').toLowerCase();
-    if (statusLower === 'ativo') return 'confirm';
-    if (statusLower === 'inativo') return 'pending';
+    if (statusLower === 'ativo' || statusLower === 'active' || statusLower === 'confirmado') return 'confirm';
+    if (statusLower === 'inativo' || statusLower === 'inactive' || statusLower === 'realizado') return 'pending';
     return 'waiting';
 }
 
 // Função para gerenciar ações em agendamentos
-async function handleAppointmentAction(button, patientName) {
+async function handleAppointmentAction(button, patientName, appointmentId) {
     const row = button.closest('tr');
     const statusSpan = row.querySelector('.status');
+    const nextStatus = button.dataset.nextStatus;
+
+    if (appointmentId && nextStatus) {
+        const confirmationMessage = nextStatus === 'confirmado'
+            ? `Deseja iniciar o atendimento de ${patientName}?`
+            : `Deseja finalizar o atendimento de ${patientName}?`;
+
+        const confirmed = await showPopup(confirmationMessage, 'confirm');
+        if (!confirmed) return;
+
+        button.disabled = true;
+        const previousText = button.innerText;
+        button.innerText = 'Salvando...';
+
+        const result = await updateAppointmentStatus(appointmentId, nextStatus);
+
+        if (!result.ok) {
+            button.disabled = false;
+            button.innerText = previousText;
+            showPopup(result.data?.message || result.error || 'Nao foi possivel atualizar o status.');
+            return;
+        }
+
+        updateAppointmentInMemory(appointmentId, nextStatus);
+
+        statusSpan.innerText = nextStatus;
+        statusSpan.className = `status ${getStatusClass(nextStatus)}`;
+
+        const action = getAppointmentAction(nextStatus);
+        button.innerText = action.label;
+        button.dataset.nextStatus = action.nextStatus || '';
+        button.disabled = action.disabled;
+
+        if (nextStatus === 'realizado') {
+            await showPopup(`Atendimento de ${patientName} finalizado com sucesso!`);
+        }
+
+        return;
+    }
 
     if (button.innerText === 'Atender') {
         const confirmar = await showPopup(`Deseja iniciar o atendimento de ${patientName}?`, 'confirm');
@@ -478,7 +587,7 @@ async function handleAppointmentAction(button, patientName) {
         await showPopup(`Atendimento de ${patientName} finalizado com sucesso!`);
         row.style.opacity = '0.5';
         button.disabled = true;
-        button.innerText = 'Concluído';
+        button.innerText = 'ConcluÃ­do';
         statusSpan.innerText = 'Finalizado';
         statusSpan.className = 'status pending';
     }
@@ -494,8 +603,8 @@ function loadPatientsData() {
         if (!appointmentsData || appointmentsData.length === 0) {
             tableBody.innerHTML = `
                 <tr>
-                    <td colspan="6" style="text-align: center; padding: 20px; color: #64748b;">
-                        Nenhum paciente com agendamentos
+                    <td colspan="5" style="text-align: center; padding: 20px; color: #64748b;">
+                        Por enquanto não há nenhum paciente com agendamentos.
                     </td>
                 </tr>
             `;
@@ -506,21 +615,22 @@ function loadPatientsData() {
         // Extrair pacientes únicos dos agendamentos
         const patientMap = new Map();
         appointmentsData.forEach(appointment => {
-            const pacienteId = appointment.paciente_id || appointment.id;
+            const pacienteId = getPatientKey(appointment);
             if (!patientMap.has(pacienteId)) {
+                const patientStatus = appointment.status || 'Nao informado';
                 patientMap.set(pacienteId, {
                     name: appointment.nome_paciente || appointment.paciente_nome || 'Paciente nao informado',
                     cpf: appointment.cpf_paciente || appointment.paciente_cpf || 'N/A',
-                    phone: appointment.telefone_paciente || appointment.paciente_telefone || 'N/A',
-                    status: appointment.paciente_status || appointment.status_paciente || 'Nao informado',
+                    email: appointment.email_paciente || appointment.paciente_email || 'N/A',
+                    status: patientStatus,
                     lastConsultation: formatDateTime(appointment.data_agendamento)
                 });
             }
         });
 
         const patients = Array.from(patientMap.values());
-        const activePatients = patients.filter(p => String(p.status).toLowerCase() === 'ativo').length;
-        const inactivePatients = patients.filter(p => String(p.status).toLowerCase() === 'inativo').length;
+        const activePatients = patients.filter(p => String(p.status).toLowerCase() === 'confirmado').length;
+        const inactivePatients = patients.filter(p => String(p.status).toLowerCase() === 'realizado').length;
 
         updatePatientStats(patients.length, activePatients, inactivePatients);
 
@@ -528,17 +638,16 @@ function loadPatientsData() {
             <tr>
                 <td><strong>${escapeHtml(patient.name)}</strong></td>
                 <td>${escapeHtml(patient.cpf)}</td>
-                <td>${escapeHtml(patient.phone)}</td>
+                <td>${escapeHtml(patient.email)}</td>
                 <td><span class="status ${getPatientStatusClass(patient.status)}">${escapeHtml(patient.status)}</span></td>
                 <td>${escapeHtml(patient.lastConsultation)}</td>
-                <td><!-- ação removida --></td>
             </tr>
         `).join('');
     } catch (error) {
         console.error('Erro ao carregar pacientes:', error);
         tableBody.innerHTML = `
             <tr>
-                <td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">
+                <td colspan="5" style="text-align: center; padding: 20px; color: #ef4444;">
                     Erro ao carregar pacientes
                 </td>
             </tr>

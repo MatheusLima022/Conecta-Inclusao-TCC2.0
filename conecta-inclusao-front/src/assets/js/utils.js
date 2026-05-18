@@ -150,75 +150,138 @@ function setupPasswordVisibilityToggles() {
             }
 
             .password-rule-feedback {
-                margin-top: 0.4rem;
-                padding: 0.5rem 0.7rem;
-                border: 1px solid #d1d5db;
-                border-radius: 0.5rem;
-                background: #f8fafc;
+                margin-top: 0.6rem;
+                padding: 0.65rem 0.8rem;
+                border: 1.5px solid #e2e8f0;
+                border-radius: 0.6rem;
+                background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
                 color: #334155;
                 font-size: 0.8rem;
                 line-height: 1.3;
                 width: 100% !important;
                 box-sizing: border-box !important;
-                display: none;
-                opacity: 0;
-                transition: opacity 0.2s ease-in-out;
+                display: block !important;
+                opacity: 1;
+                transform: translateY(0);
+                transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
                 flex-shrink: 0;
+                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+            }
+
+            .password-guidance-row {
+                width: 100%;
+                grid-column: 1 / -1;
+                margin-top: -0.25rem;
+            }
+
+            .password-guidance-row .password-rule-feedback {
+                margin-top: 0;
             }
 
             .password-rule-feedback.show {
                 display: block !important;
                 opacity: 1;
+                transform: translateY(0);
             }
 
             .password-rule-feedback p {
-                margin: 0 0 0.25rem;
-                font-weight: 600;
+                margin: 0 0 0.5rem;
+                font-weight: 700;
                 color: #0f172a;
                 font-size: 0.75rem;
+                display: flex;
+                align-items: center;
+                gap: 0.4rem;
+                text-transform: uppercase;
+                letter-spacing: 0.3px;
+            }
+
+            .password-rule-feedback p i {
+                font-size: 0.9rem;
+                color: #0073e6;
             }
 
             .password-rule-feedback ul {
                 list-style: none;
                 margin: 0;
                 padding: 0;
-                columns: 2;
-                column-gap: 0.6rem;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 0.5rem;
             }
 
             .password-rule-feedback li {
-                margin: 0.1rem 0;
+                margin: 0;
                 display: flex;
                 align-items: center;
-                gap: 0.3rem;
+                gap: 0.35rem;
                 font-size: 0.75rem;
-                break-inside: avoid;
+                color: #64748b;
+                padding: 0.3rem 0.5rem;
+                border-radius: 0.4rem;
+                background: rgba(255, 255, 255, 0.6);
+                transition: all 0.2s ease-in-out;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
 
-            .password-rule-feedback li::before {
-                content: '';
-                width: 0.4rem;
-                height: 0.4rem;
-                border-radius: 50%;
-                border: 1px solid #cbd5e1;
-                display: inline-block;
+            .password-rule-feedback li i {
+                font-size: 0.85rem;
+                color: #cbd5e1;
+                transition: color 0.2s ease-in-out;
                 flex-shrink: 0;
             }
 
-            .password-rule-feedback li.valid::before {
-                background: #22c55e;
-                border-color: #22c55e;
+            .password-rule-feedback li.valid {
+                color: #15803d;
+                background: rgba(34, 197, 94, 0.1);
             }
 
-            @media (max-width: 640px) {
+            .password-rule-feedback li.valid i {
+                color: #22c55e;
+            }
+
+            @media (max-width: 768px) {
                 .password-rule-feedback ul {
-                    columns: 1;
+                    grid-template-columns: 1fr 1fr;
                 }
 
                 .password-rule-feedback {
-                    margin-top: 0.3rem;
-                    padding: 0.4rem 0.6rem;
-                    font-size: 0.75rem;
+                    margin-top: 0.5rem;
+                    padding: 0.55rem 0.7rem;
+                }
+
+                .password-rule-feedback p {
+                    font-size: 0.7rem;
+                    gap: 0.3rem;
+                }
+
+                .password-rule-feedback li {
+                    font-size: 0.7rem;
+                    padding: 0.25rem 0.4rem;
+                }
+            }
+
+            @media (max-width: 480px) {
+                .password-rule-feedback ul {
+                    grid-template-columns: 1fr;
+                }
+
+                .password-rule-feedback {
+                    margin-top: 0.4rem;
+                    padding: 0.5rem 0.6rem;
+                }
+
+                .password-rule-feedback p {
+                    font-size: 0.65rem;
+                    margin-bottom: 0.4rem;
+                }
+
+                .password-rule-feedback li {
+                    font-size: 0.65rem;
+                    padding: 0.2rem 0.35rem;
+                    gap: 0.25rem;
                 }
             }
         `;
@@ -271,14 +334,24 @@ function isStrongPassword(password) {
 
 function updatePasswordFeedback(input) {
     const value = input.value || '';
-    const feedback = input.parentNode.querySelector('.password-rule-feedback');
+    const feedbackId = input.dataset.passwordFeedbackId;
+    const feedback = feedbackId
+        ? document.getElementById(feedbackId)
+        : input.parentNode.querySelector('.password-rule-feedback');
     if (!feedback) return;
 
     const listItems = feedback.querySelectorAll('li');
     getPasswordRules().forEach((rule, index) => {
         const item = listItems[index];
         if (!item) return;
-        item.classList.toggle('valid', rule.test(value));
+        const isValid = rule.test(value);
+        item.classList.toggle('valid', isValid);
+        const icon = item.querySelector('i');
+        if (isValid) {
+            icon.className = 'ph ph-check-circle';
+        } else {
+            icon.className = 'ph ph-circle';
+        }
     });
 }
 
@@ -287,18 +360,46 @@ function setupPasswordRuleFeedback() {
 
     passwordInputs.forEach((input) => {
         if (input.dataset.passwordGuidanceReady === 'true') return;
+        const form = input.closest('form');
+        const fieldGroup = input.closest('.form-group, .input-group') || input.parentNode;
+        const confirmInput = form
+            ? Array.from(form.querySelectorAll('input[type="password"]')).find((candidate) => {
+                if (candidate === input) return false;
+                const candidateId = (candidate.id || '').toLowerCase();
+                const candidateName = (candidate.name || '').toLowerCase();
+                return candidateId.includes('confirm') || candidateName.includes('confirm');
+            })
+            : null;
+        const confirmGroup = confirmInput?.closest('.form-group, .input-group') || confirmInput?.parentNode;
+        const sharedLayout = fieldGroup?.parentElement === confirmGroup?.parentElement
+            ? fieldGroup.parentElement
+            : null;
+        const feedbackId = `password-rule-feedback-${Math.random().toString(36).slice(2)}`;
+
+        const feedbackWrapper = document.createElement('div');
+        feedbackWrapper.className = 'password-guidance-row';
 
         const feedback = document.createElement('div');
         feedback.className = 'password-rule-feedback';
+        feedback.id = feedbackId;
         feedback.innerHTML = `
-            <p>Requisitos de senha segura:</p>
-            <ul>${getPasswordRules().map(rule => `<li>${rule.label}</li>`).join('')}</ul>
+            <p><i class="ph ph-lock"></i> Requisitos de senha segura</p>
+            <ul>${getPasswordRules().map(rule => `<li><i class="ph ph-circle"></i> ${rule.label}</li>`).join('')}</ul>
         `;
+        feedbackWrapper.appendChild(feedback);
 
-        input.parentNode.appendChild(feedback);
+        if (sharedLayout && confirmGroup) {
+            sharedLayout.insertBefore(feedbackWrapper, confirmGroup.nextSibling);
+        } else if (confirmGroup?.parentNode) {
+            confirmGroup.parentNode.insertBefore(feedbackWrapper, confirmGroup.nextSibling);
+        } else if (fieldGroup?.parentNode) {
+            fieldGroup.parentNode.insertBefore(feedbackWrapper, fieldGroup.nextSibling);
+        } else {
+            input.parentNode.appendChild(feedbackWrapper);
+        }
+
+        input.dataset.passwordFeedbackId = feedbackId;
         input.addEventListener('input', () => updatePasswordFeedback(input));
-        input.addEventListener('focus', () => feedback.classList.add('show'));
-        input.addEventListener('blur', () => feedback.classList.remove('show'));
         input.dataset.passwordGuidanceReady = 'true';
     });
 }

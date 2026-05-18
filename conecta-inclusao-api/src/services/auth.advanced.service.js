@@ -387,6 +387,10 @@ export async function resetTemporaryProfessionalPassword({ resetToken, newPasswo
     }
 
     const doctor = rows[0];
+    if (!["active", "ativo", "trabalhando"].includes(String(doctor.status || "").toLowerCase())) {
+      return { ok: false, statusCode: 403, message: "Conta inativa." };
+    }
+
     if (!doctor.must_change_password || !doctor.temporary_password_token) {
       return { ok: false, statusCode: 400, message: "Essa senha temporaria ja foi redefinida." };
     }
