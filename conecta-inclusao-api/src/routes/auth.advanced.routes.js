@@ -283,6 +283,36 @@ router.post("/password/reset", loginLimiter, async (req, res, next) => {
   }
 });
 
+router.get("/professional", authenticateToken, async (req, res, next) => {
+  try {
+    const [rows] = await pool.execute(
+      `SELECT id, name, email, crm, especialidade, unidade, bio, status, clinica_id
+       FROM medicos
+       WHERE LOWER(status) IN ('active', 'ativo', 'trabalhando')
+       ORDER BY name ASC`
+    );
+
+    return res.status(200).json(rows);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/professionals", authenticateToken, async (req, res, next) => {
+  try {
+    const [rows] = await pool.execute(
+      `SELECT id, name, email, crm, especialidade, unidade, bio, status, clinica_id
+       FROM medicos
+       WHERE LOWER(status) IN ('active', 'ativo', 'trabalhando')
+       ORDER BY name ASC`
+    );
+
+    return res.status(200).json(rows);
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get("/clinic/professionals", authenticateToken, async (req, res, next) => {
   try {
     if (req.user.profile !== 'clinica') {
@@ -375,6 +405,46 @@ router.get("/patient/appointments", authenticateToken, async (req, res, next) =>
   }
 });
 
+router.delete("/patient/appointments/:id", authenticateToken, async (req, res, next) => {
+  try {
+    if (req.user.profile !== 'paciente') {
+      return res.status(403).json({ message: 'Acesso negado. Apenas pacientes podem cancelar seus agendamentos.' });
+    }
+
+    const appointmentId = Number(req.params.id);
+    if (!appointmentId || Number.isNaN(appointmentId)) {
+      return res.status(400).json({ message: 'ID de agendamento inválido.' });
+    }
+
+    const patientId = Number(req.user.sub);
+    const [[existing]] = await pool.execute(
+      `SELECT id, paciente_id, status FROM agendamentos WHERE id = ? LIMIT 1`,
+      [appointmentId]
+    );
+
+    if (!existing) {
+      return res.status(404).json({ message: 'Agendamento nao encontrado.' });
+    }
+
+    if (Number(existing.paciente_id) !== patientId) {
+      return res.status(403).json({ message: 'Acesso negado. Este agendamento nao pertence ao paciente autenticado.' });
+    }
+
+    if (String(existing.status).toLowerCase() === 'cancelado') {
+      return res.status(400).json({ message: 'Agendamento ja cancelado.' });
+    }
+
+    await pool.execute(
+      `UPDATE agendamentos SET status = 'cancelado' WHERE id = ?`,
+      [appointmentId]
+    );
+
+    return res.status(200).json({ message: 'Agendamento cancelado com sucesso.' });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.post("/patient/appointments", authenticateToken, async (req, res, next) => {
   try {
     if (req.user.profile !== 'paciente') {
@@ -384,6 +454,12 @@ router.post("/patient/appointments", authenticateToken, async (req, res, next) =
     const { med_crm, date } = req.body;
     if (!med_crm || !date) {
       return res.status(400).json({ message: 'med_crm e date sao obrigatorios.' });
+    }
+
+    const rawDate = String(date).trim();
+    const appointmentDate = rawDate.length === 10 ? `${rawDate} 00:00:00` : rawDate;
+    if (Number.isNaN(new Date(appointmentDate).getTime())) {
+      return res.status(400).json({ message: 'Date inválido. Use formato YYYY-MM-DD ou YYYY-MM-DD HH:MM:SS.' });
     }
 
     // Normalizar CRM
@@ -400,15 +476,22 @@ router.post("/patient/appointments", authenticateToken, async (req, res, next) =
     }
 
     const pacienteId = Number(req.user.sub);
-    const clinicaId = medico.clinica_id || null;
+    const clinicaId = medico.clinica_id;
+
+    if (clinicaId == null) {
+      return res.status(400).json({ message: 'Profissional não vinculado a nenhuma clínica. Atualize o cadastro do médico antes de agendar.' });
+    }
 
     const [insertResult] = await pool.execute(
       `INSERT INTO agendamentos (clinica_id, paciente_id, medico_id, data_agendamento, status)
        VALUES (?, ?, ?, ?, 'pendente')`,
-      [clinicaId, pacienteId, medico.id, date]
+      [clinicaId, pacienteId, medico.id, appointmentDate]
     );
 
     const createdId = insertResult.insertId;
+    if (!createdId) {
+      return res.status(500).json({ message: 'Nao foi possivel criar o agendamento no banco de dados.' });
+    }
 
     const [rows] = await pool.execute(
       `SELECT a.id, a.data_agendamento AS appointmentDate, a.status, m.name AS doctorName, m.especialidade AS specialty, m.unidade AS unit, c.nome AS clinicName
